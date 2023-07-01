@@ -65,6 +65,9 @@ void motor4_drive(uint8 duty_cycle);
 /* A complete function that drives each servo in this board  */
 void motors_drive(SERVOS_DATA servos_data);
 
+/* Execute servo subcommand */
+void servo_cmd_execute(uint8 subcommand);
+
 /* A function that handles a error driven from controlling servo */
 void error_handler();
 

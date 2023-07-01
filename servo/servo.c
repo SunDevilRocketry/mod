@@ -107,6 +107,20 @@ void motors_drive(SERVOS_DATA servos_data)
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
+* 		servo_cmd_execute                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Execute servo subcommand                                               *
+*                                                                              *
+*******************************************************************************/
+void servo_cmd_execute(uint8 subcommand){
+    //TODO: Implement cases for testing servo controlling loop and testing individual servo
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
 * 		error_handler                                                          *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
@@ -117,3 +131,4 @@ void error_handler()
 {
 
 }
+
