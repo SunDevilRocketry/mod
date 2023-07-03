@@ -15,6 +15,7 @@
 ------------------------------------------------------------------------------*/
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 
 /*------------------------------------------------------------------------------
@@ -83,6 +84,58 @@ void static extract_sensor_bytes
 	uint8_t*     sensor_data_bytes_ptr,
 	uint8_t*     num_sensor_bytes
 	);
+
+/* reads from all sensors using the MCUs ADCs */
+#ifdef L0002_REV5
+SENSOR_STATUS sensor_adc_burst_read
+	(
+	SENSOR_DATA* sensor_data_ptr /* Pointer to sensor data structure */
+	);
+
+/* Mapping from pressure transducer number to mutliplexor GPIO pin */
+static inline uint16_t mux_map
+	(
+    PRESSURE_PT_NUM    pt_num    
+    );
+#endif
+
+#ifdef L0002_REV5
+/* Select the adc channel for PT1 */
+static void pt1_adc_channel_select
+	(
+	void
+	);
+
+/* Select the adc channel for PT7 */
+static void pt7_adc_channel_select
+	(
+	void
+	);
+
+/* Select the adc channel for the loadcell */
+static void loadcell_adc_channel_select
+	(
+	void
+	);
+
+/* Select the adc channel for the pt8 */
+static void pt8_adc_channel_select
+	(
+	void
+	);
+
+/* Select the adc channel for the pt5 */
+static void pt5_adc_channel_select
+	(
+	void
+	);
+
+/* Select the adc channel for the pt6 */
+static void pt6_adc_channel_select
+	(
+	void
+	);
+#endif /* #ifdef L0002_REV5 */
 
 
 /*------------------------------------------------------------------------------
@@ -543,10 +596,10 @@ switch ( subcommand )
 
 /*******************************************************************************
 *                                                                              *
-* PROCEDURE:                                                                   * 
+* PROCEDURE:                                                                   *
 * 		sensor_dump                                                            *
 *                                                                              *
-* DESCRIPTION:                                                                 * 
+* DESCRIPTION:                                                                 *
 *       reads from all sensors and fill in the sensor data structure           *
 *                                                                              *
 *******************************************************************************/
@@ -566,9 +619,14 @@ SENSOR_STATUS sensor_dump
 	BARO_STATUS     press_status;           /* Baro Sensor status codes    */
 	BARO_STATUS     temp_status;
 #elif defined( ENGINE_CONTROLLER    )
-	PRESSURE_STATUS pt_status;              /* Pressure status codes       */
-	THERMO_STATUS   tc_status;              /* Thermocouple status codes   */
-	LOADCELL_STATUS lc_status;              /* Loadcell status codes       */
+	#ifdef L0002_REV4
+		PRESSURE_STATUS pt_status;          /* Pressure status codes       */
+		THERMO_STATUS   tc_status;          /* Thermocouple status codes   */
+		LOADCELL_STATUS lc_status;          /* Loadcell status codes       */
+	#elif defined( L0002_REV5 )
+		SENSOR_STATUS   sensor_status;      /* Sensor module return codes  */
+		THERMO_STATUS   tc_status;          /* Thermocouple status codes   */
+	#endif
 #elif defined( FLIGHT_COMPUTER_LITE )
 	BARO_STATUS     press_status;           /* Baro Sensor status codes    */
 	BARO_STATUS     temp_status;
@@ -584,8 +642,13 @@ SENSOR_STATUS sensor_dump
 	press_status = BARO_OK;           
 	temp_status  = BARO_OK;
 #elif defined( ENGINE_CONTROLLER    )
-	pt_status    = PRESSURE_OK;          
-	tc_status    = THERMO_OK;        
+	#ifdef L0002_REV4
+		pt_status    = PRESSURE_OK;          
+		tc_status    = THERMO_OK;        
+	#elif defined( L0002_REV5 )
+		sensor_status = SENSOR_OK;
+		tc_status     = THERMO_OK;
+	#endif
 #elif defined( FLIGHT_COMPUTER_LITE )
 	press_status = BARO_OK;           
 	temp_status  = BARO_OK;
@@ -610,15 +673,20 @@ SENSOR_STATUS sensor_dump
 	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
 
 #elif defined( ENGINE_CONTROLLER )
+	#ifndef L0002_REV5
 	/* Pressure Transducers */
 	pt_status    = pressure_poll_pts( &( sensor_data_ptr -> pt_pressures[0] ) );
 
 	/* Load cell */
 	lc_status    = loadcell_get_reading( &( sensor_data_ptr -> load_cell_force ) );
+	#else
+	/* PTs and Load Cell */
+	sensor_status = sensor_adc_burst_read( sensor_data_ptr );
+	#endif /* #ifndef L0002_REV5 */
 
 	/* Thermocouple */
-	tc_status    = temp_get_temp( &( sensor_data_ptr -> tc_temp ), 
-	                              THERMO_HOT_JUNCTION );
+//	tc_status    = temp_get_temp( &( sensor_data_ptr -> tc_temp ), 
+	//                              THERMO_HOT_JUNCTION );
 #elif defined( FLIGHT_COMPUTER_LITE )
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
@@ -657,22 +725,37 @@ SENSOR_STATUS sensor_dump
 		return SENSOR_OK;
 		}
 #elif defined( ENGINE_CONTROLLER )
-	if      ( pt_status != PRESSURE_OK )
-		{
-		return SENSOR_PT_ERROR;
-		}
-	else if ( tc_status != THERMO_OK   )
-		{
-		return SENSOR_TC_ERROR;
-		}
-	else if ( lc_status != LOADCELL_OK )
-		{
-		return SENSOR_LC_ERROR;
-		}
-	else
-		{
-		return SENSOR_OK;
-		}
+	#ifdef L0002_REV4
+		if      ( pt_status != PRESSURE_OK )
+			{
+			return SENSOR_PT_ERROR;
+			}
+		else if ( tc_status != THERMO_OK   )
+			{
+			return SENSOR_TC_ERROR;
+			}
+		else if ( lc_status != LOADCELL_OK )
+			{
+			return SENSOR_LC_ERROR;
+			}
+		else
+			{
+			return SENSOR_OK;
+			}
+	#elif defined( L0002_REV5 )
+		if ( sensor_status != SENSOR_OK )
+			{
+			return sensor_status;
+			}
+		else if ( tc_status != THERMO_OK )
+			{
+			return SENSOR_TC_ERROR;
+			}
+		else
+			{
+			return SENSOR_OK;
+			}
+	#endif
 #elif defined( FLIGHT_COMPUTER_LITE )
 	if ( press_status != BARO_OK ||
 		 temp_status  != BARO_OK  )
@@ -720,6 +803,9 @@ SENSOR_ID* sensor_id_ptr;    /* Pointer to sensor id                */
 	THERMO_STATUS   thermo_status;   /* Thermocouple return codes */
 	LOADCELL_STATUS lc_status;       /* Loadcell return codes     */
 	PRESSURE_STATUS pt_status;       /* PT return codes           */
+	#ifdef L0002_REV5
+	SENSOR_STATUS   sensor_status;   /* Sensor return codes       */
+	#endif
 #elif defined( FLIGHT_COMPUTER_LITE )
 	BARO_STATUS     baro_status;     /* Baro module return codes  */
 #endif
@@ -745,6 +831,9 @@ sensor_id         = *(sensor_id_ptr   );
 	thermo_status = THERMO_OK;
 	lc_status     = LOADCELL_OK;
 	pt_status     = PRESSURE_OK;
+	#ifdef L0002_REV5
+	sensor_status = SENSOR_OK;
+	#endif
 #elif defined( FLIGHT_COMPUTER_LITE )
 	baro_status   = BARO_OK;
 #endif
@@ -754,6 +843,22 @@ sensor_id         = *(sensor_id_ptr   );
 	imu_accel_read = false;
 	imu_gyro_read  = false;
 	imu_mag_read   = false;
+#endif
+
+/* Burst read ADC sensors on Engine controller Rev 5 */
+#ifdef L0002_REV5
+	sensor_status = sensor_adc_burst_read( sensor_data_ptr );
+	if ( sensor_status != SENSOR_OK )
+		{
+		return sensor_status;
+		}
+	thermo_status = temp_get_temp( &( sensor_data_ptr -> tc_temp ),
+				                   THERMO_HOT_JUNCTION );
+	if ( thermo_status != THERMO_OK )
+		{
+		return SENSOR_TC_ERROR;
+		}
+	return SENSOR_OK;
 #endif
 
 
@@ -1071,6 +1176,57 @@ for ( int i = 0; i < num_sensors; ++i )
 return SENSOR_OK;
 } /* sensor_poll */
 
+#ifdef ENGINE_CONTROLLER 
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_conv_pressure                                                   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Converts a pressure transducer ADC readout to a floating point         *
+*       pressure in psi                                                        *
+*                                                                              *
+*******************************************************************************/
+float sensor_conv_pressure
+	( 
+	uint32_t adc_readout, /* Pressure readout from ADC */
+	PT_INDEX pt_num       /* PT used for readout       */
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables  
+------------------------------------------------------------------------------*/
+float voltage; /* ADC voltage    */
+float gain;    /* Amplifier gain */
+
+
+/*------------------------------------------------------------------------------
+ Initializations 
+------------------------------------------------------------------------------*/
+voltage = 0;
+gain    = 0;
+
+
+/*------------------------------------------------------------------------------
+ Implementation 
+------------------------------------------------------------------------------*/
+
+/* Convert readout to voltage */
+voltage = ( 3.3/( pow( 2, 16 ) ) )*( (float) adc_readout );
+
+/* Convert voltage to pressure in psi */
+if ( pt_num > PT_NONE_INDEX )
+	{
+	return ( voltage*( 2000.0/5.0 ) );
+	}
+else
+	{
+	gain = 1 + ( 100.0/3.3 );
+	return ( voltage*( 1000.0/(gain*0.1) ) );
+	}
+} /* sensor_conv_pressure */
+#endif
+
 
 /*------------------------------------------------------------------------------
  Internal procedures 
@@ -1166,6 +1322,317 @@ for ( uint8_t i = 0; i < num_sensors; ++i )
 	}
 
 } /* extract_sensor_bytes */
+
+#ifdef L0002_REV5
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_adc_burst_read                                                  *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       reads from all sensors using the MCUs ADCs                             *
+*                                                                              *
+*******************************************************************************/
+SENSOR_STATUS sensor_adc_burst_read
+	(
+	SENSOR_DATA* sensor_data_ptr /* Pointer to sensor data structure */
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables  
+------------------------------------------------------------------------------*/
+HAL_StatusTypeDef      adc_status[2];    /* Return codes from ADC API         */
+uint16_t               mux_pins_bitmask; /* GPIO Pins for PT1-3 MUX           */
+
+
+/*------------------------------------------------------------------------------
+ Initializations 
+------------------------------------------------------------------------------*/
+memset( &adc_status[0], HAL_OK, sizeof( adc_status ) );
+mux_pins_bitmask = 0;
+HAL_GPIO_WritePin( PRESSURE_GPIO_PORT, PRESSURE_MUX_ALL_PINS, GPIO_PIN_RESET );
+
+
+/*------------------------------------------------------------------------------
+ Poll ADCs 
+------------------------------------------------------------------------------*/
+
+/* PT1/PT7 readout */
+pt1_adc_channel_select();
+HAL_ADC_Start( &hadc1 );
+adc_status[0] = HAL_ADC_PollForConversion( &hadc1, ADC_TIMEOUT );
+sensor_data_ptr -> pt_pressures[0] = HAL_ADC_GetValue( &hadc1 );
+HAL_ADC_Stop( &hadc1 );
+pt7_adc_channel_select();
+HAL_ADC_Start( &hadc1 );
+adc_status[1] = HAL_ADC_PollForConversion( &hadc1, ADC_TIMEOUT );
+sensor_data_ptr -> pt_pressures[6] = HAL_ADC_GetValue( &hadc1 );
+HAL_ADC_Stop( &hadc1 );
+mux_pins_bitmask = mux_map( 1 );
+HAL_GPIO_WritePin( PRESSURE_GPIO_PORT, PRESSURE_MUX_ALL_PINS, GPIO_PIN_RESET );
+HAL_GPIO_WritePin( PRESSURE_GPIO_PORT, mux_pins_bitmask     , GPIO_PIN_SET   );
+if ( adc_status[0] != HAL_OK || adc_status[1] != HAL_OK )
+	{
+	return SENSOR_ADC_POLL_ERROR;
+	}
+
+/* Load Cell/PT8 readout */
+loadcell_adc_channel_select();
+HAL_ADC_Start( &hadc2 );
+adc_status[0] = HAL_ADC_PollForConversion( &hadc2, ADC_TIMEOUT );
+sensor_data_ptr -> load_cell_force = HAL_ADC_GetValue( &hadc2 );
+HAL_ADC_Stop( &hadc2 );
+pt8_adc_channel_select();
+HAL_ADC_Start( &hadc2 );
+adc_status[1] = HAL_ADC_PollForConversion( &hadc2, ADC_TIMEOUT );
+sensor_data_ptr -> pt_pressures[7] = HAL_ADC_GetValue( &hadc2 );
+HAL_ADC_Stop( &hadc2 );
+if ( adc_status[0] != HAL_OK || adc_status[1] != HAL_OK )
+	{
+	return SENSOR_ADC_POLL_ERROR;
+	}
+
+/* PT2 readout           */
+pt1_adc_channel_select(); /* wtf why patrick? */
+HAL_ADC_Start( &hadc1 );
+adc_status[0] = HAL_ADC_PollForConversion( &hadc1, ADC_TIMEOUT );
+sensor_data_ptr -> pt_pressures[1] = HAL_ADC_GetValue( &hadc1 );
+HAL_ADC_Stop( &hadc1 );
+mux_pins_bitmask = mux_map( 2 );
+HAL_GPIO_WritePin( PRESSURE_GPIO_PORT, PRESSURE_MUX_ALL_PINS, GPIO_PIN_RESET );
+HAL_GPIO_WritePin( PRESSURE_GPIO_PORT, mux_pins_bitmask     , GPIO_PIN_SET   );
+if ( adc_status[0] != HAL_OK )
+	{
+	return SENSOR_ADC_POLL_ERROR;
+	}
+
+/* PT5/PT6 readout */
+pt5_adc_channel_select();
+HAL_ADC_Start( &hadc3 );
+adc_status[0] = HAL_ADC_PollForConversion( &hadc3, ADC_TIMEOUT );
+sensor_data_ptr -> pt_pressures[4] = HAL_ADC_GetValue( &hadc3 );
+HAL_ADC_Stop( &hadc3 );
+pt6_adc_channel_select();
+HAL_ADC_Start( &hadc3 );
+adc_status[1] = HAL_ADC_PollForConversion( &hadc3, ADC_TIMEOUT );
+sensor_data_ptr -> pt_pressures[5] = HAL_ADC_GetValue( &hadc3 );
+HAL_ADC_Stop( &hadc3 );
+if ( adc_status[0] != HAL_OK || adc_status[1] != HAL_OK )
+	{
+	return SENSOR_ADC_POLL_ERROR;
+	}
+
+/* PT3 readout */
+pt1_adc_channel_select();
+HAL_ADC_Start( &hadc1 );
+adc_status[0] = HAL_ADC_PollForConversion( &hadc1, ADC_TIMEOUT );
+sensor_data_ptr -> pt_pressures[2] = HAL_ADC_GetValue( &hadc1 );
+sensor_data_ptr -> pt_pressures[3] = 0;
+HAL_ADC_Stop( &hadc1 );
+HAL_GPIO_WritePin( PRESSURE_GPIO_PORT, PRESSURE_MUX_ALL_PINS, GPIO_PIN_RESET );
+if ( adc_status[0] != HAL_OK )
+	{
+	return SENSOR_ADC_POLL_ERROR;
+	}
+else
+	{
+	return SENSOR_OK;
+	}
+
+} /* sensor_adc_burst_read */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		mux_map                                                                *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Mapping from pressure transducer number to mutliplexor GPIO pin        *
+*       bitmask. ex. PTNUM5 -> 101 -> GPIO_PIN_C | GPIO_PIN_A                  *
+*                                                                              *
+*******************************************************************************/
+static inline uint16_t mux_map
+	(
+    PRESSURE_PT_NUM    pt_num    
+    )
+{
+/* Mux pins are adjacent and from the same port. Just shift the ptnum bits up
+   to create the bitmask */
+#ifdef L0002_REV4
+	return ( (uint16_t) pt_num) << PT_MUX_BITMASK_SHIFT; 
+#elif defined( L0002_REV5 )
+	if ( pt_num <= 3 )
+		{
+		return ( (uint16_t) pt_num) << PT_MUX_BITMASK_SHIFT; 
+		}
+	else
+		{
+		return 0;
+		}
+#endif
+} /* mux_map */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		pt1_adc_channel_select                                                 *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Select the adc channel for PT1                                         *
+*                                                                              *
+*******************************************************************************/
+static void pt1_adc_channel_select
+	(
+	void
+	)
+{
+ADC_ChannelConfTypeDef sConfig   = {0};
+sConfig.Channel                  = ADC_CHANNEL_10;
+sConfig.Rank                     = ADC_REGULAR_RANK_1;
+sConfig.SamplingTime             = ADC_SAMPLETIME_1CYCLE_5;
+sConfig.SingleDiff               = ADC_SINGLE_ENDED;
+sConfig.OffsetNumber             = ADC_OFFSET_NONE;
+sConfig.Offset                   = 0;
+sConfig.OffsetSignedSaturation   = DISABLE;
+HAL_ADC_ConfigChannel( &hadc1, &sConfig );
+
+} /* pt1_adc_channel_select */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		pt7_adc_channel_select                                                 *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Select the adc channel for PT7                                         *
+*                                                                              *
+*******************************************************************************/
+static void pt7_adc_channel_select
+	(
+	void
+	)
+{
+ADC_ChannelConfTypeDef sConfig   = {0};
+sConfig.Channel                  = ADC_CHANNEL_4;
+sConfig.Rank                     = ADC_REGULAR_RANK_1;
+sConfig.SamplingTime             = ADC_SAMPLETIME_1CYCLE_5;
+sConfig.SingleDiff               = ADC_SINGLE_ENDED;
+sConfig.OffsetNumber             = ADC_OFFSET_NONE;
+sConfig.Offset                   = 0;
+sConfig.OffsetSignedSaturation   = DISABLE;
+HAL_ADC_ConfigChannel( &hadc1, &sConfig );
+
+} /* pt7_adc_channel_select */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		loadcell_adc_channel_select                                            *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Select the adc channel for the loadcell                                *
+*                                                                              *
+*******************************************************************************/
+static void loadcell_adc_channel_select
+	(
+	void
+	)
+{
+ADC_ChannelConfTypeDef sConfig      = {0};
+sConfig.Channel                     = ADC_CHANNEL_11;
+sConfig.Rank                        = ADC_REGULAR_RANK_1;
+sConfig.SamplingTime                = ADC_SAMPLETIME_1CYCLE_5;
+sConfig.SingleDiff                  = ADC_SINGLE_ENDED;
+sConfig.OffsetNumber                = ADC_OFFSET_NONE;
+sConfig.Offset                      = 0;
+sConfig.OffsetSignedSaturation      = DISABLE;
+HAL_ADC_ConfigChannel( &hadc2, &sConfig );
+} /* loadcell_adc_channel_select */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		pt8_adc_channel_select                                                 *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Select the adc channel for the pt8                                     *
+*                                                                              *
+*******************************************************************************/
+static void pt8_adc_channel_select
+	(
+	void
+	)
+{
+ADC_ChannelConfTypeDef sConfig      = {0};
+sConfig.Channel                     = ADC_CHANNEL_8;
+sConfig.Rank                        = ADC_REGULAR_RANK_1;
+sConfig.SamplingTime                = ADC_SAMPLETIME_1CYCLE_5;
+sConfig.SingleDiff                  = ADC_SINGLE_ENDED;
+sConfig.OffsetNumber                = ADC_OFFSET_NONE;
+sConfig.Offset                      = 0;
+sConfig.OffsetSignedSaturation      = DISABLE;
+HAL_ADC_ConfigChannel( &hadc2, &sConfig );
+} /* pt8_adc_channel_select */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		pt5_adc_channel_select                                                 *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Select the adc channel for the pt5                                     *
+*                                                                              *
+*******************************************************************************/
+static void pt5_adc_channel_select
+	(
+	void
+	)
+{
+ADC_ChannelConfTypeDef sConfig = {0};
+sConfig.Channel                = ADC_CHANNEL_0;
+sConfig.Rank                   = ADC_REGULAR_RANK_1;
+sConfig.SamplingTime           = ADC_SAMPLETIME_1CYCLE_5;
+sConfig.SingleDiff             = ADC_SINGLE_ENDED;
+sConfig.OffsetNumber           = ADC_OFFSET_NONE;
+sConfig.Offset                 = 0;
+sConfig.OffsetSignedSaturation = DISABLE;
+HAL_ADC_ConfigChannel( &hadc3, &sConfig );
+} /* pt5_adc_channel_select */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		pt6_adc_channel_select                                                 *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Select the adc channel for the pt6                                     *
+*                                                                              *
+*******************************************************************************/
+static void pt6_adc_channel_select
+	(
+	void
+	)
+{
+ADC_ChannelConfTypeDef sConfig = {0};
+sConfig.Channel                = ADC_CHANNEL_1;
+sConfig.Rank                   = ADC_REGULAR_RANK_1;
+sConfig.SamplingTime           = ADC_SAMPLETIME_1CYCLE_5;
+sConfig.SingleDiff             = ADC_SINGLE_ENDED;
+sConfig.OffsetNumber           = ADC_OFFSET_NONE;
+sConfig.Offset                 = 0;
+sConfig.OffsetSignedSaturation = DISABLE;
+HAL_ADC_ConfigChannel( &hadc3, &sConfig );
+} /* pt6_adc_channel_select */
+
+
+#endif /* #ifdef L0002_REV5 */
 
 
 /*******************************************************************************

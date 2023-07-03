@@ -60,8 +60,8 @@ typedef enum PRESSURE_PT_NUMS
     PT_NUM0 = 0, /* LOX Pressure                  */
     PT_NUM1    , /* LOX Flow Rate Upstream        */
     PT_NUM2    , /* LOX Flow Rate Downstream      */
-    PT_NUM3    , /* Engine Pressure               */
-    PT_NUM4    , /* Extra                         */
+    PT_NUM3    , /* Extra                         */
+    PT_NUM4    , /* Engine Pressure               */
     PT_NUM5    , /* Kerosene Flow Rate Downstream */
     PT_NUM6    , /* Kerosene Flow Rate Upstream   */
     PT_NUM7      /* Kerosene Pressure             */

@@ -155,6 +155,7 @@ switch ( usb_status )
 
 #if defined( A0002_REV2           ) || \
     defined( FLIGHT_COMPUTER_LITE ) || \
+    defined( L0002_REV5           ) || \
 	defined( L0005_REV3           )
 /*******************************************************************************
 *                                                                              *

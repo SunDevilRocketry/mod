@@ -73,6 +73,10 @@ Includes
 		/* Disable timeouts when debugging */
 		#define HAL_SENSOR_TIMEOUT ( 0xFFFFFFFF )
 	#endif
+#elif defined( GROUND_STATION )
+	/* General */
+	#define NUM_SENSORS         ( 10   )
+	#define SENSOR_DATA_SIZE    ( 40   )
 #else
 	#error Board is not compatible with SENSOR module
 #endif
@@ -101,6 +105,7 @@ typedef enum
 	SENSOR_POLL_FAIL             ,
 	SENSOR_POLL_UNRECOGNIZED_CMD ,
 	SENSOR_VALVE_UART_ERROR      ,
+	SENSOR_ADC_POLL_ERROR        ,
     SENSOR_FAIL   
     } SENSOR_STATUS;
 
@@ -133,7 +138,7 @@ typedef enum
 		SENSOR_IMUT  = 0x09,
 		SENSOR_PRES  = 0x0A,
 		SENSOR_TEMP  = 0x0B
-	#elif defined( ENGINE_CONTROLLER )
+	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		SENSOR_PT0   = 0x00,
 		SENSOR_PT1   = 0x01,
 		SENSOR_PT2   = 0x02,
@@ -160,7 +165,7 @@ typedef struct SENSOR_DATA
 		IMU_DATA imu_data;
 		float    baro_pressure;
 		float    baro_temp;	
-	#elif defined( ENGINE_CONTROLLER    )
+	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		uint32_t pt_pressures[ NUM_PTS ];
 		uint32_t load_cell_force;
 		uint32_t tc_temp;
@@ -179,6 +184,20 @@ typedef struct SENSOR_DATA_SIZE_OFFSETS
 	uint8_t offset;  /* Offset of sensor readout in SENSOR_DATA struct  */
 	size_t  size;    /* Size of readout in bytes                        */
 	} SENSOR_DATA_SIZE_OFFSETS;
+
+/* Pressure Transducer Indices */
+#ifdef ENGINE_CONTROLLER 
+	typedef enum 
+		{
+		PT_LOX_PRESS_INDEX = 0 ,
+		PT_LOX_FLOW_UP_INDEX   ,
+		PT_LOX_FLOW_DOWN_INDEX ,
+		PT_NONE_INDEX          ,
+		PT_ENGINE_PRESS_INDEX  ,
+		PT_FUEL_FLOW_DOWN_INDEX,
+		PT_FUEL_PRESS_INDEX
+		} PT_INDEX;
+#endif
 
 
 /*------------------------------------------------------------------------------
@@ -215,6 +234,16 @@ SENSOR_STATUS sensor_dump
 	(
     SENSOR_DATA* sensor_data_ptr 
     );
+
+#ifdef ENGINE_CONTROLLER
+/* Converts a pressure transducer ADC readout to a floating point pressure in 
+   psi */
+float sensor_conv_pressure
+	( 
+	uint32_t adc_readout, /* Pressure readout from ADC */
+	PT_INDEX pt_num       /* PT used for readout       */
+	);
+#endif
 
 #ifdef __cplusplus
 }

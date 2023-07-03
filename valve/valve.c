@@ -99,6 +99,34 @@ static VALVE_STATUS fuel_driver_set_direction
 	(
 	STEPPER_DRIVER_DIR_STATE direction
 	);
+
+/* Increase the lox encoder count by one */
+static void inc_lox_encoder
+	(
+	void
+	);
+
+
+/* Increase the fuel encoder count by one */
+static void inc_fuel_encoder
+	(
+	void
+	);
+
+
+/* Decrease the lox encoder count by one */
+static void dec_lox_encoder
+	(
+	void
+	);
+
+
+/* Decrease the fuel encoder count by one */
+static void dec_fuel_encoder
+	(
+	void
+	);
+
 #endif
 
 
@@ -124,14 +152,17 @@ VALVE_STATUS valve_cmd_execute
 /*------------------------------------------------------------------------------
  Local Variables
 ------------------------------------------------------------------------------*/
-uint8_t      valve_num;    /* Valve number, 0 -> ox, 1 -> fuel   */
+uint8_t           valve_num;         /* Valve number, 0 -> ox, 1 -> fuel   */
+VALVE_STATUS      valve_status[2];   /* Valve return codes                 */
+MAIN_VALVE_STATES main_valve_states; /* Main valve open/close states       */
 
 
 /*------------------------------------------------------------------------------
  Initializations 
 ------------------------------------------------------------------------------*/
-valve_num    = subcommand & 0x01;
-subcommand  -= valve_num;
+valve_num         = subcommand & 0x01;
+subcommand       -= valve_num;
+main_valve_states = 0;
 
 
 /*------------------------------------------------------------------------------
@@ -194,6 +225,72 @@ switch( subcommand )
 		{
 		return valve_calibrate_valves();
 		} /* VALVE_CALIBRATE_CODE */
+
+	/*--------------------------------------------------------------------------
+	 VALVE CRACK 
+	--------------------------------------------------------------------------*/
+	case VALVE_CRACK_CODE:
+		{
+		if ( valve_num )
+			{
+			return valve_crack_fuel_valve();
+			}
+		else
+			{
+			return valve_crack_ox_valve();
+			}
+		} /* VALVE_CRACK_CODE */
+
+	/*--------------------------------------------------------------------------
+	 VALVE RESET 
+	--------------------------------------------------------------------------*/
+	case VALVE_RESET_CODE:
+		{
+		valve_status[0] = valve_close_ox_valve  ();
+		valve_status[1] = valve_close_fuel_valve();
+		if ( ( valve_status[0] != VALVE_OK ) || ( valve_status[1] != VALVE_OK ) )
+			{
+			return VALVE_ERROR;
+			}
+		else
+			{
+			return VALVE_OK;
+			}
+		} /* VALVE_RESET_CODE */
+
+	/*--------------------------------------------------------------------------
+	 VALVE OPENALL 
+	--------------------------------------------------------------------------*/
+	case VALVE_OPENALL_CODE:
+		{
+		valve_status[0] = valve_open_ox_valve  ();
+		valve_status[1] = valve_open_fuel_valve();
+		if ( ( valve_status[0] != VALVE_OK ) || ( valve_status[1] != VALVE_OK ) )
+			{
+			return VALVE_ERROR;
+			}
+		else
+			{
+			return VALVE_OK;
+			}
+		} /* VALVE_OPENALL_CODE */
+	
+	/*--------------------------------------------------------------------------
+	 VALVE GETSTATE 
+	--------------------------------------------------------------------------*/
+	case VALVE_GETSTATE_CODE:
+		{
+		main_valve_states = valve_get_valve_states();
+		#if defined( HOTFIRE )
+			valve_transmit( &main_valve_states         , 
+			                sizeof( main_valve_states ), 
+							HAL_DEFAULT_TIMEOUT );
+		#elif defined( TERMINAL )
+			usb_transmit( &main_valve_states, 
+			              sizeof( main_valve_states ),
+						  HAL_DEFAULT_TIMEOUT );
+		#endif
+		}
 
 	/*--------------------------------------------------------------------------
 	 UNRECOGNIZED SUBCOMMAND 
@@ -609,7 +706,7 @@ if ( lox_valve_pos == VALVE_OPEN_POS )
 	}
 
 /* Set the direction   */
-valve_status = lox_driver_set_direction( STEPPER_DRIVER_CCW );
+valve_status = lox_driver_set_direction( STEPPER_DRIVER_CW );
 if ( valve_status != VALVE_OK )
 	{
 	return valve_status;
@@ -653,13 +750,13 @@ valve_status = VALVE_OK;
 ------------------------------------------------------------------------------*/
 
 /* Check if valve is already open */
-if ( lox_valve_pos == VALVE_OPEN_POS )
+if ( fuel_valve_pos == VALVE_OPEN_POS )
 	{
 	return VALVE_OK;
 	}
 
 /* Set the direction   */
-valve_status = lox_driver_set_direction( STEPPER_DRIVER_CCW );
+valve_status = fuel_driver_set_direction( STEPPER_DRIVER_CW );
 if ( valve_status != VALVE_OK )
 	{
 	return valve_status;
@@ -667,7 +764,7 @@ if ( valve_status != VALVE_OK )
 
 /* Actuate the valve   */
 fuel_valve_cracking = true;
-HAL_TIM_PWM_Start( &( VALVE_LOX_TIM ), VALVE_LOX_TIM_CHANNEL );
+HAL_TIM_PWM_Start( &( VALVE_FUEL_TIM ), VALVE_FUEL_TIM_CHANNEL );
 return VALVE_OK;
 } /* valve_crack_ox_valve */
 
@@ -755,7 +852,7 @@ else
 	{
 	return VALVE_CLOSED;
 	}
-} /* valve_get_main_valve_state */
+} /* valve_get_fuel_valve_state */
 
 
 /*******************************************************************************
@@ -785,7 +882,6 @@ HAL_TIM_PWM_Stop( &( VALVE_LOX_TIM ), VALVE_LOX_TIM_CHANNEL );
 lox_valve_pos = 0;
 
 /* Calibrate the fuel valve      */
-/*
 fuel_driver_enable();
 fuel_driver_set_direction( STEPPER_DRIVER_CCW );
 while ( valve_get_fuel_valve_state() == VALVE_OPEN )
@@ -795,7 +891,7 @@ while ( valve_get_fuel_valve_state() == VALVE_OPEN )
 HAL_Delay( 5 );
 HAL_TIM_PWM_Stop( &( VALVE_FUEL_TIM ), VALVE_FUEL_TIM_CHANNEL );
 fuel_valve_pos = 0;
-*/
+
 return VALVE_OK;
 } /* valve_calibrate_valves */
 #endif /* #ifdef VALVE_CONTROLLER */
@@ -825,7 +921,8 @@ if ( HAL_GPIO_ReadPin( LOX_ENC_GPIO_PORT, LOX_ENC_A_PIN ) )
 	lox_channelA_state = ENCODER_HIGH;
 	if ( !lox_channelB_state )
 		{
-		lox_valve_pos -= 1;
+		//lox_valve_pos -= 1;
+		dec_lox_encoder();
 
 		/* Detect valve closed position */
 		if ( ox_valve_closing && ( lox_valve_pos == VALVE_CLOSED_POS ) )
@@ -833,6 +930,14 @@ if ( HAL_GPIO_ReadPin( LOX_ENC_GPIO_PORT, LOX_ENC_A_PIN ) )
 			HAL_TIM_PWM_Stop( &( VALVE_LOX_TIM ), VALVE_LOX_TIM_CHANNEL );
 			ox_valve_closing = false;
 			}
+		/*
+		if ( ox_valve_closing && ( valve_get_ox_valve_state() == VALVE_CLOSED ) )
+			{
+			HAL_TIM_PWM_Stop( &( VALVE_LOX_TIM ), VALVE_LOX_TIM_CHANNEL );
+			ox_valve_closing = false;
+			lox_valve_pos = 0;
+			}
+		*/
 		}
 	}
 /* High to Low Transition */
@@ -863,7 +968,8 @@ if ( HAL_GPIO_ReadPin( LOX_ENC_GPIO_PORT, LOX_ENC_B_PIN ) )
 	lox_channelB_state = ENCODER_HIGH;
 	if ( !lox_channelA_state )
 		{
-		lox_valve_pos += 1;
+		//lox_valve_pos += 1;
+		inc_lox_encoder();
 
 		/* Detect valve open */
 		if ( ox_valve_opening && ( lox_valve_pos == VALVE_OPEN_POS ) )
@@ -872,7 +978,7 @@ if ( HAL_GPIO_ReadPin( LOX_ENC_GPIO_PORT, LOX_ENC_B_PIN ) )
 			ox_valve_opening = false;
 			}
 		/* Detect valve cracked */
-		else if ( ox_valve_cracking && ( lox_valve_pos = VALVE_CRACKED_POS ) )
+		else if ( ox_valve_cracking && ( lox_valve_pos == VALVE_CRACKED_POS ) )
 			{
 			HAL_TIM_PWM_Stop( &( VALVE_LOX_TIM ), VALVE_LOX_TIM_CHANNEL  );
 			ox_valve_cracking = false;
@@ -908,7 +1014,8 @@ if ( HAL_GPIO_ReadPin( KER_ENC_GPIO_PORT, KER_ENC_A_PIN ) )
 	fuel_channelA_state = ENCODER_HIGH;
 	if ( !fuel_channelB_state )
 		{
-		fuel_valve_pos -= 1;
+		//fuel_valve_pos -= 1;
+		dec_fuel_encoder();
 
 		/* Detect valve closed */
 		if ( fuel_valve_closing && ( fuel_valve_pos == VALVE_CLOSED_POS ) )
@@ -946,7 +1053,8 @@ if ( HAL_GPIO_ReadPin( KER_ENC_GPIO_PORT, KER_ENC_B_PIN ) )
 	fuel_channelB_state = ENCODER_HIGH;
 	if ( !fuel_channelA_state )
 		{
-		fuel_valve_pos += 1;
+		//fuel_valve_pos += 1;
+		inc_fuel_encoder();
 
 		/* Detect valve open */
 		if      ( fuel_valve_opening && ( fuel_valve_pos == VALVE_OPEN_POS ) )
@@ -1130,6 +1238,155 @@ else
 fuel_driver_state.direction = direction;
 return VALVE_OK;
 } /* fuel_driver_set_direction */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		valve_get_valve_states                                                 *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Get the state of both main valves                                      *
+*                                                                              *
+*******************************************************************************/
+MAIN_VALVE_STATES valve_get_valve_states
+	(
+	void
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables
+------------------------------------------------------------------------------*/
+MAIN_VALVE_STATES main_valve_states; /* Return valve        */
+
+
+/*------------------------------------------------------------------------------
+ Initializations 
+------------------------------------------------------------------------------*/
+main_valve_states = 0;
+
+
+/*------------------------------------------------------------------------------
+ Implementation 
+------------------------------------------------------------------------------*/
+
+/* Check the LOX valve  */
+if ( valve_get_ox_valve_state() == VALVE_OPEN )
+	{
+	main_valve_states |= ( 1 << 7 );
+	}
+
+/* Check the fuel valve */
+if ( valve_get_fuel_valve_state() == VALVE_OPEN )
+	{
+	main_valve_states |= ( 1 << 6 );
+	}
+
+return main_valve_states;
+} /* valve_get_valve_states */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		inc_lox_encoder                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Increase the lox encoder count by one                                  *
+*                                                                              *
+*******************************************************************************/
+static void inc_lox_encoder
+	(
+	void
+	)
+{
+if ( lox_valve_pos == 999 )
+	{
+	lox_valve_pos = 0;
+	}
+else
+	{
+	lox_valve_pos += 1;
+	}
+} /* inc_lox_encoder */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		inc_fuel_encoder                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Increase the fuel encoder count by one                                 *
+*                                                                              *
+*******************************************************************************/
+static void inc_fuel_encoder
+	(
+	void
+	)
+{
+if ( fuel_valve_pos == 999 )
+	{
+	fuel_valve_pos = 0;
+	}
+else
+	{
+	fuel_valve_pos += 1;
+	}
+
+} /* inc_fuel_encoder */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		dec_lox_encoder                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Decrease the lox encoder count by one                                  *
+*                                                                              *
+*******************************************************************************/
+static void dec_lox_encoder
+	(
+	void
+	)
+{
+if ( lox_valve_pos == 0 )
+	{
+	lox_valve_pos = 999;
+	}
+else
+	{
+	lox_valve_pos -= 1;
+	}
+
+} /* dec_lox_encoder */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		dec_fuel_encoder                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Decrease the fuel encoder count by one                                 *
+*                                                                              *
+*******************************************************************************/
+static void dec_fuel_encoder
+	(
+	void
+	)
+{
+if ( fuel_valve_pos == 0 )
+	{
+	fuel_valve_pos = 999;
+	}
+else
+	{
+	fuel_valve_pos -= 1;
+	}
+
+} /* dec_fuel_encoder */
 #endif /* #ifdef VALVE_CONTROLLER */
 
 

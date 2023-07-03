@@ -32,6 +32,8 @@ extern "C" {
 #define SOL_TOGGLE_BASE_CODE	0x10
 #define SOL_RESET_CODE	        0x18
 #define SOL_GETSTATE_CODE       0x20
+#define SOL_OPEN_CODE           0x28
+#define SOL_CLOSE_CODE          0x30
 
 /* Number of solenoids */
 #define NUM_SOLENOIDS           6
@@ -105,6 +107,18 @@ void solenoid_reset
 SOL_STATE solenoid_get_state
 	(
 	void
+	);
+
+/* Open Solenoids */
+void solenoid_open 
+	(
+	uint8_t solenoid_num
+	);
+
+/* Close solenoids */
+void solenoid_close
+	(
+	uint8_t solenoid_num
 	);
 
 

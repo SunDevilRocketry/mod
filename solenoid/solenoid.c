@@ -20,6 +20,32 @@
 #include "valve.h"
 
 
+/*------------------------------------------------------------------------------
+ Global Variables 
+------------------------------------------------------------------------------*/
+
+/* Solenoid Open States */
+GPIO_PinState sol_open_states[]   = { GPIO_PIN_SET  , 
+                                      GPIO_PIN_SET  , 
+					                  GPIO_PIN_RESET, 
+					                  GPIO_PIN_RESET,
+					                  GPIO_PIN_RESET, 
+									  GPIO_PIN_RESET };
+
+/* Solenoid Closed States */
+GPIO_PinState sol_closed_states[] = { GPIO_PIN_RESET, 
+                                      GPIO_PIN_RESET, 
+					                  GPIO_PIN_SET  ,
+					                  GPIO_PIN_SET  ,
+					                  GPIO_PIN_SET  ,
+					                  GPIO_PIN_SET };
+
+
+/*------------------------------------------------------------------------------
+ Procedures 
+------------------------------------------------------------------------------*/
+
+
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -144,6 +170,20 @@ switch(solenoid_base_code)
 		#elif defined( HOTFIRE  ) 
 			valve_transmit( &sol_state, sizeof( sol_state ), HAL_DEFAULT_TIMEOUT );
 		#endif
+		break;
+		}
+
+	/* Solenoid open */
+	case SOL_OPEN_CODE:
+		{
+		solenoid_open( solenoid_number );
+		break;
+		}
+
+	/* Solenoid closed */
+	case SOL_CLOSE_CODE:
+		{
+		solenoid_close( solenoid_number );
 		break;
 		}
 
@@ -316,6 +356,84 @@ for ( uint8_t i = 0; i < NUM_SOLENOIDS; i++ )
 	}
 return sol_state;
 } /* solenoid_get_state */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		solenoid_open                                                          *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*        Open Solenoids                                                        *
+*                                                                              *
+*******************************************************************************/
+void solenoid_open 
+	(
+	uint8_t solenoid_num
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables
+------------------------------------------------------------------------------*/
+struct sol_GPIO_handle solenoid_on_GPIO_handle;
+GPIO_PinState          pin_state;
+
+
+/*------------------------------------------------------------------------------
+ Actuation
+------------------------------------------------------------------------------*/
+
+/* Solenoid number to GPIO port/pin mapping */
+solenoid_map( &solenoid_on_GPIO_handle, solenoid_num );
+
+/* Determine Solenoid Pinstate */
+pin_state = sol_open_states[solenoid_num-1];
+
+/* HAL GPIO Driver Call */
+HAL_GPIO_WritePin( solenoid_on_GPIO_handle.GPIOx,
+                   solenoid_on_GPIO_handle.GPIO_pin,
+                   pin_state );
+
+} /* solenoid_get_state */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		solenoid_close                                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*        Close solenoids                                                       *
+*                                                                              *
+*******************************************************************************/
+void solenoid_close
+	(
+	uint8_t solenoid_num
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables
+------------------------------------------------------------------------------*/
+struct sol_GPIO_handle solenoid_on_GPIO_handle;
+GPIO_PinState          pin_state;
+
+
+/*------------------------------------------------------------------------------
+ Actuation
+------------------------------------------------------------------------------*/
+
+/* Solenoid number to GPIO port/pin mapping */
+solenoid_map( &solenoid_on_GPIO_handle, solenoid_num );
+
+/* Determine Solenoid Pinstate */
+pin_state = sol_closed_states[solenoid_num-1];
+
+/* HAL GPIO Driver Call */
+HAL_GPIO_WritePin( solenoid_on_GPIO_handle.GPIOx,
+                   solenoid_on_GPIO_handle.GPIO_pin,
+                   pin_state );
+
+} /* solenoid_close */
 
 
 /*******************************************************************************

@@ -19,6 +19,9 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "commands.h"
+#ifdef USE_RS485
+    #include "rs485.h"
+#endif
 #include "usb.h"
 #ifdef VALVE_CONTROLLER
     #include "valve.h"
@@ -64,9 +67,7 @@ response = PING_RESPONSE_CODE; /* Code specific to board and revision */
 /*------------------------------------------------------------------------------
  Command Implementation                                                         
 ------------------------------------------------------------------------------*/
-#ifndef VALVE_CONTROLLER 
-    usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
-#else
+#ifdef VALVE_CONTROLLER 
     if ( cmd_source == CMD_SOURCE_USB )
         {
         usb_transmit( &response         , 
@@ -80,6 +81,13 @@ response = PING_RESPONSE_CODE; /* Code specific to board and revision */
                         HAL_DEFAULT_TIMEOUT );
         }
 #endif
+#ifdef ENGINE_CONTROLLER
+    #if defined( USE_RS485 )
+        rs485_transmit( &response, sizeof( response ), RS485_DEFAULT_TIMEOUT );
+    #else
+        usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
+    #endif
+#endif /* #ifdef ENGINE_CONTROLLER */
 
 } /* ping */
 
