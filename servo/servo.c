@@ -40,7 +40,7 @@
 * 		Drive the first servo motor with a desired value (0-100)               *
 *                                                                              *
 *******************************************************************************/
-void motor1_drive(uint8 duty_cycle)
+void motor1_drive(uint8_t duty_cycle)
 {
 
 }
@@ -54,7 +54,7 @@ void motor1_drive(uint8 duty_cycle)
 * 		Drive the second servo motor with a desired value (0-100)              *
 *                                                                              *
 *******************************************************************************/
-void motor2_drive(uint8 duty_cycle)
+void motor2_drive(uint8_t duty_cycle)
 {
 
 }
@@ -68,7 +68,7 @@ void motor2_drive(uint8 duty_cycle)
 * 		Drive the third servo motor with a desired value (0-100)               *
 *                                                                              *
 *******************************************************************************/
-void motor3_drive(uint8 duty_cycle)
+void motor3_drive(uint8_t duty_cycle)
 {
 
 }
@@ -82,7 +82,7 @@ void motor3_drive(uint8 duty_cycle)
 * 		Drive the forth servo motor with a desired value (0-100)               *
 *                                                                              *
 *******************************************************************************/
-void motor4_drive(uint8 duty_cycle)
+void motor4_drive(uint8_t duty_cycle)
 {
 
 }
@@ -98,10 +98,10 @@ void motor4_drive(uint8 duty_cycle)
 *******************************************************************************/
 void motors_drive(SERVOS_DATA servos_data)
 {
-    motor1_drive();
-    motor2_drive();
-    motor3_drive();
-    motor4_drive();
+    motor1_drive(0);
+    motor2_drive(0);
+    motor3_drive(0);
+    motor4_drive(0);
 }
 
 /*******************************************************************************
@@ -113,7 +113,7 @@ void motors_drive(SERVOS_DATA servos_data)
 * 		Execute servo subcommand                                               *
 *                                                                              *
 *******************************************************************************/
-void servo_cmd_execute(uint8 subcommand){
+void servo_cmd_execute(uint8_t subcommand){
     //TODO: Implement cases for testing servo controlling loop and testing individual servo
 }
 

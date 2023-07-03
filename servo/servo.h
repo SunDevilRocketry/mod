@@ -51,22 +51,22 @@ typedef struct _SERVOS_DATA
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 /* Drive the first servo motor with a desired value (0-100) */
-void motor1_drive(uint8 duty_cycle);
+void motor1_drive(uint8_t duty_cycle);
 
 /* Drive the second servo motor with a desired value (0-100) */
-void motor2_drive(uint8 duty_cycle);
+void motor2_drive(uint8_t duty_cycle);
 
 /* Drive the third servo motor with a desired value (0-100) */
-void motor3_drive(uint8 duty_cycle);
+void motor3_drive(uint8_t duty_cycle);
 
 /* Drive the forth servo motor with a desired value (0-100) */
-void motor4_drive(uint8 duty_cycle);
+void motor4_drive(uint8_t duty_cycle);
 
 /* A complete function that drives each servo in this board  */
 void motors_drive(SERVOS_DATA servos_data);
 
 /* Execute servo subcommand */
-void servo_cmd_execute(uint8 subcommand);
+void servo_cmd_execute(uint8_t subcommand);
 
 /* A function that handles a error driven from controlling servo */
 void error_handler();
