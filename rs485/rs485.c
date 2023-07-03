@@ -1,11 +1,10 @@
 /*******************************************************************************
 *
 * FILE: 
-* 		wireless.c
+* 		rs485.c
 *
 * DESCRIPTION: 
-* 		Contains API functions to transmit data wirelessly using the XBee and 
-*       and LoRa modules 
+* 		Contains API functions to transmit data over RS485 
 *
 *******************************************************************************/
 
@@ -23,7 +22,7 @@
  Project Includes                                                                     
 ------------------------------------------------------------------------------*/
 #include "main.h"
-#include "wireless.h"
+#include "rs485.h"
 
 
 /*------------------------------------------------------------------------------
@@ -39,13 +38,13 @@ Global Variables
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		rf_xbee_transmit_byte                                                  *
+* 		rs485_transmit_byte                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-* 		transmits a byte wirelessly using the xbee module                      *
+* 		transmits a byte over RS485                                            *
 *                                                                              *
 *******************************************************************************/
-RF_STATUS rf_xbee_transmit_byte 
+RS485_STATUS rs485_transmit_byte 
 	(
     uint8_t tx_byte	
 	)
@@ -66,59 +65,50 @@ hal_status = HAL_OK;
  API Function Implementation 
 ------------------------------------------------------------------------------*/
 
-/* Wait for Clear to send signal */
-#ifdef GROUND_STATION
-while ( HAL_GPIO_ReadPin( XBEE_CTS_GPIO_PORT, XBEE_CTS_PIN ) != GPIO_PIN_RESET )
-	{
-	}
-#endif
-
 /* Transmit byte */
-hal_status = HAL_UART_Transmit( &( XBEE_HUART )  ,
+hal_status = HAL_UART_Transmit( &( RS485_HUART  ),
                                 &tx_byte         , 
                                 sizeof( tx_byte ), 
-                                RF_POLL_TIMEOUT );
+                                HAL_DEFAULT_TIMEOUT );
 
 /* Return HAL status */
 if ( hal_status != HAL_OK )
 	{
-	return RF_ERROR;
+	return RS485_ERROR;
 	}
 else
 	{
-	return RF_OK;
+	return RS485_OK;
 	}
-
-} /* rf_xbee_transmit_byte */
+} /* rs485_transmit_byte */
 
 
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		rf_xbee_transmit                                                       *
+* 		rs485_transmit                                                         *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-* 		transmits a buffer of bytes wirelessly using the xbee module           *
+* 		transmits a buffer of bytes over RS485                                 *
 *                                                                              *
 *******************************************************************************/
-RF_STATUS rf_xbee_transmit
+RS485_STATUS rs485_transmit
 	(
-    void*  tx_buffer_ptr,   /* Pointer to buffer data    */
-	size_t buffer_size	    /* Number of bytes in buffer */
+    void*    tx_buffer_ptr,   /* Pointer to buffer data    */
+	size_t   buffer_size  ,   /* Number of bytes in buffer */
+	uint32_t timeout          /* Timeout in ms             */
 	)
 {
 /*------------------------------------------------------------------------------
  Local Variables
 ------------------------------------------------------------------------------*/
 HAL_StatusTypeDef hal_status;    /* Return codes from HAL */
-uint32_t          timeout;       /* UART transmit timeout */
 
 
 /*------------------------------------------------------------------------------
  Initializations 
 ------------------------------------------------------------------------------*/
 hal_status = HAL_OK;
-timeout    = RF_POLL_TIMEOUT*buffer_size;
 
 
 /*------------------------------------------------------------------------------
@@ -126,7 +116,7 @@ timeout    = RF_POLL_TIMEOUT*buffer_size;
 ------------------------------------------------------------------------------*/
 
 /* Transmit byte */
-hal_status = HAL_UART_Transmit( &( XBEE_HUART ),
+hal_status = HAL_UART_Transmit( &( RS485_HUART ),
                                 tx_buffer_ptr  , 
                                 buffer_size    , 
                                 timeout );
@@ -134,26 +124,26 @@ hal_status = HAL_UART_Transmit( &( XBEE_HUART ),
 /* Return HAL status */
 if ( hal_status != HAL_OK )
 	{
-	return RF_ERROR;
+	return RS485_ERROR;
 	}
 else
 	{
-	return RF_OK;
+	return RS485_OK;
 	}
 
-} /* rf_xbee_transmit */
+} /* rs485_transmit */
 
 
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		rf_xbee_receieve_byte                                                  *
+* 		rs485_receieve_byte                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-* 		Receives a byte from the xbee module                                   *
+* 		Receives a byte from the RS485 interface                               *
 *                                                                              *
 *******************************************************************************/
-RF_STATUS rf_xbee_receive_byte 
+RS485_STATUS rs485_receive_byte 
 	(
 	uint8_t* p_rx_byte	
 	)
@@ -174,68 +164,57 @@ hal_status = HAL_OK;
  API Function Implementation 
 ------------------------------------------------------------------------------*/
 
-/* Set the Ready to Send Signal */
-#ifdef GROUND_STATION
-HAL_GPIO_WritePin( XBEE_RTS_GPIO_PORT, XBEE_RTS_PIN, GPIO_PIN_RESET );
-#endif
-
 /* Receive byte */
-hal_status = HAL_UART_Receive( &( XBEE_HUART )  ,
+hal_status = HAL_UART_Receive( &( RS485_HUART )  ,
                                p_rx_byte        , 
                                sizeof( uint8_t ), 
-                               RF_POLL_TIMEOUT );
-
-/* Reset the Read to Send signal */
-#ifdef GROUND_STATION
-HAL_GPIO_WritePin( XBEE_RTS_GPIO_PORT, XBEE_RTS_PIN, GPIO_PIN_SET );
-#endif
+                               RS485_POLL_TIMEOUT );
 
 /* Return HAL status */
 switch ( hal_status )
 	{
 	case HAL_TIMEOUT:
 		{
-		return RF_TIMEOUT;
+		return RS485_TIMEOUT;
 		}
 	case HAL_OK:
 		{
-		return RF_OK;
+		return RS485_OK;
 		}
 	default:
 		{
-		return RF_ERROR;
+		return RS485_ERROR;
         }
 	}
-} /* rf_xbee_receive_byte */
+} /* rs485_receive_byte */
 
 
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		rf_xbee_receive                                                        *
+* 		rs485_receive                                                          *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-* 		Receives data from the xbee module and outputs to a buffer             *
+* 		Receives data from the RS485 interface and outputs to a buffer         *
 *                                                                              *
 *******************************************************************************/
-RF_STATUS rf_xbee_receive
+RS485_STATUS rs485_receive
 	(
-	void*  rx_buffer_ptr,   /* Pointer to output data buffer */	
-	size_t rx_buffer_size   /* Number of bytes to recevie    */
+	void*    rx_buffer_ptr,   /* Pointer to output data buffer */	
+	size_t   rx_buffer_size,  /* Number of bytes to recevie    */
+	uint32_t timeout          /* Timeout in ms                 */
 	)
 {
 /*------------------------------------------------------------------------------
  Local Variables
 ------------------------------------------------------------------------------*/
 HAL_StatusTypeDef hal_status;    /* Return codes from HAL */
-uint32_t          timeout;       /* UART receive timeout  */
 
 
 /*------------------------------------------------------------------------------
  Initialization 
 ------------------------------------------------------------------------------*/
 hal_status = HAL_OK;
-timeout    = rx_buffer_size*RF_POLL_TIMEOUT;
 
 
 /*------------------------------------------------------------------------------
@@ -243,28 +222,77 @@ timeout    = rx_buffer_size*RF_POLL_TIMEOUT;
 ------------------------------------------------------------------------------*/
 
 /* Receive data */
-hal_status = HAL_UART_Receive( &( XBEE_HUART ),
+hal_status = HAL_UART_Receive( &( RS485_HUART ),
                                rx_buffer_ptr  , 
-                               timeout        , 
-                               RF_POLL_TIMEOUT );
+                               rx_buffer_size , 
+                               timeout );
 
 /* Return HAL status */
 switch ( hal_status )
 	{
 	case HAL_TIMEOUT:
 		{
-		return RF_TIMEOUT;
+		return RS485_TIMEOUT;
 		}
 	case HAL_OK:
 		{
-		return RF_OK;
+		return RS485_OK;
 		}
 	default:
 		{
-		return RF_ERROR;
+		return RS485_ERROR;
         }
 	}
-} /* rf_xbee_receive */
+} /* rs485_receive */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		rs485_receive_IT                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Receives data from the RS485 interface in interrupt mode and outputs   * 
+*       to a buffer                                                            *
+*                                                                              *
+*******************************************************************************/
+RS485_STATUS rs485_receive_IT
+	(
+	void*    rx_buffer_ptr,   /* Pointer to output data buffer */	
+	size_t   rx_buffer_size   /* Number of bytes to recevie    */
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables
+------------------------------------------------------------------------------*/
+HAL_StatusTypeDef hal_status;    /* Return codes from HAL */
+
+
+/*------------------------------------------------------------------------------
+ Initialization 
+------------------------------------------------------------------------------*/
+hal_status = HAL_OK;
+
+
+/*------------------------------------------------------------------------------
+ API Function Implementation 
+------------------------------------------------------------------------------*/
+
+/* Receive data */
+hal_status = HAL_UART_Receive_IT( &( RS485_HUART ),
+                                  rx_buffer_ptr   , 
+                                  rx_buffer_size );
+
+/* Return HAL status */
+if ( hal_status != HAL_OK )
+	{
+	return RS485_ERROR;
+	}
+else
+	{
+	return RS485_OK;
+	}
+} /* rs485_receive_IT */
 
 
 /*******************************************************************************

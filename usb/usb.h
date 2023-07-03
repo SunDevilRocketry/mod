@@ -19,6 +19,12 @@ extern "C" {
 
 
 /*------------------------------------------------------------------------------
+ Includes 
+------------------------------------------------------------------------------*/
+#include <stdbool.h>
+
+
+/*------------------------------------------------------------------------------
  Typdefs 
 ------------------------------------------------------------------------------*/
 
@@ -35,7 +41,6 @@ typedef enum USB_STATUS
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-
 /* transmits bytes over USB */
 USB_STATUS usb_transmit 
 	(
@@ -43,7 +48,6 @@ USB_STATUS usb_transmit
 	size_t   tx_data_size, /* Size of transmit data */ 
 	uint32_t timeout       /* UART timeout          */
 	);
-
 
 /* Receives bytes from the USB port */
 USB_STATUS usb_receive 
@@ -53,9 +57,29 @@ USB_STATUS usb_receive
 	uint32_t timeout       /* UART timeout */
 	);
 
+/* Checks for an active USB connection */
+#if defined( A0002_REV2           ) || \
+    defined( FLIGHT_COMPUTER_LITE ) || \
+    defined( L0002_REV5           ) || \
+	defined( L0005_REV3 )
+bool usb_detect
+	(
+	void
+	);
+#endif /* #if defined( A0002_REV2 ) || defined( FLIGHT_COMPUTER_LITE ) */
+
+/* Remove garbage USB data by cycling receiving data until a timeout condition 
+   is encountered */
+void usb_flush
+	(
+	void
+	);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_H */
-
 
 /*******************************************************************************
 * END OF FILE                                                                  * 

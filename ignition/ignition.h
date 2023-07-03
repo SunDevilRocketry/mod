@@ -23,7 +23,11 @@ extern "C" {
  MCU Peripheral Configuration 
 ------------------------------------------------------------------------------*/
 
-#if !( defined( A0002_REV1 ) || defined( L0002_REV4 ) ) 
+#if !( defined( A0002_REV1 ) || \
+       defined( L0002_REV4 ) || \
+	   defined( A0002_REV2 ) || \
+	   defined( L0002_REV5 ) || \
+	   defined( A0007_REV1 ) ) 
 	#error No IGNITION compatible device specified
 #endif
 
@@ -60,7 +64,8 @@ typedef enum IGN_STATUS
 	IGN_MAIN_CONT_FAIL   = 0x46,
 	IGN_MAIN_FAIL        = 0x47,
     IGN_DROGUE_CONT_FAIL = 0x48, 
-	IGN_DROGUE_FAIL      = 0x49
+	IGN_DROGUE_FAIL      = 0x49,
+	IGN_UNRECOGNIZED_CMD = 0x4A
 	} IGN_STATUS;
 
 /* SDEC Subcommand Codes */
@@ -86,20 +91,18 @@ typedef enum IGN_SUBCOMMAND
 #define IGN_NOZ_CONT_MASK       0b00100000
 
 /* Ignition burn time */
-#define IGN_BURN_DELAY          10 
+#define IGN_BURN_DELAY          1250 
 
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-#if defined( TERMINAL ) 
 /* Executes an ignition subcommand based on user input from the sdec terminal */
 IGN_STATUS ign_cmd_execute
 	(
     IGN_SUBCOMMAND ign_subcommand
     );
-#endif /* #if defined( TERMINAL ) */
 
 /* Polls each continuity pin and sets the continuity bits in the response 
    code */
@@ -137,7 +140,7 @@ bool ign_ematch_cont
 #endif /* #if defined( ENGINE_CONTROLLER ) */
 
 
-#if defined( FLIGHT_COMPUTER )
+#if ( defined( FLIGHT_COMPUTER ) || defined( FLIGHT_COMPUTER_LITE ) )
 /* Asserts the ignition signal to ignite the main parachute deployment ematch. 
    Returns a response code indicating if the ignition occured succesfully */
 IGN_STATUS ign_deploy_main 
@@ -177,8 +180,11 @@ bool ign_switch_cont
 
 #endif /* #if defined( FLIGHT_COMPUTER )*/
 
-#endif /* IGNITION_H */
+#ifdef __cplusplus
+}
+#endif
 
+#endif /* IGNITION_H */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 

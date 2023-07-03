@@ -19,10 +19,12 @@
 /*------------------------------------------------------------------------------
  MCU Pins 
 ------------------------------------------------------------------------------*/
-#if defined( FLIGHT_COMPUTER )
+#if   defined( FLIGHT_COMPUTER      )
 	#include "sdr_pin_defines_A0002.h"
-#elif defined( ENGINE_CONTROLLER )
+#elif defined( ENGINE_CONTROLLER    )
 	#include "sdr_pin_defines_L0002.h"
+#elif defined( FLIGHT_COMPUTER_LITE )
+	#include "sdr_pin_defines_A0007.h"
 #endif
 
 /*------------------------------------------------------------------------------
@@ -36,7 +38,7 @@
  Procedures 
 ------------------------------------------------------------------------------*/
 
-#if defined( TERMINAL )  
+
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
@@ -97,7 +99,7 @@ switch( ign_subcommand )
     /* Unrecognized subcommand code: call error handler */
 	default:
 		{
-		Error_Handler();
+		return IGN_UNRECOGNIZED_CMD;
 		break;
 		}
     }
@@ -106,7 +108,6 @@ switch( ign_subcommand )
 return ign_status;
 
 } /* ign_cmd_execute */
-#endif /* #if ( defined( TERMINAL ) && defined( FLIGHT_COMPUTER ) ) */
 
 
 #if defined( ENGINE_CONTROLLER )
@@ -199,7 +200,7 @@ if ( ign_nozzle_cont() )
 	{
     ign_status |= IGN_NOZ_CONT_MASK;
     }
-#elif defined( FLIGHT_COMPUTER )
+#elif ( defined( FLIGHT_COMPUTER ) || defined( FLIGHT_COMPUTER_LITE ) )
 /* Poll the switch continuity pin */
 if ( ign_switch_cont() )
 	{
@@ -323,7 +324,7 @@ else
 #endif /* #if defined( ENGINE_CONTROLLER ) */
 
 
-#if defined( FLIGHT_COMPUTER )
+#if ( defined( FLIGHT_COMPUTER ) || defined( FLIGHT_COMPUTER_LITE ) )
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
@@ -441,16 +442,16 @@ bool ign_main_cont
 {
 
 /* Check MCU GPIO State */
-uint8_t main_cont_pinstate = HAL_GPIO_ReadPin( MAIN_GPIO_PORT, MAIN_PIN );
+uint8_t main_cont_pinstate = HAL_GPIO_ReadPin( MAIN_CONT_GPIO_PORT, MAIN_CONT_PIN );
 
-/* Return true if GPIO state is high*/
+/* Return true if GPIO state is low */
 if ( main_cont_pinstate == 0 )
 	{
-    return true;
+    return false;
 	}
 else
 	{
-    return false;
+    return true;
     }
 
 } /* ign_main_cont */
@@ -476,21 +477,21 @@ bool ign_drogue_cont
 uint8_t drogue_cont_pinstate = HAL_GPIO_ReadPin( DROGUE_CONT_GPIO_PORT, 
                                                  DROGUE_CONT_PIN );
 
-/* Return true if GPIO state is high*/
+/* Return true if GPIO state is low */
 if ( drogue_cont_pinstate == 0 )
 	{
-    return true;
+    return false;
 	}
 else
 	{
-    return false;
+    return true;
     }
 
 } /* drogue_cont */
 #endif /* #if defined( FLIGHT_COMPUTER ) */
 
 
-#if defined( FLIGHT_COMPUTER )
+#if ( defined( FLIGHT_COMPUTER ) || defined( FLIGHT_COMPUTER_LITE ) )
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
@@ -519,7 +520,7 @@ else
     }
 
 } /* switch_cont */
-#endif
+#endif /* #if defined( FLIGHT_COMPUTER ) */
 
 
 /*******************************************************************************

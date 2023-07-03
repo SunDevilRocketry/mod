@@ -17,6 +17,7 @@
 extern "C" {
 #endif
 
+#include "stm32h7xx_hal.h"
 
 /*------------------------------------------------------------------------------
  Macros 
@@ -49,15 +50,25 @@ extern "C" {
 #define BARO_REG_NVM_PAR_P9     ( 0x42 )
 #define BARO_REG_NVM_PAR_P10    ( 0x44 )
 #define BARO_REG_NVM_PAR_P11    ( 0x45 )
+#define BARO_REG_CMD            ( 0x7E )
 
 /* Baro device id */
-#define BARO_DEVICE_ID          ( 0x60 )
+#define BMP390_DEVICE_ID        ( 0x60 )
+#define BMP388_DEVICE_ID        ( 0x50 )
 
 /* Size of calibration data in bytes */
 #define BARO_CAL_BUFFER_SIZE    ( 21   )
 
 /* Default I2C HAL timeout */
-#define BARO_DEFAULT_TIMEOUT    ( 1    )
+#ifndef SDR_DEBUG
+	#define BARO_DEFAULT_TIMEOUT    ( 1    )
+#else
+	#define BARO_DEFAULT_TIMEOUT    ( 0xFFFFFFFF )
+#endif /* ifndef SDR_DEBUG */
+
+/* Baro sensor command codes */
+#define BARO_CMD_RESET          ( 0xB6 )
+#define BARO_CMD_FIFO_FLUSH     ( 0xB0 )
 
 
 /*------------------------------------------------------------------------------
@@ -75,7 +86,9 @@ typedef enum _BARO_STATUS
 	BARO_UNRECOGNIZED_CHIP_ID   ,
 	BARO_ERROR                  ,
 	BARO_CAL_ERROR              ,
-	BARO_I2C_ERROR
+	BARO_I2C_ERROR              ,
+	BARO_CANNOT_RESET           ,
+	BARO_FIFO_ERROR
 	} BARO_STATUS;
 
 /* Sensor enable encodings */

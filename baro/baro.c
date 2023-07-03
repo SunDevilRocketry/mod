@@ -88,6 +88,18 @@ static float press_compensate
 	uint32_t raw_readout
 	);
 
+/* Reset the baro sensor */
+static BARO_STATUS baro_reset
+	(
+	void
+	);
+
+/* Flush the FIFO buffer */
+static BARO_STATUS baro_flush_fifo
+	(
+	void
+	);
+
 
 /*------------------------------------------------------------------------------
  API Functions 
@@ -136,10 +148,19 @@ if      ( baro_status   != BARO_OK         )
 	{
 	return BARO_I2C_ERROR;
 	}
-else if ( baro_device_id != BARO_DEVICE_ID )
+else if ( baro_device_id != BMP390_DEVICE_ID &&
+          baro_device_id != BMP388_DEVICE_ID )
 	{
 	return BARO_UNRECOGNIZED_CHIP_ID;
 	}
+
+/* Reset the sensor */
+baro_status = baro_reset();
+if ( baro_status != BARO_OK )
+	{
+	return BARO_CANNOT_RESET;
+	}
+HAL_Delay( 10 );
 
 /* Check the Baro error register */
 baro_status = read_regs( BARO_REG_ERR_REG      , 
@@ -159,6 +180,13 @@ baro_status = load_cal_data();
 if ( baro_status != BARO_OK )
 	{
 	return BARO_CAL_ERROR;
+	}
+
+/* Flush the sensor FIFO buffer */
+baro_status = baro_flush_fifo();
+if ( baro_status != BARO_OK )
+	{
+	return BARO_FIFO_ERROR;
 	}
 
 /* Initialize the compensation temperature */
@@ -644,24 +672,24 @@ cal_data_int.par_p11 = (int8_t) buffer[20];
 ------------------------------------------------------------------------------*/
 
 /* Temp Compensation */
-baro_cal_data.par_t1   = ( ( (float) cal_data_int.par_t1  )/powf( 2, -8 ) );
-baro_cal_data.par_t2   = ( ( (float) cal_data_int.par_t2  )/powf( 2, 30 ) );
-baro_cal_data.par_t3   = ( ( (float) cal_data_int.par_t3  )/powf( 2, 48 ) );
+baro_cal_data.par_t1   = ( ( (float) cal_data_int.par_t1  )/( 0.00390625f        ) );
+baro_cal_data.par_t2   = ( ( (float) cal_data_int.par_t2  )/( 1073741824.0f      ) );
+baro_cal_data.par_t3   = ( ( (float) cal_data_int.par_t3  )/( 281474976710656.0f ) );
 
 /* Pressure Compensation */
-baro_cal_data.par_p1   = ( ( (float) cal_data_int.par_p1  ) - powf( 2, 14 ) );
-baro_cal_data.par_p1  /= powf( 2, 20 );
-baro_cal_data.par_p2   = ( ( (float) cal_data_int.par_p2  ) - powf( 2, 14 ) );
-baro_cal_data.par_p2  /= powf( 2, 29 );
-baro_cal_data.par_p3   = ( ( (float) cal_data_int.par_p3  )/powf( 2, 32 ) );
-baro_cal_data.par_p4   = ( ( (float) cal_data_int.par_p4  )/powf( 2, 37 ) );
-baro_cal_data.par_p5   = ( ( (float) cal_data_int.par_p5  )/powf( 2, -3 ) );
-baro_cal_data.par_p6   = ( ( (float) cal_data_int.par_p6  )/powf( 2,  6 ) );
-baro_cal_data.par_p7   = ( ( (float) cal_data_int.par_p7  )/powf( 2,  8 ) );
-baro_cal_data.par_p8   = ( ( (float) cal_data_int.par_p8  )/powf( 2, 15 ) );
-baro_cal_data.par_p9   = ( ( (float) cal_data_int.par_p9  )/powf( 2, 48 ) );
-baro_cal_data.par_p10  = ( ( (float) cal_data_int.par_p10 )/powf( 2, 48 ) );
-baro_cal_data.par_p11  = ( ( (float) cal_data_int.par_p11 )/powf( 2, 65 ) );
+baro_cal_data.par_p1   = ( (float) ( cal_data_int.par_p1 - 16384 ) );
+baro_cal_data.par_p1  /= ( 1048576.0f );
+baro_cal_data.par_p2   = ( (float) ( cal_data_int.par_p2 - 16384 ) );
+baro_cal_data.par_p2  /= ( 536870912.0f );
+baro_cal_data.par_p3   = ( ( (float) cal_data_int.par_p3  )/( 4294967296.0f           ) );
+baro_cal_data.par_p4   = ( ( (float) cal_data_int.par_p4  )/( 137438953472.0f         ) );
+baro_cal_data.par_p5   = ( ( (float) cal_data_int.par_p5  )/( 0.125f                  ) );
+baro_cal_data.par_p6   = ( ( (float) cal_data_int.par_p6  )/( 64.0f                   ) );
+baro_cal_data.par_p7   = ( ( (float) cal_data_int.par_p7  )/( 256.0f                  ) );
+baro_cal_data.par_p8   = ( ( (float) cal_data_int.par_p8  )/( 32768.0f                ) );
+baro_cal_data.par_p9   = ( ( (float) cal_data_int.par_p9  )/( 281474976710656.0f      ) );
+baro_cal_data.par_p10  = ( ( (float) cal_data_int.par_p10 )/( 281474976710656.0f      ) );
+baro_cal_data.par_p11  = ( ( (float) cal_data_int.par_p11 )/( 36893488147419103232.0f ) );
 
 /* Load Successful */
 return BARO_OK;
@@ -772,6 +800,42 @@ partial_data4 = ( partial_data3 +
 return partial_out1 + partial_out2 + partial_data4;
 
 } /* press_compensate */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+*       baro_reset                                                             *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Performs a soft reset of the barometric pressure sensor                *
+*                                                                              *
+*******************************************************************************/
+static BARO_STATUS baro_reset
+	(
+	void
+	)
+{
+return write_reg( BARO_REG_CMD, BARO_CMD_RESET );
+} /* baro_reset */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+*       baro_flush_fifo                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Flushes the barometric pressure sensor FIFO buffer                     *
+*                                                                              *
+*******************************************************************************/
+static BARO_STATUS baro_flush_fifo
+	(
+	void
+	)
+{
+return write_reg( BARO_REG_CMD, BARO_CMD_FIFO_FLUSH );
+} /* baro_flush_fifo */
 
 
 /*******************************************************************************

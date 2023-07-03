@@ -1,17 +1,17 @@
 /*******************************************************************************
 *
 * FILE: 
-* 		power.h
+* 		loadcell.h
 *
 * DESCRIPTION: 
-* 		Contains API functions to manage the engine controller power supply
+* 		Contains API functions for reading data from the engine's load cell 
 *
 *******************************************************************************/
 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef POWER_H
-#define POWER_H
+#ifndef LOADCELL_H 
+#define LOADCELL_H 
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,41 +19,42 @@ extern "C" {
 
 
 /*------------------------------------------------------------------------------
+ Macros 
+------------------------------------------------------------------------------*/
+#define LOADCELL_ADC_HAL_TIMEOUT  ( 100 ) /* ADC timeout for a single 
+                                             conversion in milliseconds       */
+
+
+/*------------------------------------------------------------------------------
  Typdefs 
 ------------------------------------------------------------------------------*/
 
-/* Power source enumeration. Indicates if the power multiplexor is supplying 
-   5V from USB or from the buck converter */
-enum pwr_source
-	{
-    BUCK_5V_SRC = 0U,
-    USB_5V_SRC
-    };
-typedef enum pwr_source PWR_SRC;
+/* Loadcell return codes */
+typedef enum LOADCELL_STATUS 
+    {
+	LOADCELL_OK = 0        ,
+    LOADCELL_ADC_TIMEOUT   ,
+	LOADCELL_ADC_POLL_ERROR,
+    LOADCELL_FAIL        
+    } LOADCELL_STATUS;
 
 
 /*------------------------------------------------------------------------------
- Macros 
+ API Functions 
 ------------------------------------------------------------------------------*/
 
-
-/*------------------------------------------------------------------------------
- Function Prototypes 
-------------------------------------------------------------------------------*/
-
-/* Determine if the MCU is being powered by USB or by the buck converter */
-PWR_SRC pwr_get_source
+/* Read the load cell force */
+LOADCELL_STATUS loadcell_get_reading 
 	(
-    void
+    uint32_t* loadcell_reading_ptr
     );
-
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* POWER_H */
+#endif /* LOADCELL_H */
 
 /*******************************************************************************
-* END OF FILE                                                                  *
+* END OF FILE                                                                  * 
 *******************************************************************************/

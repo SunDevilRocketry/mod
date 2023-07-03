@@ -20,7 +20,7 @@ extern "C" {
 
 
 /*------------------------------------------------------------------------------
- Macros 
+ Includes 
 ------------------------------------------------------------------------------*/
 
 /* GCC requires stdint.h for uint_t types*/
@@ -57,24 +57,26 @@ typedef enum PRESSURE_STATUS
 //       each pressure transducer measures 
 typedef enum PRESSURE_PT_NUMS
 	{
-    PT_NUM0 = 0,
-    PT_NUM1    ,
-    PT_NUM2    ,
-    PT_NUM3    ,
-    PT_NUM4    ,
-    PT_NUM5    ,
-    PT_NUM6    ,
-    PT_NUM7
+    PT_NUM0 = 0, /* LOX Pressure                  */
+    PT_NUM1    , /* LOX Flow Rate Upstream        */
+    PT_NUM2    , /* LOX Flow Rate Downstream      */
+    PT_NUM3    , /* Extra                         */
+    PT_NUM4    , /* Engine Pressure               */
+    PT_NUM5    , /* Kerosene Flow Rate Downstream */
+    PT_NUM6    , /* Kerosene Flow Rate Upstream   */
+    PT_NUM7      /* Kerosene Pressure             */
     } PRESSURE_PT_NUM;
+
 
 /*------------------------------------------------------------------------------
  API Functions 
 ------------------------------------------------------------------------------*/
 
 /* Get a single pressure transducer reading */
-uint32_t pressure_get_pt_reading 
+PRESSURE_STATUS pressure_get_pt_reading 
 	(
-    PRESSURE_PT_NUM pt_num
+    PRESSURE_PT_NUM pt_num,
+    uint32_t*       pt_readout_ptr
     );
 
 /* Get readings from all pressure transducers */
@@ -108,6 +110,9 @@ void pressure_get_all_gains
     uint8_t* pgains 
     );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PRESSURE_H */
 
