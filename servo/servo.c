@@ -34,6 +34,55 @@
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
+* 		pwm_timer_init                                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Initialize PWM Timers                                                  *
+*                                                                              *
+*******************************************************************************/
+SERVO_STATUS pwm_timer_init()
+{
+HAL_StatusTypeDef hal_status1, hal_status2, hal_status3, hal_status4;
+
+hal_status1 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+hal_status2 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+hal_status3 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+hal_status4 = HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+
+if ( hal_status1 == HAL_OK &&
+     hal_status2 == HAL_OK &&
+     hal_status3 == HAL_OK &&
+     hal_status4 == HAL_OK )
+    {
+    return SERVO_OK;
+    }
+    else
+    {
+    return SERVO_FAIL;
+    }
+
+}
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		servo_init                                                             *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Initialize/Reset servo rotate to default                               *
+*                                                                              *
+*******************************************************************************/
+void servo_init()
+{
+    htim3.Instance->CCR4 = 25;
+    htim3.Instance->CCR3 = 25;
+    htim3.Instance->CCR1 = 25;
+    htim2.Instance->CCR1 = 25;
+}
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
 * 		motor1_drive                                                           *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
@@ -42,7 +91,7 @@
 *******************************************************************************/
 void motor1_drive(uint8_t duty_cycle)
 {
-
+    htim3.Instance->CCR4 = duty_cycle;
 }
 
 /*******************************************************************************
@@ -56,7 +105,7 @@ void motor1_drive(uint8_t duty_cycle)
 *******************************************************************************/
 void motor2_drive(uint8_t duty_cycle)
 {
-
+    htim3.Instance->CCR3 = duty_cycle;
 }
 
 /*******************************************************************************
@@ -70,6 +119,7 @@ void motor2_drive(uint8_t duty_cycle)
 *******************************************************************************/
 void motor3_drive(uint8_t duty_cycle)
 {
+    htim3.Instance->CCR1 = duty_cycle;
 
 }
 
@@ -84,7 +134,7 @@ void motor3_drive(uint8_t duty_cycle)
 *******************************************************************************/
 void motor4_drive(uint8_t duty_cycle)
 {
-
+    htim2.Instance->CCR1 = duty_cycle;
 }
 
 /*******************************************************************************
@@ -98,10 +148,10 @@ void motor4_drive(uint8_t duty_cycle)
 *******************************************************************************/
 void motors_drive(SERVOS_DATA servos_data)
 {
-    motor1_drive(0);
-    motor2_drive(0);
-    motor3_drive(0);
-    motor4_drive(0);
+    motor1_drive(25);
+    motor2_drive(25);
+    motor3_drive(25);
+    motor4_drive(25);
 }
 
 /*******************************************************************************

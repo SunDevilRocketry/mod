@@ -47,9 +47,21 @@ typedef struct _SERVOS_DATA
     uint8_t motor4_duty;
 	} SERVOS_DATA;
 
+typedef enum SERVO_STATUS
+    {
+    SERVO_OK = 0,
+    SERVO_FAIL
+    } SERVO_STATUS;
+
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
+/* Initialize PWM Timers */
+SERVO_STATUS pwm_timer_init();
+
+/* Initialize/Reset servo rotate to default */
+void servo_init();
+
 /* Drive the first servo motor with a desired value (0-100) */
 void motor1_drive(uint8_t duty_cycle);
 
