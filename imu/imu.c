@@ -92,7 +92,6 @@ static IMU_STATUS write_mag_reg
  Procedures 
 ------------------------------------------------------------------------------*/
 
-#if defined( A0002_REV2 )
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -112,18 +111,25 @@ IMU_STATUS imu_init
 ------------------------------------------------------------------------------*/
 IMU_STATUS imu_status;          /* IMU API call return codes       */
 uint8_t    imu_dev_id;          /* IMU identification code         */
+
+#if defined( A0002_REV2 )
 uint8_t    imu_status_reg;      /* Contents of IMU status register */
 uint8_t    imu_acc_conf;        /* IMU ACC_CONF Register contents  */
 uint8_t    imu_gyr_conf;        /* IMU GYR_CONF Register contents  */
 uint8_t    imu_sensor_data[12]; /* IMU Sensor Data                 */
-
+#endif
 
 /*------------------------------------------------------------------------------
  Initializations 
 ------------------------------------------------------------------------------*/
 imu_status     = IMU_OK;
 imu_dev_id     = 0;
+
+#if defined( A0002_REV2 )
 imu_status_reg = 0;
+#endif
+
+#if defined( A0002_REV2 )
 imu_acc_conf   = ( imu_config_ptr -> acc_odr         ) |
                  ( imu_config_ptr -> acc_filter      ) |
                  ( imu_config_ptr -> acc_filter_mode );
@@ -131,7 +137,7 @@ imu_gyr_conf   = ( imu_config_ptr -> gyro_odr        ) |
                  ( imu_config_ptr -> gyro_filter     ) |
                  ( 1 << 7 );
 memset( &imu_sensor_data[0], 0, sizeof( imu_sensor_data ) );
-
+#endif
 
 /*------------------------------------------------------------------------------
  Implementation 
@@ -251,7 +257,6 @@ if ( imu_status != IMU_OK )
 /* IMU Inititialization Successful */
 return IMU_OK;
 } /* imu_init */
-#endif /* #if defined( A0002_REV2 ) */
 
 
 /*******************************************************************************
@@ -296,6 +301,7 @@ IMU_STATUS    imu_status;     /* IMU status codes                   */
 
 /* Check for HAL IMU error */
 if ( imu_status != IMU_OK )
+
 	{
 	return imu_status;
 	}
