@@ -20,8 +20,8 @@
 #include "main.h"
 #include "sdr_pin_defines_A0002.h"
 #include "servo.h"
-
-
+#include <stdio.h>
+#include <iostream>
 /*------------------------------------------------------------------------------
  Global Variables 
 ------------------------------------------------------------------------------*/
@@ -157,14 +157,53 @@ void motors_drive(SERVOS_DATA servos_data)
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		servo_cmd_execute                                                      *
+* 		servo_cmd_execute  
+*
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		Execute servo subcommand                                               *
 *                                                                              *
 *******************************************************************************/
-void servo_cmd_execute(uint8_t subcommand){
+void servo_cmd_execute(uint8_t servo_cmd_opcode){
     //TODO: Implement cases for testing servo controlling loop and testing individual servo
+    switch(servo_cmd_opcode){
+
+        case SERVO_INFO_:
+        {
+            motors_drive();
+            break;
+        }
+
+        case SERVO_INIT_:
+        {
+            servo_init();
+            break;
+        }
+        case MOTOR_D1:
+        {
+            motor1_drive(SERVOS_DATA.motor1_duty);
+            break;
+        }
+        case MOTOR_D2:
+        {
+            motor2_drive(SERVOS_DATA.motor2_duty);
+            break;
+        }
+        case MOTOR_D3:
+        {
+            motor3_drive(SERVOS_DATA.motor3_duty);
+            break;
+        }
+        case MOTOR_D4:
+        {
+            motor4_drive(SERVOS_DATA.motor4_duty);
+            break;
+        }
+
+        case SERVO_TEST_
+
+
+    }
 }
 
 

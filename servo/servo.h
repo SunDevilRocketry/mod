@@ -28,7 +28,16 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Defines subcommand codes
 ------------------------------------------------------------------------------*/
-
+#define SERVO_INFO_     0x00
+#define SERVO_INIT_     0x01
+#define SERVO_TURN_     0x02
+#define SERVO_TEST_     0x03
+#define PID_INIT_       0x04
+#define PID_RUN_        0x05
+#define MOTOR_D1        0x06
+#define MOTOR_D2        0x07
+#define MOTOR_D3        0x08
+#define MOTOR_D4        0x09
 
 /*------------------------------------------------------------------------------
  Registers
