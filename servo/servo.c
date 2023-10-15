@@ -20,8 +20,8 @@
 #include "main.h"
 #include "sdr_pin_defines_A0002.h"
 #include "servo.h"
-#include <stdio.h>
-#include <iostream>
+// #include <stdio.h> Nick: <stdio.h> should not be imported in STM32
+// #include <iostream> Nick: <iostream> does not exist in C
 /*------------------------------------------------------------------------------
  Global Variables 
 ------------------------------------------------------------------------------*/
@@ -170,7 +170,7 @@ void servo_cmd_execute(uint8_t servo_cmd_opcode){
 
         case SERVO_INFO_:
         {
-            motors_drive();
+            // motors_drive(); Servo info should print out the avaibility of servos. Motors_drive() is to drive all servos with a certain degree.
             break;
         }
 
@@ -181,7 +181,10 @@ void servo_cmd_execute(uint8_t servo_cmd_opcode){
         }
         case MOTOR_D1:
         {
-            motor1_drive(SERVOS_DATA.motor1_duty);
+            motor1_drive(SERVOS_DATA.motor1_duty); 
+            // motor1_drive should take a subcommand received from a usb. 
+            // There should be a usb_receive function called to get the signal from the flight computer
+            // Refer to sensor_cmd_execute function in sensor.c for reference code
             break;
         }
         case MOTOR_D2:
@@ -200,7 +203,10 @@ void servo_cmd_execute(uint8_t servo_cmd_opcode){
             break;
         }
 
-        case SERVO_TEST_
+        case SERVO_TEST_:
+        {
+            
+        }
 
 
     }
