@@ -152,6 +152,54 @@ switch ( usb_status )
 
 } /* usb_receive */
 
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		usb_receive_IT                                                       	*
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Receives data from the USB interface in interrupt mode and outputs   * 
+*       to a buffer                                                            *
+*                                                                              *
+*******************************************************************************/
+USB_STATUS usb_receive_IT
+	(
+	void* rx_data_ptr,
+	size_t rx_data_size
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables
+------------------------------------------------------------------------------*/
+HAL_StatusTypeDef hal_status;    /* Return codes from HAL */
+
+
+/*------------------------------------------------------------------------------
+ Initialization 
+------------------------------------------------------------------------------*/
+hal_status = HAL_OK;
+
+
+/*------------------------------------------------------------------------------
+ API Function Implementation 
+------------------------------------------------------------------------------*/
+
+/* Receive data */
+hal_status = HAL_UART_Receive_IT( &( USB_HUART ),
+                                  rx_data_ptr   , 
+                                  rx_data_size );
+
+/* Return HAL status */
+if ( hal_status != HAL_OK )
+	{
+	return USB_FAIL;
+	}
+else
+	{
+	return USB_OK;
+	}
+} /* usb_recieve_IT */
+
 
 #if defined( A0002_REV2           ) || \
     defined( FLIGHT_COMPUTER_LITE ) || \

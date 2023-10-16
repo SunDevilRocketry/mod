@@ -57,6 +57,12 @@ USB_STATUS usb_receive
 	uint32_t timeout       /* UART timeout */
 	);
 
+USB_STATUS usb_receive_IT
+	(
+	void*	rx_data_ptr,
+	size_t	rx_data_size
+	);
+
 /* Checks for an active USB connection */
 #if defined( A0002_REV2           ) || \
     defined( FLIGHT_COMPUTER_LITE ) || \
