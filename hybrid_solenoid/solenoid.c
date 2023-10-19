@@ -12,7 +12,7 @@
  Includes
 ------------------------------------------------------------------------------*/
 #include "main.h"
-
+#include "solenoid.h"
 
 /*------------------------------------------------------------------------------
  Global Variables 
@@ -54,8 +54,9 @@ void solenoid_cmd_execute
 void solenoid_on(){
     //TODO: Implement code to turn on the solenoid
     
-}
+HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
 
+}
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -68,8 +69,9 @@ void solenoid_on(){
 void solenoid_off(){
     //TODO: Implement code to turn off the solenoid
 
-}
+HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 
+}
 /*******************************************************************************
 * END OF FILE                                                                  *
 *******************************************************************************/

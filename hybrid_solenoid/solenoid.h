@@ -40,13 +40,13 @@ void solenoid_cmd_execute
 /* Turn a solenoid on */
 void solenoid_on
 	(
-	uint8_t solenoid_num  /* Solenoid number to actuate */
+	  /* Solenoid number to actuate */
 	); /* solenoid_on */
 
 /* Turn a solenoid off */
 void solenoid_off
 	(
-	uint8_t solenoid_num  /* Solenoid number to actuate */
+	  /* Solenoid number to actuate */
 	); /* solenoid_off */
 
 
