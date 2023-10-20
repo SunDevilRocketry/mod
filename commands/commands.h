@@ -31,6 +31,7 @@ extern "C" {
 #define SOL_OP         0x51    /* solenoid command opcode    */
 #define VALVE_OP       0x52    /* Valve command opcode       */
 #define DUAL_DEPLOY_OP 0xA0    /* dual-deploy command opcode */
+#define SEND_OP		   0xB0	   /* ground-station send opcode */
 
 /* Board identifier code */
 #if   defined( A0002_REV1 ) /* Flight Computer Rev 1.0 */
@@ -57,6 +58,8 @@ extern "C" {
 #elif defined ( A0005_REV2 ) /* Ground Station Rev 2.0 */
 	/* Rev 2 */
 	#define PING_RESPONSE_CODE    ( 0x09 ) 
+#elif defined ( A0005_REV1 ) /* Flight Ground Station Rev */
+	#define PING_RESPONSE_CODE	  ( 0xA0 ) 
 #endif
 
 /* Firmware Identifier Code */
@@ -64,6 +67,7 @@ extern "C" {
 #define FIRMWARE_DATA_LOGGER    ( 0x02 ) /* Data Logger Firmware */
 #define FIRMWARE_DUAL_DEPLOY    ( 0x03 ) /* Dual Deploy Firmware */
 #define FIRMWARE_HOTFIRE        ( 0x04 ) /* Hotfire Firmware     */
+#define FIRMWARE_GD_TRANSMITTER ( 0x05 ) /* Ground station Transmitter Firmware*/
 
 
 /*------------------------------------------------------------------------------
