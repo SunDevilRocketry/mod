@@ -36,7 +36,7 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "usb.h"
-
+#include "led.h"
 
 /*------------------------------------------------------------------------------
  Preprocesor Directives 
@@ -196,6 +196,7 @@ if ( hal_status != HAL_OK )
 	}
 else
 	{
+	led_set_color( LED_WHITE );
 	return USB_OK;
 	}
 } /* usb_recieve_IT */
