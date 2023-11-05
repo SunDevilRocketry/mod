@@ -20,8 +20,6 @@
 #include "main.h"
 #include "sdr_pin_defines_A0002.h"
 #include "servo.h"
-// #include <stdio.h> Nick: <stdio.h> should not be imported in STM32
-// #include <iostream> Nick: <iostream> does not exist in C
 /*------------------------------------------------------------------------------
  Global Variables 
 ------------------------------------------------------------------------------*/
@@ -164,54 +162,48 @@ void motors_drive(SERVOS_DATA servos_data)
 * 		Execute servo subcommand                                               *
 *                                                                              *
 *******************************************************************************/
+
+void motor_drive(){
+    motor_number = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
+    deg = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
+
+    switch (motor_number){
+        case 1: {
+            htim3.Instance->CCR4 = duty_cycle;
+        }
+
+        case 2: {
+            htim3.Instance->CCR3 = duty_cycle;
+        }
+        case 3: {
+            htim3.Instance->CCR2 = duty_cycle;
+        }
+        case 4: {
+            htim3.Instance->CCR1 = duty_cycle;
+        }
+    }
+    
+}
+
+
 void servo_cmd_execute(uint8_t servo_cmd_opcode){
     //TODO: Implement cases for testing servo controlling loop and testing individual servo
     switch(servo_cmd_opcode){
-
-        case SERVO_INFO_:
+        
+        case SERVO_INIT_:
         {
-            // motors_drive(); Servo info should print out the avaibility of servos. Motors_drive() is to drive all servos with a certain degree.
+            motors_drive();
             break;
         }
 
-        case SERVO_INIT_:
+        case SERVO_TURN_:
         {
             servo_init();
             break;
         }
-        case MOTOR_D1:
-        {
-            motor1_drive(SERVOS_DATA.motor1_duty); 
-            // motor1_drive should take a subcommand received from a usb. 
-            // There should be a usb_receive function called to get the signal from the flight computer
-            // Refer to sensor_cmd_execute function in sensor.c for reference code
-            break;
-        }
-        case MOTOR_D2:
-        {
-            motor2_drive(SERVOS_DATA.motor2_duty);
-            break;
-        }
-        case MOTOR_D3:
-        {
-            motor3_drive(SERVOS_DATA.motor3_duty);
-            break;
-        }
-        case MOTOR_D4:
-        {
-            motor4_drive(SERVOS_DATA.motor4_duty);
-            break;
-        }
+        
 
-        case SERVO_TEST_:
-        {
-            
-        }
-
-
-    }
-}
-
+    }}
 
 /*******************************************************************************
 *                                                                              *
