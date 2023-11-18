@@ -163,7 +163,8 @@ void motors_drive(SERVOS_DATA servos_data)
 *                                                                              *
 *******************************************************************************/
 
-void motor_drive(){
+void motor_drive()
+{
     motor_number = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
     deg = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
 
@@ -190,15 +191,15 @@ void servo_cmd_execute(uint8_t servo_cmd_opcode){
     //TODO: Implement cases for testing servo controlling loop and testing individual servo
     switch(servo_cmd_opcode){
         
-        case SERVO_INIT_:
+        case SERVO_INIT:
         {
-            motors_drive();
+            servo_init();
             break;
         }
 
-        case SERVO_TURN_:
+        case SERVO_TURN:
         {
-            servo_init();
+            motor_drive();
             break;
         }
         
