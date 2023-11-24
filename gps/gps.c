@@ -128,7 +128,6 @@ gps_status = HAL_UART_Receive( &( GPS_HUART ),
                                rx_data_ptr   , 
                                rx_data_size  , 
                                timeout );
-
 /* Return HAL status */
 switch ( gps_status )
 	{
