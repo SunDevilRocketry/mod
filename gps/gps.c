@@ -63,7 +63,7 @@ Global Variables
 *******************************************************************************/
 GPS_STATUS gps_transmit 
 	(
-    uint8_t*    tx_data_ptr , /* Data to be sent       */	
+    void*    tx_data_ptr , /* Data to be sent       */	
 	size_t   tx_data_size, /* Size of transmit data */ 
 	uint32_t timeout       /* UART timeout          */
 	)
@@ -108,7 +108,7 @@ else
 *******************************************************************************/
 GPS_STATUS gps_receive 
 	(
-	uint8_t*    rx_data_ptr , /* Buffer to export data to        */
+	void*    rx_data_ptr , /* Buffer to export data to        */
 	size_t   rx_data_size, /* Size of the data to be received */
 	uint32_t timeout       /* UART timeout */
 	)
@@ -150,6 +150,59 @@ switch ( gps_status )
 	}
 
 } /* usb_receive */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		usb_recieve_IT                                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 	    Receives bytes from the USB port                                       *
+*                                                                              *
+*******************************************************************************/
+GPS_STATUS gps_receive_IT 
+	(
+	uint8_t*    rx_data_ptr , /* Buffer to export data to        */
+	size_t   rx_data_size /* Size of the data to be received */
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables
+------------------------------------------------------------------------------*/
+HAL_StatusTypeDef gps_status;
+
+
+/*------------------------------------------------------------------------------
+ API Function Implementation 
+------------------------------------------------------------------------------*/
+
+/* Transmit byte */
+gps_status = HAL_UART_Receive_IT( &( GPS_HUART ),
+                               rx_data_ptr   , 
+                               rx_data_size );
+
+/* Return HAL status */
+switch ( gps_status )
+	{
+	case HAL_TIMEOUT:
+		{
+		return GPS_TIMEOUT;
+		break;
+		}
+	case HAL_OK:
+		{
+		return GPS_OK;
+		break;
+		}
+	default:
+		{
+		return GPS_FAIL;
+		break;
+        }
+	}
+
+} /* usb_receive_IT */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 
