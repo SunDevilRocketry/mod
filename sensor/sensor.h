@@ -20,6 +20,7 @@ extern "C" {
 #include "stm32h7xx_hal.h"
 #if defined( FLIGHT_COMPUTER )
 	#include "imu.h"
+	#include "gps.h"
 #endif
 
 /*------------------------------------------------------------------------------
@@ -52,7 +53,7 @@ Includes
 	/* General */
 	#define NUM_SENSORS         ( 12   )
 	#define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 28   )
+	#define SENSOR_DATA_SIZE	( 116   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -163,6 +164,7 @@ typedef struct SENSOR_DATA
 	{
 	#if   defined( FLIGHT_COMPUTER      )
 		IMU_DATA imu_data;
+		GPS_t	 gps_pack;
 		float    baro_pressure;
 		float    baro_temp;	
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )

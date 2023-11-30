@@ -61,6 +61,8 @@
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
 
+extern GPS_t GPS;
+
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -667,6 +669,9 @@ SENSOR_STATUS sensor_dump
 	sensor_data_ptr -> imu_data.temp = 0;     // Figure out what to do with this 
 											  // readout, temporarily being used 
 											  // as struct padding
+
+	/* GPS sensor */
+	sensor_data_ptr->gps_pack = GPS;
 
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
