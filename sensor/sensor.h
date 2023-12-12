@@ -53,7 +53,7 @@ Includes
 	/* General */
 	#define NUM_SENSORS         ( 12   )
 	#define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 116   )
+	#define SENSOR_DATA_SIZE	( 48   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -138,7 +138,13 @@ typedef enum
 		SENSOR_MAGZ  = 0x08,
 		SENSOR_IMUT  = 0x09,
 		SENSOR_PRES  = 0x0A,
-		SENSOR_TEMP  = 0x0B
+		SENSOR_TEMP  = 0x0B,
+		DEC_LONG	 = 0x0C,
+		NMEA_LONG	 = 0x0D,
+		DEC_LAT 	 = 0x0E,
+		NMEA_LAT	 = 0x0F,
+		UTC_TIME	 = 0x10
+		
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		SENSOR_PT0   = 0x00,
 		SENSOR_PT1   = 0x01,
@@ -164,7 +170,11 @@ typedef struct SENSOR_DATA
 	{
 	#if   defined( FLIGHT_COMPUTER      )
 		IMU_DATA imu_data;
-		GPS_t	 gps_pack;
+		float	 dec_longitude;
+		float	 nmea_longitude;
+		float	 dec_latitude;
+		float	 nmea_latitude;
+		float 	 utc_time;
 		float    baro_pressure;
 		float    baro_temp;	
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )

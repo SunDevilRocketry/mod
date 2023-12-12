@@ -671,7 +671,11 @@ SENSOR_STATUS sensor_dump
 											  // as struct padding
 
 	/* GPS sensor */
-	sensor_data_ptr->gps_pack = GPS;
+	sensor_data_ptr->dec_longitude = GPS.dec_longitude;
+	sensor_data_ptr->nmea_longitude = GPS.nmea_longitude;
+	sensor_data_ptr->dec_latitude = GPS.dec_latitude;
+	sensor_data_ptr->nmea_latitude = GPS.nmea_latitude;
+	sensor_data_ptr->utc_time = GPS.utc_time;
 
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
