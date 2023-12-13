@@ -58,7 +58,10 @@ extern "C" {
 #elif defined ( A0005_REV2 ) /* Ground Station Rev 2.0 */
 	/* Rev 2 */
 	#define PING_RESPONSE_CODE    ( 0x09 ) 
+#elif defined ( A0005_REV1 ) /* Flight Ground Station Rev */
+	#define PING_RESPONSE_CODE	  ( 0xA0 ) 
 #endif
+
 
 /* Firmware Identifier Code */
 #define FIRMWARE_TERMINAL       ( 0x01 ) /* Terminal Firmware    */
