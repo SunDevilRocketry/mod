@@ -68,7 +68,7 @@ extern "C" {
 #define FIRMWARE_DUAL_DEPLOY    ( 0x03 ) /* Dual Deploy Firmware */
 #define FIRMWARE_HOTFIRE        ( 0x04 ) /* Hotfire Firmware     */
 #define FIRMWARE_GD_TRANSMITTER ( 0x05 ) /* Ground station Transmitter Firmware*/
-
+#define FIRMWARE_GD_RECEIVER	( 0x06 ) /* Ground station Receiver */
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
