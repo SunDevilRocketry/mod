@@ -20,6 +20,7 @@
 #include "main.h"
 #include "sdr_pin_defines_A0002.h"
 #include "servo.h"
+#include "led.h"
 /*------------------------------------------------------------------------------
  Global Variables 
 ------------------------------------------------------------------------------*/
@@ -52,10 +53,12 @@ if ( hal_status1 == HAL_OK &&
      hal_status3 == HAL_OK &&
      hal_status4 == HAL_OK )
     {
+    led_set_color(LED_BLUE);
     return SERVO_OK;
     }
     else
     {
+    led_set_color(LED_RED);
     return SERVO_FAIL;
     }
 
