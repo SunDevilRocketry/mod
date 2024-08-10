@@ -30,39 +30,6 @@
  Procedures 
 ------------------------------------------------------------------------------*/
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		pwm_timer_init                                                         *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Initialize PWM Timers                                                  *
-*                                                                              *
-*******************************************************************************/
-SERVO_STATUS pwm_timer_init()
-{
-HAL_StatusTypeDef hal_status1, hal_status2, hal_status3, hal_status4;
-
-hal_status1 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-hal_status2 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-hal_status3 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-hal_status4 = HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-
-if ( hal_status1 == HAL_OK &&
-     hal_status2 == HAL_OK &&
-     hal_status3 == HAL_OK &&
-     hal_status4 == HAL_OK )
-    {
-    led_set_color(LED_BLUE);
-    return SERVO_OK;
-    }
-    else
-    {
-    led_set_color(LED_RED);
-    return SERVO_FAIL;
-    }
-
-}
 
 /*******************************************************************************
 *                                                                              *
@@ -70,16 +37,56 @@ if ( hal_status1 == HAL_OK &&
 * 		servo_init                                                             *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
+* 		Initialize/Reset servo                             *
+*                                                                              *
+*******************************************************************************/
+SERVO_STATUS servo_init()
+{
+    // GPIO Initialization
+    HAL_GPIO_WritePin(MOTOR1_EN_PORT, MOTOR1_EN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(MOTOR2_EN_PORT, MOTOR2_EN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(MOTOR3_EN_PORT, MOTOR3_EN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(MOTOR4_EN_PORT, MOTOR4_EN, GPIO_PIN_SET);
+
+    // Timer intialization
+    HAL_StatusTypeDef hal_status1, hal_status2, hal_status3, hal_status4;
+
+    hal_status1 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+    hal_status2 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+    hal_status3 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+    hal_status4 = HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+
+    if ( hal_status1 == HAL_OK &&
+        hal_status2 == HAL_OK &&
+        hal_status3 == HAL_OK &&
+        hal_status4 == HAL_OK )
+        {
+        return SERVO_OK;
+        }
+        else
+        {
+        return SERVO_FAIL;
+        }
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		servo_reset                                                             *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
 * 		Initialize/Reset servo rotate to default                               *
 *                                                                              *
 *******************************************************************************/
-void servo_init()
+void servo_reset()
 {
     htim3.Instance->CCR4 = 25;
     htim3.Instance->CCR3 = 25;
     htim3.Instance->CCR1 = 25;
     htim2.Instance->CCR1 = 25;
 }
+
 
 /*******************************************************************************
 *                                                                              *
