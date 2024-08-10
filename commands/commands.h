@@ -65,6 +65,7 @@ extern "C" {
 #define FIRMWARE_DATA_LOGGER    ( 0x02 ) /* Data Logger Firmware */
 #define FIRMWARE_DUAL_DEPLOY    ( 0x03 ) /* Dual Deploy Firmware */
 #define FIRMWARE_HOTFIRE        ( 0x04 ) /* Hotfire Firmware     */
+#define FIRMWARE_CANARD			( 0x05 ) /* Canard Firmware      */
 
 
 /*------------------------------------------------------------------------------
