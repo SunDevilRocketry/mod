@@ -69,23 +69,31 @@ typedef enum SERVO_STATUS
 /* Initialize/Reset servo rotate to default */
 SERVO_STATUS servo_init();
 
+void motor1_pwm_drive(uint8_t pulse);
+void motor2_pwm_drive(uint8_t pulse);
+void motor3_pwm_drive(uint8_t pulse);
+void motor4_pwm_drive(uint8_t pulse);
+
 /* Drive the first servo motor with a desired value (0-100) */
-void motor1_drive(uint8_t duty_cycle);
+void motor1_drive(uint8_t angle);
 
 /* Drive the second servo motor with a desired value (0-100) */
-void motor2_drive(uint8_t duty_cycle);
+void motor2_drive(uint8_t angle);
 
 /* Drive the third servo motor with a desired value (0-100) */
-void motor3_drive(uint8_t duty_cycle);
+void motor3_drive(uint8_t angle);
 
 /* Drive the forth servo motor with a desired value (0-100) */
-void motor4_drive(uint8_t duty_cycle);
+void motor4_drive(uint8_t angle);
 
 /* A complete function that drives each servo in this board  */
 void motors_drive(SERVOS_DATA servos_data);
 
 /* Execute servo subcommand */
 void servo_cmd_execute(uint8_t subcommand);
+
+uint8_t angle_to_pulse(uint8_t angle);
+
 
 /* A function that handles a error driven from controlling servo */
 void error_handler();
