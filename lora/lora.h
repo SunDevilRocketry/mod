@@ -9,11 +9,29 @@
 *
 *******************************************************************************/
 
+#ifndef LORA_H
+#define LORA_H
+
 /* Standard includes */
 #include <stdbool.h>
 
 /* Project includes */
 #include "sensor.h"
+
+/* Operation Mode Register Values */
+#define LORA_LORA_MODE             0b1
+#define LORA_LORA_REGISTER_PAGE    0b0
+#define LORA_FSK_REGISTER_PAGE     0b1
+#define LORA_HIGH_FREQ_MODE        0b1
+#define LORA_LOW_FREQ_MODE         0b0
+#define LORA_OPERATION_RESERVED    0b00
+#define LORA_SLEEP_MODE            0b000
+#define LORA_STANDBY_MODE          0b001
+#define LORA_FREQ_SYNTH_TX_MODE    0b010
+#define LORA_TRANSMIT_MODE         0b011
+#define LORA_FREQ_SYNTH_RX_MODE    0b100
+#define LORA_RX_CONTINUOUS_MODE    0b101
+#define LORA_RX_SINGLE_MODE        0b111
 
 /* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)
    Note: as we are using LoRa, the FSK opcodes are not included*/
@@ -62,3 +80,5 @@
 #define LORA_REG_AGC_THRESHOLD_1           0x62
 #define LORA_REG_AGC_THRESHOLD_2           0x63
 #define LORA_REG_AGC_THRESHOLD_4           0x64
+
+#endif
