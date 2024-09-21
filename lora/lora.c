@@ -30,6 +30,15 @@
 ------------------------------------------------------------------------------*/
 
 void set_chip_mode( uint8_t chip_mode ) {
+    /* chip_mode should be one of the following 3-bit variables defined in lora.h
+            #define LORA_SLEEP_MODE            0b000
+            #define LORA_STANDBY_MODE          0b001
+            #define LORA_FREQ_SYNTH_TX_MODE    0b010
+            #define LORA_TRANSMIT_MODE         0b011
+            #define LORA_FREQ_SYNTH_RX_MODE    0b100
+            #define LORA_RX_CONTINUOUS_MODE    0b101
+            #define LORA_RX_SINGLE_MODE        0b111
+    */
     // I may give this function a return type in the future to check success of operation.
     // Also, may need to be updated based on pin definitions after those are fixed.
 
