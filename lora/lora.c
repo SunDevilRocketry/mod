@@ -26,21 +26,27 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ Project Inlcudes
+------------------------------------------------------------------------------*/
+#include lora.h
+
+/*------------------------------------------------------------------------------
  Helper functions for various pin functions on the LoRa modem.
 ------------------------------------------------------------------------------*/
-void lora_write_cs_pin( GPIO_PinState pinState ) {
+void lora_write_cs_pin( bool pinState ) {
     /* Takes either GPIO_PIN_SET or GPIO_PIN_RESET to bring the chip select pin
        high or low.*/
     HAL_GPIO_WritePin( LORA_SS_GPIO_PORT, pinState );
 }
 
-HAL_StatusTypeDef lora_spi_receive( uint8_t *register ) {
+uint8_t lora_spi_receive( LORA_REGISTER_ADDR *register ) {
     /* Takes pointer to the requested register. The response size is set to
        1 byte, as that is the size of the LoRa module's registers*/
     return HAL_SPI_Receive( &(LORA_SPI), &(register)), 1, HAL_DEFAULT_TIMEOUT  );
 }
 
-HAL_StatusTypeDef lora_spi_transmit( uint8_t register, uint8_t data ) {
+void lora_spi_transmit( LORA_REGISTER_ADDR *register, uint8_t data ) {
+    // TODO: Actually make this return something
     /* Takes register and data to write (1 byte) and writes that register. */
     uint8_t transmitBuffer[2] = { register, data };
     HAL_SPI_Transmit( &(LORA_SPI),  &transmitBuffer, 2, HAL_DEFAULT_TIMEOUT);
@@ -50,7 +56,7 @@ HAL_StatusTypeDef lora_spi_transmit( uint8_t register, uint8_t data ) {
  Function to set the mode of the chip
 ------------------------------------------------------------------------------*/
 
-void set_lora_chip_mode( uint8_t chip_mode ) {
+void set_lora_chip_mode( LORA_CHIPMODE chip_mode ) {
     /* chip_mode should be one of the following 3-bit variables defined in lora.h
             #define LORA_SLEEP_MODE            0b000
             #define LORA_STANDBY_MODE          0b001
