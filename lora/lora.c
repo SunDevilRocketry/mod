@@ -37,6 +37,9 @@ void lora_write_cs_pin( bool pinState ) {
     /* Takes either GPIO_PIN_SET or GPIO_PIN_RESET to bring the chip select pin
        high or low.*/
     HAL_GPIO_WritePin( LORA_SS_GPIO_PORT, pinState );
+    // HAL_GPIO_WritePin(LORA_NSS_PORT, LORA_NSS_PIN, GPIO_PIN_SET); 
+
+    
 }
 
 uint8_t lora_spi_receive( LORA_REGISTER_ADDR *register ) {
