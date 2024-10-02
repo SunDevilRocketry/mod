@@ -13,7 +13,6 @@
 #define LORA_H
 
 /* Project includes */
-#include "sensor.h"
 
 /* Operation Mode Register Values */
 /* These are just random parts of the operation register that may or not get used
@@ -37,6 +36,16 @@ typedef enum LORA_CHIPMODE {
    LORA_RX_CONTINUOUS_MODE = 0b101,
    LORA_RX_SINGLE_MODE = 0b111,
 } LORA_CHIPMODE;
+
+typedef enum _LORA_STATUS {
+   LORA_OK = 0,
+   LORA_FAIL
+} LORA_STATUS;
+
+typedef enum _CS_STATUS {
+   CS_LOW = 0,
+   CS_HIGH
+} CS_STATUS;
 
 /* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)
    Note: as we are using LoRa, the FSK opcodes are not included*/
@@ -87,5 +96,9 @@ typedef enum LORA_REGISTER_ADDR {
    LORA_REG_AGC_THRESHOLD_2            = 0x63,
    LORA_REG_AGC_THRESHOLD_4            = 0x64
 } LORA_REGISTER_ADDR;
+
+LORA_STATUS lora_spi_receive( uint8_t read_buffer[] );
+
+LORA_STATUS lora_spi_transmit( LORA_REGISTER_ADDR register, uint8_t data );
 
 #endif
