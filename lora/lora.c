@@ -34,7 +34,7 @@
  Helper functions for various pin functions on the LoRa modem.
 ------------------------------------------------------------------------------*/
 //TODO: Switch pinState to a good enum
-void lora_write_cs_pin( bool pinState ) {
+void lora_write_cs_pin( bool pinState ) {LORA_SPI
     /* Takes either GPIO_PIN_SET or GPIO_PIN_RESET to bring the chip select pin
        high or low.*/
     HAL_GPIO_WritePin( LORA_NSS_PORT, pinState );
@@ -70,7 +70,7 @@ void lora_spi_set_register( LORA_REGISTER_ADDR lora_register, uint8_t data ) {
  Function to set the mode of the chip
 ------------------------------------------------------------------------------*/
 
-void set_lora_chip_mode( LORA_CHIPMODE chip_mode ) {
+void lora_set_chip_mode( LORA_CHIPMODE chip_mode ) {
     /* chip_mode should be one of the following 3-bit variables defined in lora.h
             #define LORA_SLEEP_MODE            0b000
             #define LORA_STANDBY_MODE          0b001
@@ -87,7 +87,7 @@ void set_lora_chip_mode( LORA_CHIPMODE chip_mode ) {
     lora_write_cs_pin( GPIO_PIN_SET );
 
     // Get initial value of the operation mode register
-    uint8_t operation_mode_register = lora_spi_get_register( &(LORA_REG_OPERATION_MODE) );
+    uint8_t operation_mode_register = lora_spi_get_register( LORA_REG_OPERATION_MODE );
 
     // Shift the chip mode bits to be the first 3 bits of the sequence
     uint8_t shifted_chip_mode = (chip_mode << 0b00000);
@@ -96,8 +96,14 @@ void set_lora_chip_mode( LORA_CHIPMODE chip_mode ) {
     uint8_t new_opmode_register = (operation_mode_register | chip_mode);
 
     // Write new bit
-    lora_spi_set_register( LORA_REG_OPERATION_MODE, new_opmode_register );
+    lora_spi_set_register( LORA_REG_OPERATION_MODE, new_opmode_register );LORA_REG_
 
     // Bring chip select back high
     lora_write_cs_pin( GPIO_PIN_RESET );
+}
+
+// Get the device chip ID
+uint8_t lora_get_device_id() {
+    uint8_t[2] chip_id_packet = lora_spi_get_register( LORA_REG_ID_VERSION );
+    return chip_id_packet[1];
 }
