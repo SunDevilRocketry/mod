@@ -29,7 +29,7 @@ extern "C" {
 ------------------------------------------------------------------------------*/
 
 
-typedef struct{
+typedef struct _GPS_DATA{
 
     // calculated values
     float dec_longitude;
@@ -64,7 +64,7 @@ typedef struct{
     char speed_k_unit;
     float speed_km; // speek km/hr
     char speed_km_unit;
-} GPS_t;
+} GPS_DATA;
 
 
 /* Function return codes */
@@ -102,11 +102,13 @@ GPS_STATUS gps_receive_IT
 	size_t   rx_data_size /* Size of the data to be received */
 	);
 
-int GPS_validate(char *nmeastr);
+int gps_mesg_validate(char *nmeastr);
 
-void GPS_parse(char *GPSstrParse);
+void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse);
 
 float GPS_nmea_to_dec(float deg_coord, char nsew);
+
+void gps_listener();
 
 #ifdef __cplusplus
 }

@@ -42,12 +42,9 @@
  Preprocesor Directives 
 ------------------------------------------------------------------------------*/
 
-
 /*------------------------------------------------------------------------------
 Global Variables                                                                  
 ------------------------------------------------------------------------------*/
-extern GPS_t GPS;
-
 
 /*------------------------------------------------------------------------------
  Procedures 
@@ -205,7 +202,16 @@ switch ( gps_status )
 
 } /* usb_receive_IT */
 
-int GPS_validate(char *nmeastr){
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		gps_mesg_validate                                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 	    Validate message returned from GPS                                       *
+*                                                                              *
+*******************************************************************************/
+int gps_mesg_validate(char *nmeastr){
     char check[3];
     char checkcalcstr[3];
     int i;
@@ -241,27 +247,27 @@ int GPS_validate(char *nmeastr){
     sprintf(checkcalcstr,"%02X",calculated_check);
     return((checkcalcstr[0] == check[0])
         && (checkcalcstr[1] == check[1])) ? 1 : 0 ;
-}
+} /*gps_mesg_validate*/
 
-void GPS_parse(char *GPSstrParse){
+void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
     if(!strncmp(GPSstrParse, "$GPGGA", 6)){
-    	if (sscanf(GPSstrParse, "$GPGGA,%f,%f,%c,%f,%c,%d,%d,%f,%f,%c", &GPS.utc_time, &GPS.nmea_latitude, &GPS.ns, &GPS.nmea_longitude, &GPS.ew, &GPS.lock, &GPS.satelites, &GPS.hdop, &GPS.msl_altitude, &GPS.msl_units) >= 1){
-    		GPS.dec_latitude = GPS_nmea_to_dec(GPS.nmea_latitude, GPS.ns);
-    		GPS.dec_longitude = GPS_nmea_to_dec(GPS.nmea_longitude, GPS.ew);
+    	if (sscanf(GPSstrParse, "$GPGGA,%f,%f,%c,%f,%c,%d,%d,%f,%f,%c", gps_ptr->utc_time, gps_ptr->nmea_latitude, gps_ptr->ns, gps_ptr->nmea_longitude, gps_ptr->ew, gps_ptr->lock, gps_ptr->satelites, gps_ptr->hdop, gps_ptr->msl_altitude, gps_ptr->msl_units) >= 1){
+    		gps_ptr->dec_latitude = GPS_nmea_to_dec(gps_ptr->nmea_latitude, gps_ptr->ns);
+    		gps_ptr->dec_longitude = GPS_nmea_to_dec(gps_ptr->nmea_longitude, gps_ptr->ew);
     		return;
     	}
     }
     else if (!strncmp(GPSstrParse, "$GPRMC", 6)){
-    	if(sscanf(GPSstrParse, "$GPRMC,%f,%f,%c,%f,%c,%f,%f,%d", &GPS.utc_time, &GPS.nmea_latitude, &GPS.ns, &GPS.nmea_longitude, &GPS.ew, &GPS.speed_k, &GPS.course_d, &GPS.date) >= 1)
+    	if(sscanf(GPSstrParse, "$GPRMC,%f,%f,%c,%f,%c,%f,%f,%d", gps_ptr->utc_time, gps_ptr->nmea_latitude, gps_ptr->ns, gps_ptr->nmea_longitude, gps_ptr->ew, gps_ptr->speed_k, gps_ptr->course_d, gps_ptr->date) >= 1)
     		return;
 
     }
     else if (!strncmp(GPSstrParse, "$GPGLL", 6)){
-        if(sscanf(GPSstrParse, "$GPGLL,%f,%c,%f,%c,%f,%c", &GPS.nmea_latitude, &GPS.ns, &GPS.nmea_longitude, &GPS.ew, &GPS.utc_time, &GPS.gll_status) >= 1)
+        if(sscanf(GPSstrParse, "$GPGLL,%f,%c,%f,%c,%f,%c", gps_ptr->nmea_latitude, gps_ptr->ns, gps_ptr->nmea_longitude, gps_ptr->ew, gps_ptr->utc_time, gps_ptr->gll_status) >= 1)
             return;
     }
     else if (!strncmp(GPSstrParse, "$GPVTG", 6)){
-        if(sscanf(GPSstrParse, "$GPVTG,%f,%c,%f,%c,%f,%c,%f,%c", &GPS.course_t, &GPS.course_t_unit, &GPS.course_m, &GPS.course_m_unit, &GPS.speed_k, &GPS.speed_k_unit, &GPS.speed_km, &GPS.speed_km_unit) >= 1)
+        if(sscanf(GPSstrParse, "$GPVTG,%f,%c,%f,%c,%f,%c,%f,%c", gps_ptr->course_t, gps_ptr->course_t_unit, gps_ptr->course_m, gps_ptr->course_m_unit, gps_ptr->speed_k, gps_ptr->speed_k_unit, gps_ptr->speed_km, gps_ptr->speed_km_unit) >= 1)
             return;
     }
 }

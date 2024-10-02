@@ -61,7 +61,7 @@
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
 
-extern GPS_t GPS;
+extern GPS_DATA gps_data;
 
 
 /*------------------------------------------------------------------------------
@@ -671,11 +671,11 @@ SENSOR_STATUS sensor_dump
 											  // as struct padding
 
 	/* GPS sensor */
-	sensor_data_ptr->dec_longitude = GPS.dec_longitude;
-	sensor_data_ptr->nmea_longitude = GPS.nmea_longitude;
-	sensor_data_ptr->dec_latitude = GPS.dec_latitude;
-	sensor_data_ptr->nmea_latitude = GPS.nmea_latitude;
-	sensor_data_ptr->utc_time = GPS.utc_time;
+	sensor_data_ptr->dec_longitude = gps_data.dec_longitude;
+	sensor_data_ptr->nmea_longitude = gps_data.nmea_longitude;
+	sensor_data_ptr->dec_latitude = gps_data.dec_latitude;
+	sensor_data_ptr->nmea_latitude = gps_data.nmea_latitude;
+	sensor_data_ptr->utc_time = gps_data.utc_time;
 
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
