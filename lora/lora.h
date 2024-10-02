@@ -101,4 +101,6 @@ LORA_STATUS lora_spi_receive( uint8_t read_buffer[] );
 
 LORA_STATUS lora_spi_transmit( LORA_REGISTER_ADDR register, uint8_t data );
 
+void lora_get_device_id(uint8_t* packet);
+
 #endif

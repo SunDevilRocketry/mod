@@ -115,5 +115,7 @@ void lora_spi_set_register( LORA_REGISTER_ADDR lora_register, uint8_t data ) {
 
 // Get the device chip ID
 void lora_get_device_id(uint8_t* packet) {
+    lora_write_cs_pin(CS_HIGH);
     lora_spi_get_register( LORA_REG_ID_VERSION, &packet[0]);
+    lora_write_cs_pin(CS_LOW);
 }
