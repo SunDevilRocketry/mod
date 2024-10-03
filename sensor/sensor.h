@@ -139,11 +139,11 @@ typedef enum
 		SENSOR_IMUT  = 0x09,
 		SENSOR_PRES  = 0x0A,
 		SENSOR_TEMP  = 0x0B,
-		DEC_LONG	 = 0x0C,
-		NMEA_LONG	 = 0x0D,
-		DEC_LAT 	 = 0x0E,
-		NMEA_LAT	 = 0x0F,
-		UTC_TIME	 = 0x10
+		GPS_DEC_LONG	 = 0x0C,
+		GPS_DEC_LAT 	 = 0x0D,
+		GOS_NMEA_LONG	 = 0x0E,
+		GPS_NMEA_LAT	 = 0x0F,
+		GPS_UTC_TIME	 = 0x10
 		
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		SENSOR_PT0   = 0x00,
@@ -170,13 +170,13 @@ typedef struct SENSOR_DATA
 	{
 	#if   defined( FLIGHT_COMPUTER      )
 		IMU_DATA imu_data;
-		float	 dec_longitude;
-		float	 nmea_longitude;
-		float	 dec_latitude;
-		float	 nmea_latitude;
-		float 	 utc_time;
 		float    baro_pressure;
-		float    baro_temp;	
+		float    baro_temp;
+		float	 dec_longitude;
+		float	 dec_latitude;
+		float	 nmea_longitude;
+		float	 nmea_latitude;
+		float 	 utc_time;	
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		uint32_t pt_pressures[ NUM_PTS ];
 		uint32_t load_cell_force;
