@@ -68,6 +68,7 @@ typedef enum SERVO_STATUS
 
 /* Initialize/Reset servo rotate to default */
 SERVO_STATUS servo_init();
+void servo_reset();
 
 void motor1_pwm_drive(uint8_t pulse);
 void motor2_pwm_drive(uint8_t pulse);
