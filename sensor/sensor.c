@@ -1632,6 +1632,20 @@ HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 } /* pt6_adc_channel_select */
 
 
+static void imu_get_state_estimate(IMU_DATA* imu_data){
+    float roll_angle = atan(imu_data->accel_y/imu_data->accel_z);
+	float pitch_angle = atan(imu_data->accel_x/9.81);
+
+	float roll_rate = imu_data->gyro_x + imu_data->gyro_y*sin(roll_angle)*tan(pitch_angle) + imu_data->gyro_z*cos(roll_angle)*tan(pitch_angle);
+	float pitch_rate = imu_data->gyro_y*cos(roll_angle) - imu_data->gyro_z*sin(roll_angle);	
+
+	imu_data->state_estimate->roll_angle = roll_angle;
+	imu_data->state_estimate->pitch_angle = pitch_angle;
+	imu_data->state_estimate->roll_rate = roll_rate;
+	imu_data->state_estimate->pitch_rate = pitch_rate;
+}
+
+
 #endif /* #ifdef L0002_REV5 */
 
 

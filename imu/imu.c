@@ -21,6 +21,7 @@
 #include "sdr_pin_defines_A0002.h"
 #include "imu.h"
 
+#include <math.h>
 
 /*------------------------------------------------------------------------------
  Global Variables 
@@ -824,8 +825,9 @@ else
     return IMU_OK;
     }
 } /* write_mag_regs */
-#endif /* #if defined( A0002_REV2 ) */
 
+
+#endif /* #if defined( A0002_REV2 ) */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 

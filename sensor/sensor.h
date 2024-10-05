@@ -51,8 +51,8 @@ Includes
 #if   defined( FLIGHT_COMPUTER   )
 	/* General */
 	#define NUM_SENSORS         ( 12   )
-	#define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 28   )
+	// #define IMU_DATA_SIZE       ( 20   )
+	#define SENSOR_DATA_SIZE	( 52   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -162,8 +162,8 @@ typedef enum
 typedef struct SENSOR_DATA 
 	{
 	#if   defined( FLIGHT_COMPUTER      )
-		IMU_DATA imu_data;
-		float    baro_pressure;
+		IMU_DATA imu_data; 
+		float    baro_pressure; 
 		float    baro_temp;	
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		uint32_t pt_pressures[ NUM_PTS ];
@@ -177,6 +177,8 @@ typedef struct SENSOR_DATA
 		int32_t fuel_valve_pos;
 	#endif /* #elif defined( ENGINE_CONTROLLER ) */
 	} SENSOR_DATA;
+
+
 
 /* Sensor Data sizes and offsets */
 typedef struct SENSOR_DATA_SIZE_OFFSETS
