@@ -701,6 +701,16 @@ SENSOR_STATUS sensor_dump
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
 	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
 
+	/* Calculated and retrieve converted IMU data */
+	sensor_conv_imu( &(sensor_data_ptr->imu_data) );
+
+	/* Calculated to get body state */
+	sensor_body_state( &(sensor_data_ptr->imu_data) );
+
+	/* Calculated velocity and position */
+	sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+
+
 #elif defined( ENGINE_CONTROLLER )
 	#ifndef L0002_REV5
 	/* Pressure Transducers */

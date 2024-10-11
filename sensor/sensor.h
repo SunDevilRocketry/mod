@@ -250,6 +250,8 @@ SENSOR_STATUS sensor_dump
     );
 
 #ifdef FLIGHT_COMPUTER
+void sensor_body_state(IMU_DATA* imu_data);
+void sensor_imu_velo(IMU_DATA* imu_data);
 void sensor_conv_imu(IMU_DATA* imu_data);
 float sensor_acc_conv(uint16_t readout);
 float sensor_gyro_conv(uint16_t readout);
