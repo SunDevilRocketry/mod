@@ -1201,6 +1201,38 @@ void sensor_conv_imu(IMU_DATA* imu_data){
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
+* 		sensor_body_state                                                   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Perform sensor fusion on imu converted data to get body rate           *
+*                                                                              *
+*******************************************************************************/
+void sensor_body_state(IMU_DATA* imu_data){
+	// Calculate body state angles (pitch, roll)
+	float pitch, roll;
+	float g = 9.8;
+	roll = atanf( imu_data->imu_converted.accel_y / imu_data->imu_converted.accel_y );
+	pitch = atanf( imu_data->imu_converted.accel_x / g );
+
+	// Calculate body state anglular rate
+	float pitch_rate, roll_rate;
+	roll_rate = imu_data->imu_converted.gyro_x + 									\
+			imu_data->imu_converted.gyro_y * ( sinf(roll)*tanf(pitch) ) +	 		\
+			imu_data->imu_converted.gyro_z * ( cosf(roll)*tanf(pitch) );
+
+	pitch_rate = imu_data->imu_converted.gyro_y * ( cosf(roll) ) - imu_data->imu_converted.gyro_z * ( sinf(roll) );
+
+	// Store calculated data
+	imu_data->state_estimate.roll_angle 	= roll;
+	imu_data->state_estimate.pitch_angle 	= pitch;
+	imu_data->state_estimate.roll_rate 		= roll_rate;
+	imu_data->state_estimate.pitch_rate 	= pitch_rate;
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
 * 		sensor_acc_conv                                                        *
 *                                                                              *
 * DESCRIPTION:                                                                 *
@@ -1250,18 +1282,6 @@ float sensor_gyro_conv(uint16_t readout){
 	
 	return readout / gyro_sens;
 }
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_gyro_conv                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Process IMU data                                                    *
-*                                                                              *
-*******************************************************************************/
-
-
 
 #endif
 
