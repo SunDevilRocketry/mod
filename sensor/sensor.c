@@ -854,6 +854,8 @@ SENSOR_ID* sensor_id_ptr;    /* Pointer to sensor id                */
 	bool imu_accel_read;
 	bool imu_gyro_read;
 	bool imu_mag_read;
+	bool body_state_converted;
+	bool velo_pos_calculated;
 #endif
 
 /*------------------------------------------------------------------------------
@@ -882,6 +884,8 @@ sensor_id         = *(sensor_id_ptr   );
 	imu_accel_read = false;
 	imu_gyro_read  = false;
 	imu_mag_read   = false;
+	body_state_converted = false;
+	velo_pos_calculated = false;
 #endif
 
 /* Burst read ADC sensors on Engine controller Rev 5 */
@@ -1042,6 +1046,238 @@ for ( int i = 0; i < num_sensors; ++i )
 			case SENSOR_IMUT:
 				{
 				sensor_data_ptr -> imu_data.temp = 0;
+				break;
+				}
+			case SENSOR_ACCX_CONV:
+				{
+				if ( !imu_accel_read )
+					{
+					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_ACCEL_ERROR;
+						}
+					imu_accel_read = true;
+					}
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_ACCY_CONV:
+				{
+				if ( !imu_accel_read )
+					{
+					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_ACCEL_ERROR;
+						}
+					imu_accel_read = true;
+					}
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_ACCZ_CONV:
+				{
+				if ( !imu_accel_read )
+					{
+					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_ACCEL_ERROR;
+						}
+					imu_accel_read = true;
+					}
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_GYROX_CONV:
+				{
+				if ( !imu_gyro_read )
+					{
+					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_GYRO_ERROR;
+						}
+					imu_gyro_read = true;
+					}	
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );			
+				break;
+				}
+			case SENSOR_GYROY_CONV:
+				{
+				if ( !imu_gyro_read )
+					{
+					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_GYRO_ERROR;
+						}
+					imu_gyro_read = true;
+					}	
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_GYROZ_CONV:
+				{
+				if ( !imu_gyro_read )
+					{
+					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_GYRO_ERROR;
+						}
+					imu_gyro_read = true;
+					}		
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_ROLL_DEG:
+				{
+				if (!body_state_converted)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					if (!imu_gyro_read)
+						{
+							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_GYRO_ERROR;
+								}
+							imu_gyro_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						}
+					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_PITCH_DEG:
+				{
+				if (!body_state_converted)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					if (!imu_gyro_read)
+						{
+							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_GYRO_ERROR;
+								}
+							imu_gyro_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						}
+					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_ROLL_RATE:
+				{
+				if (!body_state_converted)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					if (!imu_gyro_read)
+						{
+							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_GYRO_ERROR;
+								}
+							imu_gyro_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						}
+					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_PITCH_RATE:
+				{
+				if (!body_state_converted)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					if (!imu_gyro_read)
+						{
+							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_GYRO_ERROR;
+								}
+							imu_gyro_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						}
+					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_VELOCITY:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_POSITION:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					}
 				break;
 				}
 		#endif /* #if defined( FLIGHT_COMPUTER ) */
