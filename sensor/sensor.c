@@ -1574,10 +1574,12 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	float accel_y = imu_data->imu_converted.accel_y;
 	float accel_z = imu_data->imu_converted.accel_z;
 
+	float ts_delta = tdelta / 1000.0;
+
 	// Calculate 3 velocity vectors using motion equations
-	velo_x = accel_x*tdelta;
-	velo_y = accel_y*tdelta;
-	velo_z = accel_z*tdelta;
+	velo_x = accel_x*ts_delta;
+	velo_y = accel_y*ts_delta;
+	velo_z = accel_z*ts_delta;
 	
 	// Calculate the velocity scalar
 	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
