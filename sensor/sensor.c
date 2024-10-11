@@ -61,6 +61,10 @@
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
 
+#ifdef FLIGHT_COMPUTER
+extern uint32_t tdelta;
+#endif
+
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -1281,6 +1285,35 @@ float sensor_gyro_conv(uint16_t readout){
 	float gyro_sens = 65535.0 / (2*gyro_setting);
 	
 	return readout / gyro_sens;
+}
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_imu_velo                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Calculate the velocity depending on accel 								*
+*                                                                              *
+*******************************************************************************/
+void sensor_imu_velo(IMU_DATA* imu_data){
+	float velo_x, velo_y, velo_z, velocity;
+
+	float accel_x = imu_data->imu_converted.accel_x;
+	float accel_y = imu_data->imu_converted.accel_y;
+	float accel_z = imu_data->imu_converted.accel_z;
+
+	// Calculate 3 velocity vectors using motion equations
+	velo_x = accel_x*tdelta;
+	velo_y = accel_y*tdelta;
+	velo_z = accel_z*tdelta;
+	
+	// Calculate the velocity scalar
+	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
+
+	imu_data->state_estimate.velocity = velocity;
+
+	imu_data->state_estimate.position = 0; //TODO: Implement position
 }
 
 #endif

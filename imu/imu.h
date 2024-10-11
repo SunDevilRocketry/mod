@@ -206,7 +206,7 @@ typedef struct _STATE_ESTIMATION {
 	float pitch_angle;
 	float roll_rate;
 	float pitch_rate;
-	float postion;
+	float position;
 	float velocity;
 } STATE_ESTIMATION;
 
