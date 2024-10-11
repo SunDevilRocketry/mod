@@ -52,7 +52,7 @@ Includes
 	/* General */
 	#define NUM_SENSORS         ( 12   )
 	// #define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 52   )
+	#define SENSOR_DATA_SIZE	( 76   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -236,6 +236,12 @@ SENSOR_STATUS sensor_dump
 	(
     SENSOR_DATA* sensor_data_ptr 
     );
+
+#ifdef FLIGHT_COMPUTER
+void sensor_conv_imu(IMU_DATA* imu_data);
+float sensor_acc_conv(uint16_t readout);
+float sensor_gyro_conv(uint16_t readout);
+#endif
 
 #ifdef ENGINE_CONTROLLER
 /* Converts a pressure transducer ADC readout to a floating point pressure in 

@@ -1176,6 +1176,96 @@ for ( int i = 0; i < num_sensors; ++i )
 return SENSOR_OK;
 } /* sensor_poll */
 
+
+#ifdef FLIGHT_COMPUTER
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_conv_imu                                                   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Conversion of IMU raw chip readouts into 9-axis Acceralometer and Gyro                                                     *
+*                                                                              *
+*******************************************************************************/
+void sensor_conv_imu(IMU_DATA* imu_data){
+	imu_data->imu_converted.accel_x = sensor_acc_conv(imu_data->accel_x);
+	imu_data->imu_converted.accel_y = sensor_acc_conv(imu_data->accel_y);
+	imu_data->imu_converted.accel_z = sensor_acc_conv(imu_data->accel_z);
+
+	imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
+	imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
+	imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_data->gyro_z);
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_acc_conv                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Convert Acc readouts to m/s^2                                          *
+*                                                                              *
+*******************************************************************************/
+float sensor_acc_conv(uint16_t readout){
+	// sign check
+	uint8_t sign;
+
+	sign = (readout & (0x8000)) >> 15;
+
+	if (sign == 1){
+		readout = -( ( ~readout + 1 ) & (0xFFFF) );
+	}
+
+	// Convert to accel
+	uint8_t g_setting = 16;
+	float g = 9.8;
+	float accel_step = 2*g_setting*g/65535.0;
+
+	return accel_step*readout;
+}
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_gyro_conv                                                       *   
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Convert gyro readouts to deg/s                                         *
+*                                                                              *
+*******************************************************************************/
+float sensor_gyro_conv(uint16_t readout){
+	// sign check
+	uint8_t sign;
+
+	sign = (readout & (0x8000)) >> 15;
+
+	if (sign == 1){
+		readout = -( ( ~readout + 1 ) & (0xFFFF) );
+	}
+
+	// Convert to accel
+	float gyro_setting = 250.0;
+	float gyro_sens = 65535.0 / (2*gyro_setting);
+	
+	return readout / gyro_sens;
+}
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_gyro_conv                                                   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Process IMU data                                                    *
+*                                                                              *
+*******************************************************************************/
+
+
+
+#endif
+
+
 #ifdef ENGINE_CONTROLLER 
 /*******************************************************************************
 *                                                                              *
