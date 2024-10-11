@@ -1516,12 +1516,12 @@ void sensor_body_state(IMU_DATA* imu_data){
 *******************************************************************************/
 float sensor_acc_conv(uint16_t readout){
 	// sign check
-	uint8_t sign;
+	uint16_t num_sign = (readout & (0x8000)) >> 0xF;
+	int8_t sign_bit = 1;
 
-	sign = (readout & (0x8000)) >> 15;
-
-	if (sign == 1){
-		readout = -( ( ~readout + 1 ) & (0xFFFF) );
+	if (num_sign == 1){
+		readout = ((uint16_t) ( ( ~readout + 1 ) & (0xFFFF) ));
+		sign_bit = -1;
 	}
 
 	// Convert to accel
@@ -1529,7 +1529,7 @@ float sensor_acc_conv(uint16_t readout){
 	float g = 9.8;
 	float accel_step = 2*g_setting*g/65535.0;
 
-	return accel_step*readout;
+	return sign_bit*(accel_step*readout);
 }
 
 /*******************************************************************************
@@ -1543,19 +1543,18 @@ float sensor_acc_conv(uint16_t readout){
 *******************************************************************************/
 float sensor_gyro_conv(uint16_t readout){
 	// sign check
-	uint8_t sign;
-
-	sign = (readout & (0x8000)) >> 15;
-
-	if (sign == 1){
-		readout = -( ( ~readout + 1 ) & (0xFFFF) );
+	uint16_t num_sign = (readout & (0x8000)) >> 0xF;
+	int8_t sign_bit = 1;
+	if (num_sign == 1){
+		readout = ((uint16_t) ( ( ~readout + 1 ) & (0xFFFF) ));
+		sign_bit = -1;
 	}
 
 	// Convert to accel
 	float gyro_setting = 250.0;
 	float gyro_sens = 65535.0 / (2*gyro_setting);
 	
-	return readout / gyro_sens;
+	return sign_bit * (readout / gyro_sens);
 }
 
 /*******************************************************************************
