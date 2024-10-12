@@ -173,20 +173,20 @@ void sensor_init
 	sensor_size_offsets_table[ 7  ].offset = 14; /* SENSOR_MAGY  */
 	sensor_size_offsets_table[ 8  ].offset = 16; /* SENSOR_MAGZ  */
 	sensor_size_offsets_table[ 9  ].offset = 18; /* SENSOR_IMUT  */
-	sensor_size_offsets_table[ 10 ].offset = 20; /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 11 ].offset = 24; /* SENSOR_TEMP  */
-	sensor_size_offsets_table[ 12 ].offset = 28; /* SENSOR_ACCX_CONV  */
-	sensor_size_offsets_table[ 13 ].offset = 32; /* SENSOR_ACCY_CONV  */
-	sensor_size_offsets_table[ 14 ].offset = 36; /* SENSOR_ACCZ_CONV  */
-	sensor_size_offsets_table[ 15 ].offset = 40; /* SENSOR_GYROX_CONV  */
-	sensor_size_offsets_table[ 16 ].offset = 44; /* SENSOR_GYROY_CONV  */
-	sensor_size_offsets_table[ 17 ].offset = 48; /* SENSOR_GYROZ_CONV  */
-	sensor_size_offsets_table[ 18 ].offset = 52; /* SENSOR_ROLL_DEG  */
-	sensor_size_offsets_table[ 19 ].offset = 56; /* SENSOR_PITCH_DEG  */
-	sensor_size_offsets_table[ 20 ].offset = 60; /* SENSOR_ROLL_RATE  */
-	sensor_size_offsets_table[ 21 ].offset = 64; /* SENSOR_PITCH_RATE  */
-	sensor_size_offsets_table[ 22 ].offset = 68; /* VELOCITY  */
-	sensor_size_offsets_table[ 23 ].offset = 72; /* POSITION  */
+	sensor_size_offsets_table[ 10 ].offset = 20; /* SENSOR_ACCX_CONV  */
+	sensor_size_offsets_table[ 11 ].offset = 24; /* SENSOR_ACCY_CONV  */
+	sensor_size_offsets_table[ 12 ].offset = 28; /* SENSOR_ACCZ_CONV  */
+	sensor_size_offsets_table[ 13 ].offset = 32; /* SENSOR_GYROX_CONV  */
+	sensor_size_offsets_table[ 14 ].offset = 36; /* SENSOR_GYROY_CONV  */
+	sensor_size_offsets_table[ 15 ].offset = 40; /* SENSOR_GYROZ_CONV  */
+	sensor_size_offsets_table[ 16 ].offset = 44; /* SENSOR_ROLL_DEG  */
+	sensor_size_offsets_table[ 17 ].offset = 48; /* SENSOR_PITCH_DEG  */
+	sensor_size_offsets_table[ 18 ].offset = 52; /* SENSOR_ROLL_RATE  */
+	sensor_size_offsets_table[ 19 ].offset = 56; /* SENSOR_PITCH_RATE  */
+	sensor_size_offsets_table[ 20 ].offset = 60; /* VELOCITY  */
+	sensor_size_offsets_table[ 21 ].offset = 64; /* POSITION  */
+	sensor_size_offsets_table[ 22 ].offset = 68; /* SENSOR_PRES  */
+	sensor_size_offsets_table[ 23 ].offset = 72; /* SENSOR_TEMP  */
 
 
 	/* Sensor Sizes   */
@@ -200,20 +200,20 @@ void sensor_init
 	sensor_size_offsets_table[ 7  ].size   = 2;  /* SENSOR_MAGY  */
 	sensor_size_offsets_table[ 8  ].size   = 2;  /* SENSOR_MAGZ  */
 	sensor_size_offsets_table[ 9  ].size   = 2;  /* SENSOR_IMUT  */
-	sensor_size_offsets_table[ 10 ].size   = 4;  /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 11 ].size   = 4;  /* SENSOR_TEMP  */
-	sensor_size_offsets_table[ 12 ].size   = 4; /* SENSOR_ACCX_CONV  */
-	sensor_size_offsets_table[ 13 ].size 	= 4; /* SENSOR_ACCY_CONV  */
-	sensor_size_offsets_table[ 14 ].size 	= 4; /* SENSOR_ACCZ_CONV  */
-	sensor_size_offsets_table[ 15 ].size	= 4; /* SENSOR_GYROX_CONV  */
-	sensor_size_offsets_table[ 16 ].size 	= 4; /* SENSOR_GYROY_CONV  */
-	sensor_size_offsets_table[ 17 ].size	= 4; /* SENSOR_GYROZ_CONV  */
-	sensor_size_offsets_table[ 18 ].size	= 4; /* SENSOR_ROLL_DEG  */
-	sensor_size_offsets_table[ 19 ].size	= 4; /* SENSOR_PITCH_DEG  */
-	sensor_size_offsets_table[ 20 ].size	= 4; /* SENSOR_ROLL_RATE  */
-	sensor_size_offsets_table[ 21 ].size	= 4; /* SENSOR_PITCH_RATE  */
-	sensor_size_offsets_table[ 22 ].size	= 4; /* VELOCITY  */
-	sensor_size_offsets_table[ 23 ].size	= 4; /* POSITION  */
+	sensor_size_offsets_table[ 10 ].size   = 4; /* SENSOR_ACCX_CONV  */
+	sensor_size_offsets_table[ 11 ].size 	= 4; /* SENSOR_ACCY_CONV  */
+	sensor_size_offsets_table[ 12 ].size 	= 4; /* SENSOR_ACCZ_CONV  */
+	sensor_size_offsets_table[ 13 ].size	= 4; /* SENSOR_GYROX_CONV  */
+	sensor_size_offsets_table[ 14 ].size 	= 4; /* SENSOR_GYROY_CONV  */
+	sensor_size_offsets_table[ 15 ].size	= 4; /* SENSOR_GYROZ_CONV  */
+	sensor_size_offsets_table[ 16 ].size	= 4; /* SENSOR_ROLL_DEG  */
+	sensor_size_offsets_table[ 17 ].size	= 4; /* SENSOR_PITCH_DEG  */
+	sensor_size_offsets_table[ 18 ].size	= 4; /* SENSOR_ROLL_RATE  */
+	sensor_size_offsets_table[ 19 ].size	= 4; /* SENSOR_PITCH_RATE  */
+	sensor_size_offsets_table[ 20 ].size	= 4; /* VELOCITY  */
+	sensor_size_offsets_table[ 21 ].size	= 4; /* POSITION  */
+	sensor_size_offsets_table[ 22 ].size   = 4;  /* SENSOR_PRES  */
+	sensor_size_offsets_table[ 23 ].size   = 4;  /* SENSOR_TEMP  */
 #elif defined( ENGINE_CONTROLLER )
 	/* Sensor offsets */
 	sensor_size_offsets_table[ 0  ].offset = 0;  /* SENSOR_PT0  */

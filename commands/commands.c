@@ -89,6 +89,10 @@ response = PING_RESPONSE_CODE; /* Code specific to board and revision */
     #endif
 #endif /* #ifdef ENGINE_CONTROLLER */
 
+#ifdef FLIGHT_COMPUTER
+    usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
+#endif
+
 } /* ping */
 
 
