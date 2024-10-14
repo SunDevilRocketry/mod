@@ -1566,7 +1566,7 @@ float sensor_gyro_conv(uint16_t readout){
 *       Calculate the velocity depending on accel 								*
 *                                                                              *
 *******************************************************************************/
-float velo_x_prev, velo_y_prev, velo_y_prev = 0.0;
+float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
 void sensor_imu_velo(IMU_DATA* imu_data){
 	float velo_x, velo_y, velo_z, velocity;
 
