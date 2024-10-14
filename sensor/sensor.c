@@ -1566,6 +1566,7 @@ float sensor_gyro_conv(uint16_t readout){
 *       Calculate the velocity depending on accel 								*
 *                                                                              *
 *******************************************************************************/
+float velo_x_prev, velo_y_prev, velo_y_prev = 0.0;
 void sensor_imu_velo(IMU_DATA* imu_data){
 	float velo_x, velo_y, velo_z, velocity;
 
@@ -1576,14 +1577,19 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	float ts_delta = tdelta / 1000.0;
 
 	// Calculate 3 velocity vectors using motion equations
-	velo_x = accel_x*ts_delta;
-	velo_y = accel_y*ts_delta;
-	velo_z = accel_z*ts_delta;
+	velo_x = velo_x_prev + accel_x*ts_delta;
+	velo_y = velo_y_prev + accel_y*ts_delta;
+	velo_z = velo_z_prev + accel_z*ts_delta;
 	
 	// Calculate the velocity scalar
 	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
 
 	imu_data->state_estimate.velocity = velocity;
+
+	// Save current velocity for next computation
+	velo_x_prev = velo_x;
+	velo_y_prev = velo_y;
+	velo_z_prev = velo_z;
 
 	imu_data->state_estimate.position = 0; //TODO: Implement position
 }
