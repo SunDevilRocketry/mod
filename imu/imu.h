@@ -236,7 +236,15 @@ typedef struct _IMU_DATA
     STATE_ESTIMATION state_estimate;
 	} IMU_DATA;
 
-
+/* Struct containing imu offset */
+typedef struct _IMU_OFFSET {
+    float accel_x;
+    float accel_y;
+    float accel_z;
+    float gyro_x ;
+    float gyro_y ;
+    float gyro_z ;
+} IMU_OFFSET;
 
 /* Sensor Enable Configuration */
 typedef enum _IMU_SENSOR_ENABLE

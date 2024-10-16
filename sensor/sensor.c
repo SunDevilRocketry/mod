@@ -63,6 +63,7 @@ static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
 
 #ifdef FLIGHT_COMPUTER
 extern uint32_t tdelta;
+extern IMU_OFFSET imu_offset;
 #endif
 
 
@@ -1466,6 +1467,26 @@ void sensor_conv_imu(IMU_DATA* imu_data){
 	imu_data->imu_converted.accel_x = sensor_acc_conv(imu_data->accel_x);
 	imu_data->imu_converted.accel_y = sensor_acc_conv(imu_data->accel_y);
 	imu_data->imu_converted.accel_z = sensor_acc_conv(imu_data->accel_z);
+
+	if (imu_data->imu_converted.accel_x > 0){
+		imu_data->imu_converted.accel_x = imu_data->imu_converted.accel_x - imu_offset.accel_x;
+	} else {
+		imu_data->imu_converted.accel_x = imu_data->imu_converted.accel_x + imu_offset.accel_x;
+	}
+
+	if (imu_data->imu_converted.accel_y > 0){
+		imu_data->imu_converted.accel_y = imu_data->imu_converted.accel_y - imu_offset.accel_y;
+	} else {
+		imu_data->imu_converted.accel_y = imu_data->imu_converted.accel_y + imu_offset.accel_y;
+	}
+
+	if (imu_data->imu_converted.accel_z > 0){
+		imu_data->imu_converted.accel_z = imu_data->imu_converted.accel_z - imu_offset.accel_z;
+	} else {
+		imu_data->imu_converted.accel_z = imu_data->imu_converted.accel_z + imu_offset.accel_z;
+	}
+
+
 
 	imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
 	imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
