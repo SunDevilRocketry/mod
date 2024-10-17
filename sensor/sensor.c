@@ -1486,11 +1486,28 @@ void sensor_conv_imu(IMU_DATA* imu_data){
 		imu_data->imu_converted.accel_z = imu_data->imu_converted.accel_z + imu_offset.accel_z;
 	}
 
-
-
 	imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
 	imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
 	imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_data->gyro_z);
+
+	if (imu_data->imu_converted.gyro_x > 0){
+		imu_data->imu_converted.gyro_x = imu_data->imu_converted.gyro_x - imu_offset.gyro_x;
+	} else {
+		imu_data->imu_converted.gyro_x = imu_data->imu_converted.gyro_x + imu_offset.gyro_x;
+	}
+
+	if (imu_data->imu_converted.gyro_y > 0){
+		imu_data->imu_converted.gyro_y = imu_data->imu_converted.gyro_y - imu_offset.gyro_y;
+	} else {
+		imu_data->imu_converted.gyro_y = imu_data->imu_converted.gyro_y + imu_offset.gyro_y;
+	}
+
+	if (imu_data->imu_converted.gyro_z > 0){
+		imu_data->imu_converted.gyro_z = imu_data->imu_converted.gyro_z - imu_offset.gyro_z;
+	} else {
+		imu_data->imu_converted.gyro_z = imu_data->imu_converted.gyro_z + imu_offset.gyro_z;
+	}
+
 }
 
 
