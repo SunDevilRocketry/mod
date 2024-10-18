@@ -61,6 +61,11 @@
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
 
+#ifdef FLIGHT_COMPUTER
+extern uint32_t tdelta;
+extern IMU_OFFSET imu_offset;
+#endif
+
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -169,8 +174,21 @@ void sensor_init
 	sensor_size_offsets_table[ 7  ].offset = 14; /* SENSOR_MAGY  */
 	sensor_size_offsets_table[ 8  ].offset = 16; /* SENSOR_MAGZ  */
 	sensor_size_offsets_table[ 9  ].offset = 18; /* SENSOR_IMUT  */
-	sensor_size_offsets_table[ 10 ].offset = 20; /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 11 ].offset = 24; /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 10 ].offset = 20; /* SENSOR_ACCX_CONV  */
+	sensor_size_offsets_table[ 11 ].offset = 24; /* SENSOR_ACCY_CONV  */
+	sensor_size_offsets_table[ 12 ].offset = 28; /* SENSOR_ACCZ_CONV  */
+	sensor_size_offsets_table[ 13 ].offset = 32; /* SENSOR_GYROX_CONV  */
+	sensor_size_offsets_table[ 14 ].offset = 36; /* SENSOR_GYROY_CONV  */
+	sensor_size_offsets_table[ 15 ].offset = 40; /* SENSOR_GYROZ_CONV  */
+	sensor_size_offsets_table[ 16 ].offset = 44; /* SENSOR_ROLL_DEG  */
+	sensor_size_offsets_table[ 17 ].offset = 48; /* SENSOR_PITCH_DEG  */
+	sensor_size_offsets_table[ 18 ].offset = 52; /* SENSOR_ROLL_RATE  */
+	sensor_size_offsets_table[ 19 ].offset = 56; /* SENSOR_PITCH_RATE  */
+	sensor_size_offsets_table[ 20 ].offset = 60; /* VELOCITY  */
+	sensor_size_offsets_table[ 21 ].offset = 64; /* POSITION  */
+	sensor_size_offsets_table[ 22 ].offset = 68; /* SENSOR_PRES  */
+	sensor_size_offsets_table[ 23 ].offset = 72; /* SENSOR_TEMP  */
+
 
 	/* Sensor Sizes   */
 	sensor_size_offsets_table[ 0  ].size   = 2;  /* SENSOR_ACCX  */
@@ -183,8 +201,20 @@ void sensor_init
 	sensor_size_offsets_table[ 7  ].size   = 2;  /* SENSOR_MAGY  */
 	sensor_size_offsets_table[ 8  ].size   = 2;  /* SENSOR_MAGZ  */
 	sensor_size_offsets_table[ 9  ].size   = 2;  /* SENSOR_IMUT  */
-	sensor_size_offsets_table[ 10 ].size   = 4;  /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 11 ].size   = 4;  /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 10 ].size   = 4; /* SENSOR_ACCX_CONV  */
+	sensor_size_offsets_table[ 11 ].size 	= 4; /* SENSOR_ACCY_CONV  */
+	sensor_size_offsets_table[ 12 ].size 	= 4; /* SENSOR_ACCZ_CONV  */
+	sensor_size_offsets_table[ 13 ].size	= 4; /* SENSOR_GYROX_CONV  */
+	sensor_size_offsets_table[ 14 ].size 	= 4; /* SENSOR_GYROY_CONV  */
+	sensor_size_offsets_table[ 15 ].size	= 4; /* SENSOR_GYROZ_CONV  */
+	sensor_size_offsets_table[ 16 ].size	= 4; /* SENSOR_ROLL_DEG  */
+	sensor_size_offsets_table[ 17 ].size	= 4; /* SENSOR_PITCH_DEG  */
+	sensor_size_offsets_table[ 18 ].size	= 4; /* SENSOR_ROLL_RATE  */
+	sensor_size_offsets_table[ 19 ].size	= 4; /* SENSOR_PITCH_RATE  */
+	sensor_size_offsets_table[ 20 ].size	= 4; /* VELOCITY  */
+	sensor_size_offsets_table[ 21 ].size	= 4; /* POSITION  */
+	sensor_size_offsets_table[ 22 ].size   = 4;  /* SENSOR_PRES  */
+	sensor_size_offsets_table[ 23 ].size   = 4;  /* SENSOR_TEMP  */
 #elif defined( ENGINE_CONTROLLER )
 	/* Sensor offsets */
 	sensor_size_offsets_table[ 0  ].offset = 0;  /* SENSOR_PT0  */
@@ -672,6 +702,16 @@ SENSOR_STATUS sensor_dump
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
 	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
 
+	/* Calculated and retrieve converted IMU data */
+	sensor_conv_imu( &(sensor_data_ptr->imu_data) );
+
+	/* Calculated to get body state */
+	sensor_body_state( &(sensor_data_ptr->imu_data) );
+
+	/* Calculated velocity and position */
+	sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+
+
 #elif defined( ENGINE_CONTROLLER )
 	#ifndef L0002_REV5
 	/* Pressure Transducers */
@@ -815,6 +855,8 @@ SENSOR_ID* sensor_id_ptr;    /* Pointer to sensor id                */
 	bool imu_accel_read;
 	bool imu_gyro_read;
 	bool imu_mag_read;
+	bool body_state_converted;
+	bool velo_pos_calculated;
 #endif
 
 /*------------------------------------------------------------------------------
@@ -843,6 +885,8 @@ sensor_id         = *(sensor_id_ptr   );
 	imu_accel_read = false;
 	imu_gyro_read  = false;
 	imu_mag_read   = false;
+	body_state_converted = false;
+	velo_pos_calculated = false;
 #endif
 
 /* Burst read ADC sensors on Engine controller Rev 5 */
@@ -1003,6 +1047,238 @@ for ( int i = 0; i < num_sensors; ++i )
 			case SENSOR_IMUT:
 				{
 				sensor_data_ptr -> imu_data.temp = 0;
+				break;
+				}
+			case SENSOR_ACCX_CONV:
+				{
+				if ( !imu_accel_read )
+					{
+					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_ACCEL_ERROR;
+						}
+					imu_accel_read = true;
+					}
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_ACCY_CONV:
+				{
+				if ( !imu_accel_read )
+					{
+					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_ACCEL_ERROR;
+						}
+					imu_accel_read = true;
+					}
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_ACCZ_CONV:
+				{
+				if ( !imu_accel_read )
+					{
+					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_ACCEL_ERROR;
+						}
+					imu_accel_read = true;
+					}
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_GYROX_CONV:
+				{
+				if ( !imu_gyro_read )
+					{
+					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_GYRO_ERROR;
+						}
+					imu_gyro_read = true;
+					}	
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );			
+				break;
+				}
+			case SENSOR_GYROY_CONV:
+				{
+				if ( !imu_gyro_read )
+					{
+					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_GYRO_ERROR;
+						}
+					imu_gyro_read = true;
+					}	
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_GYROZ_CONV:
+				{
+				if ( !imu_gyro_read )
+					{
+					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+					if ( imu_status != IMU_OK )
+						{
+						return SENSOR_GYRO_ERROR;
+						}
+					imu_gyro_read = true;
+					}		
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				break;
+				}
+			case SENSOR_ROLL_DEG:
+				{
+				if (!body_state_converted)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					if (!imu_gyro_read)
+						{
+							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_GYRO_ERROR;
+								}
+							imu_gyro_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						}
+					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_PITCH_DEG:
+				{
+				if (!body_state_converted)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					if (!imu_gyro_read)
+						{
+							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_GYRO_ERROR;
+								}
+							imu_gyro_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						}
+					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_ROLL_RATE:
+				{
+				if (!body_state_converted)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					if (!imu_gyro_read)
+						{
+							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_GYRO_ERROR;
+								}
+							imu_gyro_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						}
+					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_PITCH_RATE:
+				{
+				if (!body_state_converted)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					if (!imu_gyro_read)
+						{
+							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_GYRO_ERROR;
+								}
+							imu_gyro_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						}
+					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_VELOCITY:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					}
+				break;
+				}
+			case SENSOR_POSITION:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					}
 				break;
 				}
 		#endif /* #if defined( FLIGHT_COMPUTER ) */
@@ -1175,6 +1451,189 @@ for ( int i = 0; i < num_sensors; ++i )
 
 return SENSOR_OK;
 } /* sensor_poll */
+
+
+#ifdef FLIGHT_COMPUTER
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_conv_imu                                                   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Conversion of IMU raw chip readouts into 9-axis Acceralometer and Gyro                                                     *
+*                                                                              *
+*******************************************************************************/
+void sensor_conv_imu(IMU_DATA* imu_data){
+	imu_data->imu_converted.accel_x = sensor_acc_conv(imu_data->accel_x);
+	imu_data->imu_converted.accel_y = sensor_acc_conv(imu_data->accel_y);
+	imu_data->imu_converted.accel_z = sensor_acc_conv(imu_data->accel_z);
+
+	if (imu_data->imu_converted.accel_x > 0){
+		imu_data->imu_converted.accel_x = imu_data->imu_converted.accel_x - imu_offset.accel_x;
+	} else {
+		imu_data->imu_converted.accel_x = imu_data->imu_converted.accel_x + imu_offset.accel_x;
+	}
+
+	if (imu_data->imu_converted.accel_y > 0){
+		imu_data->imu_converted.accel_y = imu_data->imu_converted.accel_y - imu_offset.accel_y;
+	} else {
+		imu_data->imu_converted.accel_y = imu_data->imu_converted.accel_y + imu_offset.accel_y;
+	}
+
+	if (imu_data->imu_converted.accel_z > 0){
+		imu_data->imu_converted.accel_z = imu_data->imu_converted.accel_z - imu_offset.accel_z;
+	} else {
+		imu_data->imu_converted.accel_z = imu_data->imu_converted.accel_z + imu_offset.accel_z;
+	}
+
+	imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
+	imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
+	imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_data->gyro_z);
+
+	if (imu_data->imu_converted.gyro_x > 0){
+		imu_data->imu_converted.gyro_x = imu_data->imu_converted.gyro_x - imu_offset.gyro_x;
+	} else {
+		imu_data->imu_converted.gyro_x = imu_data->imu_converted.gyro_x + imu_offset.gyro_x;
+	}
+
+	if (imu_data->imu_converted.gyro_y > 0){
+		imu_data->imu_converted.gyro_y = imu_data->imu_converted.gyro_y - imu_offset.gyro_y;
+	} else {
+		imu_data->imu_converted.gyro_y = imu_data->imu_converted.gyro_y + imu_offset.gyro_y;
+	}
+
+	if (imu_data->imu_converted.gyro_z > 0){
+		imu_data->imu_converted.gyro_z = imu_data->imu_converted.gyro_z - imu_offset.gyro_z;
+	} else {
+		imu_data->imu_converted.gyro_z = imu_data->imu_converted.gyro_z + imu_offset.gyro_z;
+	}
+
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_body_state                                                   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Perform sensor fusion on imu converted data to get body rate           *
+*                                                                              *
+*******************************************************************************/
+void sensor_body_state(IMU_DATA* imu_data){
+	// Calculate body state angles (pitch, roll)
+	float pitch, roll;
+	float g = 9.8;
+	roll = atanf( imu_data->imu_converted.accel_y / imu_data->imu_converted.accel_y );
+	pitch = atanf( imu_data->imu_converted.accel_x / g );
+
+	// Calculate body state anglular rate
+	float pitch_rate, roll_rate;
+	roll_rate = imu_data->imu_converted.gyro_x + 									\
+			imu_data->imu_converted.gyro_y * ( sinf(roll)*tanf(pitch) ) +	 		\
+			imu_data->imu_converted.gyro_z * ( cosf(roll)*tanf(pitch) );
+
+	pitch_rate = imu_data->imu_converted.gyro_y * ( cosf(roll) ) - imu_data->imu_converted.gyro_z * ( sinf(roll) );
+
+	// Store calculated data
+	imu_data->state_estimate.roll_angle 	= roll;
+	imu_data->state_estimate.pitch_angle 	= pitch;
+	imu_data->state_estimate.roll_rate 		= roll_rate;
+	imu_data->state_estimate.pitch_rate 	= pitch_rate;
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_acc_conv                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Convert Acc readouts to m/s^2                                          *
+*                                                                              *
+*******************************************************************************/
+float sensor_acc_conv(uint16_t readout){
+	// sign check
+	uint16_t num_sign = (readout & (0x8000)) >> 0xF;
+	int8_t sign_bit = 1;
+
+	if (num_sign == 1){
+		readout = ((uint16_t) ( ( ~readout + 1 ) & (0xFFFF) ));
+		sign_bit = -1;
+	}
+
+	// Convert to accel
+	uint8_t g_setting = 16;
+	float g = 9.8;
+	float accel_step = 2*g_setting*g/65535.0;
+
+	return sign_bit*(accel_step*readout);
+}
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_gyro_conv                                                       *   
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Convert gyro readouts to deg/s                                         *
+*                                                                              *
+*******************************************************************************/
+float sensor_gyro_conv(uint16_t readout){
+	// sign check
+	uint16_t num_sign = (readout & (0x8000)) >> 0xF;
+	int8_t sign_bit = 1;
+	if (num_sign == 1){
+		readout = ((uint16_t) ( ( ~readout + 1 ) & (0xFFFF) ));
+		sign_bit = -1;
+	}
+
+	// Convert to accel
+	float gyro_setting = 2000.0;
+	float gyro_sens = 65535.0 / (2*gyro_setting);
+	
+	return sign_bit * (readout / gyro_sens);
+}
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_imu_velo                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Calculate the velocity depending on accel 								*
+*                                                                              *
+*******************************************************************************/
+float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
+void sensor_imu_velo(IMU_DATA* imu_data){
+	float velo_x, velo_y, velo_z, velocity;
+
+	float accel_x = imu_data->imu_converted.accel_x;
+	float accel_y = imu_data->imu_converted.accel_y;
+	float accel_z = imu_data->imu_converted.accel_z;
+
+	float ts_delta = tdelta / 1000.0;
+
+	// Calculate 3 velocity vectors using motion equations
+	velo_x = velo_x_prev + accel_x*ts_delta;
+	velo_y = velo_y_prev + accel_y*ts_delta;
+	velo_z = velo_z_prev + accel_z*ts_delta;
+	
+	// Calculate the velocity scalar
+	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
+
+	imu_data->state_estimate.velocity = velocity;
+
+	// Save current velocity for next computation
+	velo_x_prev = velo_x;
+	velo_y_prev = velo_y;
+	velo_z_prev = velo_z;
+
+	imu_data->state_estimate.position = 0; //TODO: Implement position
+}
+
+#endif
+
 
 #ifdef ENGINE_CONTROLLER 
 /*******************************************************************************
@@ -1630,6 +2089,20 @@ sConfig.Offset                 = 0;
 sConfig.OffsetSignedSaturation = DISABLE;
 HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 } /* pt6_adc_channel_select */
+
+
+static void imu_get_state_estimate(IMU_DATA* imu_data){
+    float roll_angle = atan(imu_data->accel_y/imu_data->accel_z);
+	float pitch_angle = atan(imu_data->accel_x/9.81);
+
+	float roll_rate = imu_data->gyro_x + imu_data->gyro_y*sin(roll_angle)*tan(pitch_angle) + imu_data->gyro_z*cos(roll_angle)*tan(pitch_angle);
+	float pitch_rate = imu_data->gyro_y*cos(roll_angle) - imu_data->gyro_z*sin(roll_angle);	
+
+	imu_data->state_estimate->roll_angle = roll_angle;
+	imu_data->state_estimate->pitch_angle = pitch_angle;
+	imu_data->state_estimate->roll_rate = roll_rate;
+	imu_data->state_estimate->pitch_rate = pitch_rate;
+}
 
 
 #endif /* #ifdef L0002_REV5 */
