@@ -1589,7 +1589,7 @@ float sensor_gyro_conv(uint16_t readout){
 	}
 
 	// Convert to accel
-	float gyro_setting = 250.0;
+	float gyro_setting = 2000.0;
 	float gyro_sens = 65535.0 / (2*gyro_setting);
 	
 	return sign_bit * (readout / gyro_sens);
