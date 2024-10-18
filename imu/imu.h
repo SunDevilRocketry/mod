@@ -200,6 +200,25 @@ extern "C" {
  Typdefs 
 ------------------------------------------------------------------------------*/
 
+/* Processed IMU aata */
+typedef struct _STATE_ESTIMATION {
+	float roll_angle;
+	float pitch_angle;
+	float roll_rate;
+	float pitch_rate;
+    float velocity;
+	float position;
+} STATE_ESTIMATION;
+
+typedef struct _IMU_CONVERTED {
+    float accel_x;
+    float accel_y;
+    float accel_z;
+    float gyro_x ;
+    float gyro_y ;
+    float gyro_z ;
+} IMU_CONVERTED;
+
 /* Structure for imu containing all accel, gyro, and mag data */
 typedef struct _IMU_DATA 
 	{
@@ -213,7 +232,19 @@ typedef struct _IMU_DATA
     uint16_t    mag_y  ;
     uint16_t    mag_z  ;
 	uint16_t    temp   ;
+    IMU_CONVERTED imu_converted;
+    STATE_ESTIMATION state_estimate;
 	} IMU_DATA;
+
+/* Struct containing imu offset */
+typedef struct _IMU_OFFSET {
+    float accel_x;
+    float accel_y;
+    float accel_z;
+    float gyro_x ;
+    float gyro_y ;
+    float gyro_z ;
+} IMU_OFFSET;
 
 /* Sensor Enable Configuration */
 typedef enum _IMU_SENSOR_ENABLE
