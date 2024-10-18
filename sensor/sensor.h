@@ -53,7 +53,7 @@ Includes
 	/* General */
 	#define NUM_SENSORS         ( 24   )
 	// #define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 76   )
+	#define SENSOR_DATA_SIZE	( 96   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )

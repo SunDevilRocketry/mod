@@ -30,7 +30,6 @@ extern "C" {
 
 
 typedef struct _GPS_DATA{
-
     // calculated values
     float dec_longitude;
     float dec_latitude;
