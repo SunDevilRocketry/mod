@@ -31,7 +31,7 @@ extern "C" {
 #define SOL_OP         0x51    /* solenoid command opcode    */
 #define VALVE_OP       0x52    /* Valve command opcode       */
 #define DUAL_DEPLOY_OP 0xA0    /* dual-deploy command opcode */
-#define SERVO_OP	   0x08 // :)
+#define SERVO_OP	   0x08
 
 /* Board identifier code */
 #if   defined( A0002_REV1 ) /* Flight Computer Rev 1.0 */
