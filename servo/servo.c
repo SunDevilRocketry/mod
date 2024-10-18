@@ -237,48 +237,48 @@ void motors_drive(SERVOS_DATA servos_data)
 *                                                                              *
 *******************************************************************************/
 
-void motor_drive(uint8_t subcommand_code)
-{
-    uint8_t motor_number = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
-    uint8_t deg = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
+// void motor_drive(uint8_t subcommand_code)
+// {
+//     uint8_t motor_number = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
+//     uint8_t deg = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
 
-    switch (motor_number){
-        case 1: {
-            htim3.Instance->CCR4 = deg;
-        }
+//     switch (motor_number){
+//         case 1: {
+//             htim3.Instance->CCR4 = deg;
+//         }
 
-        case 2: {
-            htim3.Instance->CCR3 = deg;
-        }
-        case 3: {
-            htim3.Instance->CCR2 = deg;
-        }
-        case 4: {
-            htim3.Instance->CCR1 = deg;
-        }
-    }
+//         case 2: {
+//             htim3.Instance->CCR3 = deg;
+//         }
+//         case 3: {
+//             htim3.Instance->CCR2 = deg;
+//         }
+//         case 4: {
+//             htim3.Instance->CCR1 = deg;
+//         }
+//     }
     
-}
+// }
 
 
-void servo_cmd_execute(uint8_t servo_cmd_opcode){
-    //TODO: Implement cases for testing servo controlling loop and testing individual servo
-    switch(servo_cmd_opcode){
+// void servo_cmd_execute(uint8_t servo_cmd_opcode){
+//     //TODO: Implement cases for testing servo controlling loop and testing individual servo
+//     switch(servo_cmd_opcode){
         
-        case SERVO_INIT:
-        {
-            servo_init();
-            break;
-        }
+//         case SERVO_INIT:
+//         {
+//             servo_init();
+//             break;
+//         }
 
-        case SERVO_TURN:
-        {
-            motor_drive(servo_cmd_opcode);
-            break;
-        }
+//         case SERVO_TURN:
+//         {
+//             motor_drive(servo_cmd_opcode);
+//             break;
+//         }
         
 
-    }}
+//     }}
 
 uint8_t angle_to_pulse(uint8_t angle)
 {
