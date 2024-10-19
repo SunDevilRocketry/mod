@@ -1486,6 +1486,17 @@ void sensor_conv_imu(IMU_DATA* imu_data){
 		imu_data->imu_converted.accel_z = imu_data->imu_converted.accel_z + imu_offset.accel_z;
 	}
 
+	/* Truncate small values to prevent noise */
+	if (imu_data->imu_converted.accel_x < 0.1 && imu_data->imu_converted.accel_x > -0.1){
+		imu_data->imu_converted.accel_x = 0.0;
+	}
+	if (imu_data->imu_converted.accel_y < 0.1 && imu_data->imu_converted.accel_y > -0.1){
+		imu_data->imu_converted.accel_y = 0.0;
+	}
+	if (imu_data->imu_converted.accel_z < 0.1 && imu_data->imu_converted.accel_z > -0.1){
+		imu_data->imu_converted.accel_z = 0.0;
+	}
+
 	imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
 	imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
 	imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_data->gyro_z);
@@ -1508,6 +1519,16 @@ void sensor_conv_imu(IMU_DATA* imu_data){
 		imu_data->imu_converted.gyro_z = imu_data->imu_converted.gyro_z + imu_offset.gyro_z;
 	}
 
+	/* Truncate small values to prevent noise */
+	if (imu_data->imu_converted.gyro_x < 1.0 && imu_data->imu_converted.gyro_x > -1.0){
+		imu_data->imu_converted.gyro_x = 0.0;
+	}
+	if (imu_data->imu_converted.gyro_y < 1.0 && imu_data->imu_converted.gyro_y > -1.0){
+		imu_data->imu_converted.gyro_y = 0.0;
+	}
+	if (imu_data->imu_converted.gyro_z < 1.0 && imu_data->imu_converted.gyro_z > -1.0){
+		imu_data->imu_converted.gyro_z = 0.0;
+	}
 }
 
 
