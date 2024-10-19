@@ -1620,7 +1620,7 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	velo_z = velo_z_prev + accel_z*ts_delta;
 	
 	// Calculate the velocity scalar
-	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
+	velocity = sqrtf(velo_x*velo_x + velo_y*velo_y + velo_z*velo_z);
 
 	imu_data->state_estimate.velocity = velocity;
 
