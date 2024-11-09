@@ -37,14 +37,17 @@ typedef enum LORA_CHIPMODE {
    LORA_RX_SINGLE_MODE = 0b111,
 } LORA_CHIPMODE;
 
-typedef enum _LORA_STATUS {
+typedef enum LORA_STATUS {
    LORA_OK = 0,
-   LORA_FAIL
+   LORA_FAIL,
+   // Temporary enum additions to distinguish between transmit and receive failures
+   LORA_TRANSMIT_FAIL,
+   LORA_RECEIVE_FAIL
 } LORA_STATUS;
 
 typedef enum _CS_STATUS {
    CS_LOW = 0,
-   CS_HIGH
+   CS_HIGH =1
 } CS_STATUS;
 
 /* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)

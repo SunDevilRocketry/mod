@@ -65,12 +65,26 @@ LORA_STATUS lora_spi_transmit( LORA_REGISTER_ADDR reg, uint8_t data ) {
 
 LORA_STATUS lora_spi_get_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData) {
     LORA_STATUS transmit_status, receive_status;
+
+    lora_write_cs_pin( CS_LOW );
     
-    transmit_status = lora_spi_transmit( (lora_register | 0b00000000), 0b00000000 );
+    transmit_status = lora_spi_transmit( (lora_register | 0b00000000), 0b00000000 ); // The problem starts here
     receive_status = lora_spi_receive( &regData[0] );
+
+    lora_write_cs_pin( CS_HIGH );
+
+    // I've temporarily added RECEIVE_FAIL and TRANSMIT_FAIL to the enum to be able to pinpoint issues
+    // This will be removed in the final code, and this function will only be able to output
+    // LORA_OK or LORA_FAIL
     if (transmit_status + receive_status == 0){
         return LORA_OK;
-    } else return LORA_FAIL;
+    } /* else return LORA_FAIL; */ else if( transmit_status == LORA_FAIL ) {
+        return LORA_TRANSMIT_FAIL;
+    } else if( receive_status == LORA_RECEIVE_FAIL ) {
+        return LORA_RECEIVE_FAIL;
+    } else {
+        return LORA_FAIL;
+    }
 }
 
 // Update this - nick
