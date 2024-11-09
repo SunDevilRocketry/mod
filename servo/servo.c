@@ -27,8 +27,7 @@
 ------------------------------------------------------------------------------*/
 #define SER_PER 0.55555
 
-extern uint8_t rp_servo1;
-extern uint8_t rp_servo2;
+extern SERVO_PRESET servo_preset;
 
 /*------------------------------------------------------------------------------
  Procedures 
@@ -85,8 +84,8 @@ SERVO_STATUS servo_init()
 *******************************************************************************/
 void servo_reset()
 {
-    motor1_drive(rp_servo1);
-    motor2_drive(rp_servo2);
+    motor1_drive(servo_preset.rp_servo1);
+    motor2_drive(servo_preset.rp_servo2);
 }
 
 

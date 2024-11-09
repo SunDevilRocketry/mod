@@ -190,6 +190,12 @@ typedef struct SENSOR_DATA
 	#endif /* #elif defined( ENGINE_CONTROLLER ) */
 	} SENSOR_DATA;
 
+/* Baro Preset data */
+typedef struct _BARO_PRESET
+	{
+	float baro_pres;
+	float baro_temp;
+	} BARO_PRESET;
 
 
 /* Sensor Data sizes and offsets */
