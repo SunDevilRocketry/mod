@@ -50,9 +50,9 @@ Includes
 
 #if   defined( FLIGHT_COMPUTER   )
 	/* General */
-	#define NUM_SENSORS         ( 24   )
+	#define NUM_SENSORS         ( 29   )
 	// #define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 76   )
+	#define SENSOR_DATA_SIZE	( 96   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -147,9 +147,14 @@ typedef enum
 		SENSOR_ROLL_RATE 	= 0x12,
 		SENSOR_PITCH_RATE 	= 0x13,
 		SENSOR_VELOCITY 	= 0x14,
-		SENSOR_POSITION 	= 0x15,
-		SENSOR_PRES  		= 0x16,
-		SENSOR_TEMP  		= 0x17,
+		SENSOR_VELO_X		= 0x15,
+		SENSOR_VELO_Y		= 0x16,
+		SENSOR_VELO_Z		= 0x17,
+		SENSOR_POSITION 	= 0x18,
+		SENSOR_PRES  		= 0x19,
+		SENSOR_TEMP  		= 0x1A,
+		SENSOR_BARO_ALT		= 0x1B,
+		SENSOR_BARO_VELO	= 0x1C
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		SENSOR_PT0   = 0x00,
 		SENSOR_PT1   = 0x01,
@@ -177,6 +182,8 @@ typedef struct SENSOR_DATA
 		IMU_DATA imu_data; 
 		float    baro_pressure; 
 		float    baro_temp;	
+		float	 baro_alt;
+		float 	 baro_velo;
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		uint32_t pt_pressures[ NUM_PTS ];
 		uint32_t load_cell_force;

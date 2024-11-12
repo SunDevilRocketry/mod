@@ -185,10 +185,14 @@ void sensor_init
 	sensor_size_offsets_table[ 18 ].offset = 52; /* SENSOR_ROLL_RATE  */
 	sensor_size_offsets_table[ 19 ].offset = 56; /* SENSOR_PITCH_RATE  */
 	sensor_size_offsets_table[ 20 ].offset = 60; /* VELOCITY  */
-	sensor_size_offsets_table[ 21 ].offset = 64; /* POSITION  */
-	sensor_size_offsets_table[ 22 ].offset = 68; /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 23 ].offset = 72; /* SENSOR_TEMP  */
-
+	sensor_size_offsets_table[ 21 ].offset = 64; /* VELO_X  */
+	sensor_size_offsets_table[ 22 ].offset = 68; /* VELO_Y  */
+	sensor_size_offsets_table[ 23 ].offset = 72; /* VELO_Z  */
+	sensor_size_offsets_table[ 24 ].offset = 76; /* POSITION  */
+	sensor_size_offsets_table[ 25 ].offset = 80; /* SENSOR_PRES  */
+	sensor_size_offsets_table[ 26 ].offset = 84; /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 27 ].offset = 88; /* BARO_ALT  */
+	sensor_size_offsets_table[ 28 ].offset = 92; /* BARO_VELO  */
 
 	/* Sensor Sizes   */
 	sensor_size_offsets_table[ 0  ].size   = 2;  /* SENSOR_ACCX  */
@@ -212,9 +216,15 @@ void sensor_init
 	sensor_size_offsets_table[ 18 ].size	= 4; /* SENSOR_ROLL_RATE  */
 	sensor_size_offsets_table[ 19 ].size	= 4; /* SENSOR_PITCH_RATE  */
 	sensor_size_offsets_table[ 20 ].size	= 4; /* VELOCITY  */
-	sensor_size_offsets_table[ 21 ].size	= 4; /* POSITION  */
-	sensor_size_offsets_table[ 22 ].size   = 4;  /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 23 ].size   = 4;  /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 21 ].size	= 4; /* VELO_X  */
+	sensor_size_offsets_table[ 22 ].size	= 4; /* VELO_Y  */
+	sensor_size_offsets_table[ 23 ].size	= 4; /* VELO_Z  */
+	sensor_size_offsets_table[ 24 ].size	= 4; /* POSITION  */
+	sensor_size_offsets_table[ 25 ].size   = 4;  /* SENSOR_PRES  */
+	sensor_size_offsets_table[ 26 ].size   = 4;  /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 27 ].size   = 4;  /* BARO_ALT  */
+	sensor_size_offsets_table[ 28 ].size   = 4;  /* BARO_VELO  */
+
 #elif defined( ENGINE_CONTROLLER )
 	/* Sensor offsets */
 	sensor_size_offsets_table[ 0  ].offset = 0;  /* SENSOR_PT0  */
