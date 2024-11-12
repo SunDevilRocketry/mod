@@ -1168,6 +1168,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					body_state_converted = true;
 					}
 				break;
 				}
@@ -1196,6 +1197,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					body_state_converted = true;
 					}
 				break;
 				}
@@ -1224,6 +1226,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					body_state_converted = true;
 					}
 				break;
 				}
@@ -1252,6 +1255,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					body_state_converted = true;
 					}
 				break;
 				}
@@ -1270,6 +1274,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						} 	
 					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
 					}
 				break;
 				}
@@ -1288,7 +1293,73 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						} 	
 					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
 					}
+				break;
+				}
+			case SENSOR_VELO_X:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
+					}
+				break;
+				}
+			case SENSOR_VELO_Y:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
+					}
+				break;
+				}
+			case SENSOR_VELO_Z:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
+					}
+				break;
+				}
+			case SENSOR_BARO_ALT:
+				{
+				break;
+				}
+			case SENSOR_BARO_VELO:
+				{
 				break;
 				}
 		#endif /* #if defined( FLIGHT_COMPUTER ) */
@@ -1654,7 +1725,10 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	velocity = sqrtf(velo_x*velo_x + velo_y*velo_y + velo_z*velo_z);
 
 	imu_data->state_estimate.velocity = velocity;
-
+	imu_data->state_estimate.velo_x = velo_x;
+	imu_data->state_estimate.velo_y = velo_y;
+	imu_data->state_estimate.velo_z = velo_z;
+	
 	// Save current velocity for next computation
 	velo_x_prev = velo_x;
 	velo_y_prev = velo_y;
