@@ -28,16 +28,6 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Defines subcommand codes
 ------------------------------------------------------------------------------*/
-// #define SERVO_INFO      0x00
-// #define SERVO_INIT      0x01
-// #define SERVO_TURN      0x02
-// #define SERVO_TEST      0x03
-// #define PID_INIT        0x04
-// #define PID_RUN         0x05
-// #define MOTOR_D1        0x06
-// #define MOTOR_D2        0x07
-// #define MOTOR_D3        0x08
-// #define MOTOR_D4        0x09
 
 /*------------------------------------------------------------------------------
  Registers
@@ -61,6 +51,12 @@ typedef enum SERVO_STATUS
     SERVO_OK = 0,
     SERVO_FAIL
     } SERVO_STATUS;
+
+typedef struct _SERVO_PRESET
+    {
+    uint8_t rp_servo1;
+    uint8_t rp_servo2;
+    } SERVO_PRESET;
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
