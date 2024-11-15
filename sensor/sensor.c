@@ -1722,7 +1722,7 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	velo_z = velo_z_prev + accel_z*ts_delta;
 	
 	// Calculate the velocity scalar
-	velocity = sqrtf(velo_x*velo_x + velo_y*velo_y + velo_z*velo_z);
+	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
 
 	imu_data->state_estimate.velocity = velocity;
 	imu_data->state_estimate.velo_x = velo_x;
@@ -1736,6 +1736,42 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 
 	imu_data->state_estimate.position = 0; //TODO: Implement position
 }
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_baro_velo                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Calculate the velocity from pressure readings 								*
+*                                                                              *
+*******************************************************************************/
+float velo_prev, alt_prev = 0.0;
+void sensor_baro_velo(SENSOR_DATA* sen_data)
+{
+	float velocity;
+
+	float pressure = sen_data->baro_pressure;
+	float temp = sen_data->baro_temp;
+	// conv pressure to pascal for equation
+	pressure *= 6894.76;
+	float ts_delta = tdelta / 1000.0;
+
+	// calc altitude
+	float PRESSURE_SEA_LEVEL = 101325;
+    float EXP = 0.190294958;
+    float TEMP_LAPSE_RATE = 0.0065;
+
+    float alt = (pow(PRESSURE_SEA_LEVEL / pressure, EXP) - 1) * (temp + 273.15) / TEMP_LAPSE_RATE;
+
+	
+	// Calculate the velocity scalar
+	velocity = (alt-alt_prev)/ts_delta;
+	alt_prev = alt;
+	velo_prev = velocity;
+
+}
+
 
 #endif
 
