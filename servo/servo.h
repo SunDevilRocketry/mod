@@ -28,16 +28,16 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Defines subcommand codes
 ------------------------------------------------------------------------------*/
-#define SERVO_INFO      0x00
-#define SERVO_INIT      0x01
-#define SERVO_TURN      0x02
-#define SERVO_TEST      0x03
-#define PID_INIT        0x04
-#define PID_RUN         0x05
-#define MOTOR_D1        0x06
-#define MOTOR_D2        0x07
-#define MOTOR_D3        0x08
-#define MOTOR_D4        0x09
+// #define SERVO_INFO      0x00
+// #define SERVO_INIT      0x01
+// #define SERVO_TURN      0x02
+// #define SERVO_TEST      0x03
+// #define PID_INIT        0x04
+// #define PID_RUN         0x05
+// #define MOTOR_D1        0x06
+// #define MOTOR_D2        0x07
+// #define MOTOR_D3        0x08
+// #define MOTOR_D4        0x09
 
 /*------------------------------------------------------------------------------
  Registers
@@ -88,10 +88,10 @@ void motor3_drive(uint8_t angle);
 void motor4_drive(uint8_t angle);
 
 /* A complete function that drives each servo in this board  */
-void motors_drive(SERVOS_DATA servos_data);
+// void motors_drive(SERVOS_DATA servos_data);
 
 /* Execute servo subcommand */
-void servo_cmd_execute(uint8_t subcommand);
+// void servo_cmd_execute(uint8_t subcommand);
 
 uint8_t angle_to_pulse(uint8_t angle);
 
