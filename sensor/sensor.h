@@ -268,6 +268,7 @@ void sensor_imu_velo(IMU_DATA* imu_data);
 void sensor_conv_imu(IMU_DATA* imu_data);
 float sensor_acc_conv(uint16_t readout);
 float sensor_gyro_conv(uint16_t readout);
+void sensor_baro_velo(SENSOR_DATA* sensor_data_ptr);
 #endif
 
 #ifdef ENGINE_CONTROLLER

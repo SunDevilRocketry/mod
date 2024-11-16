@@ -721,6 +721,8 @@ SENSOR_STATUS sensor_dump
 	/* Calculated velocity and position */
 	sensor_imu_velo( &(sensor_data_ptr->imu_data) );
 
+	sensor_baro_velo( sensor_data_ptr );
+
 
 #elif defined( ENGINE_CONTROLLER )
 	#ifndef L0002_REV5
@@ -867,6 +869,8 @@ SENSOR_ID* sensor_id_ptr;    /* Pointer to sensor id                */
 	bool imu_mag_read;
 	bool body_state_converted;
 	bool velo_pos_calculated;
+	bool baro_calculated;
+	bool baro_read;
 #endif
 
 /*------------------------------------------------------------------------------
@@ -897,6 +901,8 @@ sensor_id         = *(sensor_id_ptr   );
 	imu_mag_read   = false;
 	body_state_converted = false;
 	velo_pos_calculated = false;
+	baro_calculated = false;
+	baro_read = false;
 #endif
 
 /* Burst read ADC sensors on Engine controller Rev 5 */
@@ -1356,10 +1362,44 @@ for ( int i = 0; i < num_sensors; ++i )
 				}
 			case SENSOR_BARO_ALT:
 				{
+				if (!baro_calculated){
+					if (!baro_read){
+						baro_status = baro_get_temp(     &( sensor_data_ptr -> baro_temp     ) );
+						baro_status = baro_get_pressure( &( sensor_data_ptr -> baro_pressure ) );
+						if ( baro_status != BARO_OK )
+							{
+							return SENSOR_BARO_ERROR;
+							}
+						if ( baro_status != BARO_OK )
+							{
+							return SENSOR_BARO_ERROR;
+							}
+						baro_read = true;
+					} 
+					sensor_baro_velo(sensor_data_ptr);
+					baro_calculated = true;
+				}
 				break;
 				}
 			case SENSOR_BARO_VELO:
 				{
+				if (!baro_calculated){
+					if (!baro_read){
+						baro_status = baro_get_temp(     &( sensor_data_ptr -> baro_temp     ) );
+						baro_status = baro_get_pressure( &( sensor_data_ptr -> baro_pressure ) );
+						if ( baro_status != BARO_OK )
+							{
+							return SENSOR_BARO_ERROR;
+							}
+						if ( baro_status != BARO_OK )
+							{
+							return SENSOR_BARO_ERROR;
+							}
+						baro_read = true;
+					}
+					sensor_baro_velo(sensor_data_ptr);
+					baro_calculated = true;
+				}
 				break;
 				}
 		#endif /* #if defined( FLIGHT_COMPUTER ) */
@@ -1747,14 +1787,14 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 *                                                                              *
 *******************************************************************************/
 float velo_prev, alt_prev = 0.0;
-void sensor_baro_velo(SENSOR_DATA* sen_data)
+void sensor_baro_velo(SENSOR_DATA* sensor_data_ptr)
 {
 	float velocity;
 
-	float pressure = sen_data->baro_pressure;
-	float temp = sen_data->baro_temp;
+	float pressure = sensor_data_ptr->baro_pressure;
+	float temp = sensor_data_ptr->baro_temp;
+	
 	// conv pressure to pascal for equation
-	pressure *= 6894.76;
 	float ts_delta = tdelta / 1000.0;
 
 	// calc altitude
@@ -1762,14 +1802,16 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
     float EXP = 0.190294958;
     float TEMP_LAPSE_RATE = 0.0065;
 
-    float alt = (pow(PRESSURE_SEA_LEVEL / pressure, EXP) - 1) * (temp + 273.15) / TEMP_LAPSE_RATE;
+    float alt = (powf(PRESSURE_SEA_LEVEL / pressure, EXP) - 1) * (temp + 273.15) / TEMP_LAPSE_RATE;
 
-	
+	sensor_data_ptr->baro_alt = alt;
+
 	// Calculate the velocity scalar
 	velocity = (alt-alt_prev)/ts_delta;
 	alt_prev = alt;
 	velo_prev = velocity;
 
+	sensor_data_ptr->baro_velo = velocity;
 }
 
 
