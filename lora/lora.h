@@ -47,7 +47,7 @@ typedef enum LORA_STATUS {
 
 typedef enum _CS_STATUS {
    CS_LOW = 0,
-   CS_HIGH =1
+   CS_HIGH
 } CS_STATUS;
 
 /* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)
@@ -104,6 +104,6 @@ LORA_STATUS lora_spi_receive( uint8_t read_buffer[] );
 
 LORA_STATUS lora_spi_transmit( LORA_REGISTER_ADDR register, uint8_t data );
 
-void lora_get_device_id(uint8_t* packet);
+LORA_STATUS lora_get_device_id(uint8_t* packet);
 
 #endif

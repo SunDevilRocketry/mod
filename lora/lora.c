@@ -35,7 +35,11 @@
 void lora_write_cs_pin( CS_STATUS pinState ) {
     /* Takes either GPIO_PIN_SET or GPIO_PIN_RESET to bring the chip select pin
        high or low.*/
-    HAL_GPIO_WritePin( LORA_NSS_PORT, LORA_NSS_PIN, pinState );
+    if( pinState == CS_HIGH ) {
+       HAL_GPIO_WritePin( LORA_NSS_PORT, LORA_NSS_PIN, GPIO_PIN_SET );
+    } else {
+        HAL_GPIO_WritePin( LORA_NSS_PORT, LORA_NSS_PIN, GPIO_PIN_RESET );
+    }
 }
 
 LORA_STATUS lora_spi_receive( uint8_t read_buffer[] ) {
@@ -69,6 +73,7 @@ LORA_STATUS lora_spi_get_register( LORA_REGISTER_ADDR lora_register, uint8_t* re
     lora_write_cs_pin( CS_LOW );
     
     transmit_status = lora_spi_transmit( (lora_register | 0b00000000), 0b00000000 ); // The problem starts here
+    transmit_status = LORA_OK;
     receive_status = lora_spi_receive( &regData[0] );
 
     lora_write_cs_pin( CS_HIGH );
@@ -128,8 +133,6 @@ void lora_spi_set_register( LORA_REGISTER_ADDR lora_register, uint8_t data ) {
 // }
 
 // Get the device chip ID
-void lora_get_device_id(uint8_t* packet) {
-    lora_write_cs_pin(CS_HIGH);
-    lora_spi_get_register( LORA_REG_ID_VERSION, &packet[0]);
-    lora_write_cs_pin(CS_LOW);
+LORA_STATUS lora_get_device_id(uint8_t* packet) {
+    return lora_spi_get_register( LORA_REG_ID_VERSION, &packet[0]);
 }
