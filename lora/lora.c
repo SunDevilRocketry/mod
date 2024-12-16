@@ -88,8 +88,8 @@ LORA_STATUS lora_spi_get_register( LORA_REGISTER_ADDR lora_register, uint8_t* re
 }
 
 // Update this - nick
-LORA_STATUS lora_spi_set_register( LORA_REGISTER_ADDR lora_register, uint8_t data ) {
-    return lora_spi_transmit( (lora_register | 0b10000000), data );
+void lora_spi_set_register( LORA_REGISTER_ADDR lora_register, uint8_t data ) {
+    lora_spi_transmit( (lora_register | 0b10000000), data );
 }
 
 /*------------------------------------------------------------------------------
