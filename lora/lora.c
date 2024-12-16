@@ -34,7 +34,8 @@
 //TODO: Switch pinState to a good enum
 void lora_write_cs_pin( CS_STATUS pinState ) {
     /* Takes either GPIO_PIN_SET or GPIO_PIN_RESET to bring the chip select pin
-       high or low.*/
+       high or low. I use the HAL enums because that's what our flash module
+       does as well. */
     if( pinState == CS_HIGH ) {
        HAL_GPIO_WritePin( LORA_NSS_PORT, LORA_NSS_PIN, GPIO_PIN_SET );
     } else {
