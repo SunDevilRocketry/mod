@@ -45,11 +45,6 @@ typedef enum LORA_STATUS {
    LORA_RECEIVE_FAIL
 } LORA_STATUS;
 
-typedef enum _CS_STATUS {
-   CS_LOW = 0,
-   CS_HIGH
-} CS_STATUS;
-
 /* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)
    Note: as we are using LoRa, the FSK opcodes are not included*/
 typedef enum LORA_REGISTER_ADDR {
@@ -100,10 +95,14 @@ typedef enum LORA_REGISTER_ADDR {
    LORA_REG_AGC_THRESHOLD_4            = 0x64
 } LORA_REGISTER_ADDR;
 
-LORA_STATUS lora_spi_receive( uint8_t read_buffer[] );
+LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr );
 
-LORA_STATUS lora_spi_transmit( LORA_REGISTER_ADDR register, uint8_t data );
+LORA_STATUS LORA_SPI_Transmit( LORA_REGISTER_ADDR reg, uint8_t data );
 
-LORA_STATUS lora_get_device_id(uint8_t* packet);
+LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData);
+
+LORA_STATUS lora_write_register( LORA_REGISTER_ADDR lora_register, uint8_t data );
+
+LORA_STATUS lora_get_device_id(uint8_t* buffer_ptr);
 
 #endif

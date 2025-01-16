@@ -31,58 +31,45 @@
 /*------------------------------------------------------------------------------
  Helper functions for various pin functions on the LoRa modem.
 ------------------------------------------------------------------------------*/
-//TODO: Switch pinState to a good enum
-void lora_write_cs_pin( CS_STATUS pinState ) {
-    /* Takes either GPIO_PIN_SET or GPIO_PIN_RESET to bring the chip select pin
-       high or low. I use the HAL enums because that's what our flash module
-       does as well. */
-    if( pinState == CS_HIGH ) {
-       HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_SET );
-    } else {
-        HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_RESET );
-    }
-}
-
-LORA_STATUS lora_spi_receive( uint8_t* read_buffer_ptr ) {
+LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
     HAL_StatusTypeDef status;
 
     /* Takes pointer to the read buffer. and puts output there */
     status = HAL_SPI_Receive( &(hspi4), &read_buffer_ptr[0], 2, HAL_DEFAULT_TIMEOUT );
 
-    if (status == LORA_OK){
+    if (status == HAL_OK){
         return LORA_OK;
     } else 
         return LORA_FAIL;
 }
 
-LORA_STATUS lora_spi_transmit( LORA_REGISTER_ADDR reg, uint8_t data ) {
+LORA_STATUS LORA_SPI_Transmit( LORA_REGISTER_ADDR reg, uint8_t data ) {
     HAL_StatusTypeDef status;
 
     /* Takes register and data to write (1 byte) and writes that register. */
     uint8_t transmitBuffer[2] = { reg, data };
     status = HAL_SPI_Transmit( &(hspi4), &transmitBuffer[0], 2, HAL_DEFAULT_TIMEOUT);
 
-    if (status == LORA_OK){
+    if (status == HAL_OK){
         return LORA_OK;
     } else return LORA_FAIL;
 }
 
 
-LORA_STATUS lora_spi_get_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData) {
+LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData) {
     LORA_STATUS transmit_status, receive_status;
 
-    lora_write_cs_pin( CS_LOW );
+    HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_RESET );
     
-    transmit_status = lora_spi_transmit( (lora_register | 0b00000000), 0b00000000 ); // The problem starts here
-    transmit_status = LORA_OK;
-    receive_status = lora_spi_receive( &regData[0] );
+    transmit_status = LORA_SPI_Transmit( (lora_register | 0b00000000), 0b00000000 ); // The problem starts here
+    receive_status = LORA_SPI_Receive( &regData[0] );
 
-    lora_write_cs_pin( CS_HIGH );
+    HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_SET );
 
     // I've temporarily added RECEIVE_FAIL and TRANSMIT_FAIL to the enum to be able to pinpoint issues
     // This will be removed in the final code, and this function will only be able to output
     // LORA_OK or LORA_FAIL
-    if (transmit_status | receive_status == 0){
+    if (transmit_status + receive_status == 0){
         return LORA_OK;
     }  else if( transmit_status == LORA_FAIL ) {
         return LORA_TRANSMIT_FAIL;
@@ -94,8 +81,29 @@ LORA_STATUS lora_spi_get_register( LORA_REGISTER_ADDR lora_register, uint8_t* re
 }
 
 
-LORA_STATUS lora_spi_set_register( LORA_REGISTER_ADDR lora_register, uint8_t data ) {
-    return lora_spi_transmit( (lora_register | 0b10000000), data );
+LORA_STATUS lora_write_register( LORA_REGISTER_ADDR lora_register, uint8_t data ) {
+    LORA_STATUS status;
+
+    HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_RESET );
+
+    status = LORA_SPI_Transmit( (lora_register | 0b10000000), data );
+    
+    HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_SET );
+
+    if ( status == LORA_OK )
+        return LORA_OK;
+    else return LORA_FAIL;
+}
+
+// Get the device chip ID
+LORA_STATUS lora_get_device_id(uint8_t* buffer_ptr) {
+    LORA_STATUS status;
+
+    status = lora_read_register( LORA_REG_ID_VERSION, &buffer_ptr[0] );
+
+    if ( status == LORA_OK )
+        return LORA_OK;
+    else return LORA_FAIL;
 }
 
 /*------------------------------------------------------------------------------
@@ -132,8 +140,3 @@ LORA_STATUS lora_spi_set_register( LORA_REGISTER_ADDR lora_register, uint8_t dat
 //     // Bring chip select back high
 //     lora_write_cs_pin( GPIO_PIN_RESET );
 // }
-
-// Get the device chip ID
-LORA_STATUS lora_get_device_id(uint8_t* buffer_ptr) {
-    return lora_spi_get_register( LORA_REG_ID_VERSION, &buffer_ptr[0]);
-}
