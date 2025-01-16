@@ -61,7 +61,7 @@ LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regDa
 
     HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_RESET );
     
-    transmit_status = LORA_SPI_Transmit( (lora_register | 0b00000000), 0b00000000 ); // The problem starts here
+    transmit_status = LORA_SPI_Transmit( (lora_register & 0x7F), 0x00 ); // The problem starts here
     receive_status = LORA_SPI_Receive( &regData[0] );
 
     HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_SET );
@@ -86,7 +86,7 @@ LORA_STATUS lora_write_register( LORA_REGISTER_ADDR lora_register, uint8_t data 
 
     HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_RESET );
 
-    status = LORA_SPI_Transmit( (lora_register | 0b10000000), data );
+    status = LORA_SPI_Transmit( (lora_register | 0x80), data );
     
     HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_SET );
 
