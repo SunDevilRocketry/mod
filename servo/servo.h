@@ -56,6 +56,8 @@ typedef struct _SERVO_PRESET
     {
     uint8_t rp_servo1;
     uint8_t rp_servo2;
+    uint8_t rp_servo3;
+    uint8_t rp_servo4;
     } SERVO_PRESET;
 
 /*------------------------------------------------------------------------------
