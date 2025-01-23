@@ -35,7 +35,7 @@ LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
     HAL_StatusTypeDef status;
 
     /* Takes pointer to the read buffer. and puts output there */
-    status = HAL_SPI_Receive( &(LORA_SPI), &read_buffer_ptr[0], 2, 2000 );
+    status = HAL_SPI_Receive( &(LORA_SPI), read_buffer_ptr, 1, 2000 );
 
     if (status == HAL_OK){
         return LORA_OK;
@@ -47,9 +47,9 @@ LORA_STATUS LORA_SPI_Transmit( LORA_REGISTER_ADDR reg, uint8_t data ) {
     HAL_StatusTypeDef status;
 
     /* Takes register and data to write (1 byte) and writes that register. */
-    uint8_t transmitBuffer[2] = { reg, data };
-    // uint8_t transmitBuffer = reg;
-    status = HAL_SPI_Transmit( &(LORA_SPI), &transmitBuffer[0], 2, 2000);
+    // uint8_t transmitBuffer[2] = { reg, data };
+    uint8_t transmitBuffer = reg;
+    status = HAL_SPI_Transmit( &(LORA_SPI), &transmitBuffer, 1, 2000);
 
     if (status == HAL_OK){
         return LORA_OK;
@@ -57,13 +57,13 @@ LORA_STATUS LORA_SPI_Transmit( LORA_REGISTER_ADDR reg, uint8_t data ) {
 }
 
 
-LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData) {
+LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* pRegData) {
     LORA_STATUS transmit_status, receive_status;
 
     HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_RESET );
     
     transmit_status = LORA_SPI_Transmit( (lora_register & 0x7F), 0x00 ); // The problem starts here
-    receive_status = LORA_SPI_Receive( &regData[0] );
+    receive_status = LORA_SPI_Receive( pRegData );
 
     HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_SET );
 
@@ -93,7 +93,7 @@ LORA_STATUS lora_write_register( LORA_REGISTER_ADDR lora_register, uint8_t data 
 LORA_STATUS lora_get_device_id(uint8_t* buffer_ptr) {
     LORA_STATUS status;
 
-    status = lora_read_register( LORA_REG_ID_VERSION, &buffer_ptr[0] );
+    status = lora_read_register( LORA_REG_ID_VERSION, buffer_ptr );
 
     if ( status == LORA_OK )
         return LORA_OK;
