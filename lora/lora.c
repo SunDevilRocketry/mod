@@ -35,7 +35,7 @@ LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
     HAL_StatusTypeDef status;
 
     /* Takes pointer to the read buffer. and puts output there */
-    status = HAL_SPI_Receive( &(FLASH_LORA), &read_buffer_ptr[0], 2, 2000 );
+    status = HAL_SPI_Receive( &(LORA_SPI), &read_buffer_ptr[0], 2, 2000 );
 
     if (status == HAL_OK){
         return LORA_OK;
@@ -49,7 +49,7 @@ LORA_STATUS LORA_SPI_Transmit( LORA_REGISTER_ADDR reg, uint8_t data ) {
     /* Takes register and data to write (1 byte) and writes that register. */
     uint8_t transmitBuffer[2] = { reg, data };
     // uint8_t transmitBuffer = reg;
-    status = HAL_SPI_Transmit( &(FLASH_LORA), &transmitBuffer, 2, 2000);
+    status = HAL_SPI_Transmit( &(LORA_SPI), &transmitBuffer[0], 2, 2000);
 
     if (status == HAL_OK){
         return LORA_OK;
@@ -67,9 +67,6 @@ LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regDa
 
     HAL_GPIO_WritePin( LORA_NSS_GPIO_PORT, LORA_NSS_PIN, GPIO_PIN_SET );
 
-    // I've temporarily added RECEIVE_FAIL and TRANSMIT_FAIL to the enum to be able to pinpoint issues
-    // This will be removed in the final code, and this function will only be able to output
-    // LORA_OK or LORA_FAIL
     if (transmit_status + receive_status == 0){
         return LORA_OK;
     } else {
