@@ -99,12 +99,18 @@ LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr );
 
 LORA_STATUS LORA_SPI_Transmit_Double( LORA_REGISTER_ADDR reg, uint8_t data );
 
-LORA_STATUS LORA_SPI_Transmit_Single( LORA_REGISTER_ADDR reg, uint8_t data );
+LORA_STATUS LORA_SPI_Transmit_Single( LORA_REGISTER_ADDR reg );
 
 LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData);
 
 LORA_STATUS lora_write_register( LORA_REGISTER_ADDR lora_register, uint8_t data );
 
 LORA_STATUS lora_get_device_id(uint8_t* buffer_ptr);
+
+LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode );
+
+LORA_STATUS lora_init();
+
+LORA_STATUS lora_transmit( uint8_t data );
 
 #endif
