@@ -97,7 +97,9 @@ typedef enum LORA_REGISTER_ADDR {
 
 LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr );
 
-LORA_STATUS LORA_SPI_Transmit( LORA_REGISTER_ADDR reg, uint8_t data );
+LORA_STATUS LORA_SPI_Transmit_Double( LORA_REGISTER_ADDR reg, uint8_t data );
+
+LORA_STATUS LORA_SPI_Transmit_Single( LORA_REGISTER_ADDR reg, uint8_t data );
 
 LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData);
 
