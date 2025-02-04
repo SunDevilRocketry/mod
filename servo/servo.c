@@ -86,6 +86,9 @@ void servo_reset()
 {
     motor1_drive(servo_preset.rp_servo1);
     motor2_drive(servo_preset.rp_servo2);
+    motor3_drive(servo_preset.rp_servo3);
+    motor4_drive(servo_preset.rp_servo4);
+
     // Add motor 3 and 4 - Nick
 
 }
