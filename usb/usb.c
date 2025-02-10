@@ -153,6 +153,57 @@ switch ( usb_status )
 } /* usb_receive */
 
 
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		usb_receive_IT                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Receives data from the usb in interrupt mode and outputs   				* 
+*       to a buffer                                                            *
+*                                                                              *
+*******************************************************************************/
+USB_STATUS usb_receive_IT
+	(
+	void*    rx_buffer_ptr,   /* Pointer to output data buffer */	
+	size_t   rx_buffer_size   /* Number of bytes to recevie    */
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables
+------------------------------------------------------------------------------*/
+HAL_StatusTypeDef hal_status;    /* Return codes from HAL */
+
+
+/*------------------------------------------------------------------------------
+ Initialization 
+------------------------------------------------------------------------------*/
+hal_status = HAL_OK;
+
+
+/*------------------------------------------------------------------------------
+ API Function Implementation 
+------------------------------------------------------------------------------*/
+
+/* Receive data */
+hal_status = HAL_UART_Receive_IT( &( USB_HUART ),
+                                  rx_buffer_ptr   , 
+                                  rx_buffer_size );
+
+/* Return HAL status */
+if ( hal_status != HAL_OK )
+	{
+	return USB_FAIL;
+	}
+else
+	{
+	return USB_OK;
+	}
+} /* usb_receive_IT */
+
+
+
 #if defined( A0002_REV2           ) || \
     defined( FLIGHT_COMPUTER_LITE ) || \
     defined( L0002_REV5           ) || \
