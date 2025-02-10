@@ -62,7 +62,7 @@ USB_STATUS usb_receive_IT
 	(
 	void*    rx_buffer_ptr,   /* Pointer to output data buffer */	
 	size_t   rx_buffer_size   /* Number of bytes to recevie    */
-	)
+	);
 
 /* Checks for an active USB connection */
 #if defined( A0002_REV2           ) || \
