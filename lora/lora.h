@@ -27,6 +27,8 @@ they are commented out for now and will be uncommented as they're needed.
 #define LORA_OPERATION_RESERVED    0b00
 */
 
+#define LORA_TIMEOUT                2000
+
 typedef enum LORA_CHIPMODE {
    LORA_SLEEP_MODE = 0b000,
    LORA_STANDBY_MODE = 0b001,

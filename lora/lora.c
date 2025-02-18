@@ -35,7 +35,7 @@ LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
     HAL_StatusTypeDef status;
 
     /* Takes pointer to the read buffer. and puts output there */
-    status = HAL_SPI_Receive( &(LORA_SPI), read_buffer_ptr, 1, 2000 );
+    status = HAL_SPI_Receive( &(LORA_SPI), read_buffer_ptr, 1, LORA_TIMEOUT );
 
     if (status == HAL_OK){
         return LORA_OK;
@@ -49,7 +49,7 @@ LORA_STATUS LORA_SPI_Transmit_Single( LORA_REGISTER_ADDR reg ) {
     /* Takes register and data to write (1 byte) and writes that register. */
     // uint8_t transmitBuffer[2] = { reg, data };
     uint8_t transmitBuffer = reg;
-    status = HAL_SPI_Transmit( &(LORA_SPI), &transmitBuffer, 1, 2000);
+    status = HAL_SPI_Transmit( &(LORA_SPI), &transmitBuffer, 1, LORA_TIMEOUT);
 
     if (status == HAL_OK){
         return LORA_OK;
@@ -61,7 +61,7 @@ LORA_STATUS LORA_SPI_Transmit_Double( LORA_REGISTER_ADDR reg, uint8_t data ) {
 
     /* Takes register and data to write (1 byte) and writes that register. */
     uint8_t transmitBuffer[2] = { reg, data };
-    status = HAL_SPI_Transmit( &(LORA_SPI), &transmitBuffer, 1, 2000);
+    status = HAL_SPI_Transmit( &(LORA_SPI), &transmitBuffer, 1, LORA_TIMEOUT);
 
     if (status == HAL_OK){
         return LORA_OK;
