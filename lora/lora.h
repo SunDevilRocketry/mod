@@ -30,13 +30,14 @@ they are commented out for now and will be uncommented as they're needed.
 #define LORA_TIMEOUT                2000
 
 typedef enum LORA_CHIPMODE {
-   LORA_SLEEP_MODE = 0b000,
-   LORA_STANDBY_MODE = 0b001,
-   LORA_FREQ_SYNTH_TX_MODE = 0b010,
-   LORA_TRANSMIT_MODE = 0b011,
-   LORA_FREQ_SYNTH_RX_MODE = 0b100,
-   LORA_RX_CONTINUOUS_MODE = 0b101,
-   LORA_RX_SINGLE_MODE = 0b111,
+   LORA_SLEEP_MODE = 0x00,
+   LORA_STANDBY_MODE = 0x01,
+   LORA_FREQ_SYNTH_TX_MODE = 0x02,
+   LORA_TRANSMIT_MODE = 0x03,
+   LORA_FREQ_SYNTH_RX_MODE = 0x04,
+   LORA_RX_CONTINUOUS_MODE = 0x05,
+   LORA_RX_SINGLE_MODE = 0x06,
+   LORA_RX_CAD         = 0x07
 } LORA_CHIPMODE;
 
 typedef enum LORA_STATUS {

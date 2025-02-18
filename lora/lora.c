@@ -114,23 +114,21 @@ LORA_STATUS lora_get_device_id(uint8_t* buffer_ptr) {
  Function to set the mode of the chip
 ------------------------------------------------------------------------------*/
 LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode ) {
-    /* chip_mode should be one of the following 3-bit variables defined in lora.h
-            #define LORA_SLEEP_MODE            0b000
-            #define LORA_STANDBY_MODE          0b001
-            #define LORA_FREQ_SYNTH_TX_MODE    0b010
-            #define LORA_TRANSMIT_MODE         0b011
-            #define LORA_FREQ_SYNTH_RX_MODE    0b100
-            #define LORA_RX_CONTINUOUS_MODE    0b101            #define LORA_RX_SINGLE_MODE        0b111
-    */
-    // I may give this function a return type in the future to check success of operation.
-
     // Get initial value of the operation mode register
     uint8_t operation_mode_register;
     LORA_STATUS read_status = lora_read_register( LORA_REG_OPERATION_MODE, &operation_mode_register );
-    if( read_status & 0b00000001 != 0b00000001 ) { // Make function automatically fail if chip is not in LoRa mode
-        return LORA_FAIL;
+    // if( read_status & 0b00000001 != 0b00000001 ) { // Make function automatically fail if chip is not in LoRa mode
+    //     return LORA_FAIL;
+    // }
+
+    if (read_status != LORA_OK)
+    {
+        // Error handler
     }
 
+    if !( operation_mode_register & (1<<7) ){
+        return LORA_FAIL;
+    }
     // Shift the chip mode bits to be the first 3 bits of the sequence
     uint8_t shifted_chip_mode = (chip_mode << 0b00000);
 
