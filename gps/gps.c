@@ -252,16 +252,16 @@ int gps_mesg_validate(char *nmeastr){
 void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
     if(!strncmp(GPSstrParse, "$GPGGA", 6)){
     	if (sscanf(GPSstrParse, "$GPGGA,%f,%f,%c,%f,%c,%d,%d,%f,%f,%c", 
-				&gps_ptr->utc_time, 
-				&gps_ptr->nmea_latitude, 
-				&gps_ptr->ns, 
-				&gps_ptr->nmea_longitude, 
-				&gps_ptr->ew, 
-				&gps_ptr->lock, 
-				&gps_ptr->satelites, 
-				&gps_ptr->hdop, 
-				&gps_ptr->msl_altitude, 
-				&gps_ptr->msl_units) >= 1)
+				&(gps_ptr->utc_time), 
+				&(gps_ptr->nmea_latitude), 
+				&(gps_ptr->ns), 
+				&(gps_ptr->nmea_longitude), 
+				&(gps_ptr->ew), 
+				&(gps_ptr->lock), 
+				&(gps_ptr->satelites), 
+				&(gps_ptr->hdop), 
+				&(gps_ptr->msl_altitude), 
+				&(gps_ptr->msl_units)) >= 1)
 			{
 			gps_ptr->dec_latitude = GPS_nmea_to_dec(gps_ptr->nmea_latitude, gps_ptr->ns);
     		gps_ptr->dec_longitude = GPS_nmea_to_dec(gps_ptr->nmea_longitude, gps_ptr->ew);
@@ -270,37 +270,37 @@ void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
     }
     else if (!strncmp(GPSstrParse, "$GPRMC", 6)){
     	if(sscanf(GPSstrParse, "$GPRMC,%f,%f,%c,%f,%c,%f,%f,%d",
-				&gps_ptr->utc_time, 
-				&gps_ptr->nmea_latitude, 
-				&gps_ptr->ns, 
-				&gps_ptr->nmea_longitude, 
-				&gps_ptr->ew, 
-				&gps_ptr->speed_k, 
-				&gps_ptr->course_d, 
-				&gps_ptr->date) >= 1)
+				&(gps_ptr->utc_time), 
+				&(gps_ptr->nmea_latitude), 
+				&(gps_ptr->ns), 
+				&(gps_ptr->nmea_longitude), 
+				&(gps_ptr->ew), 
+				&(gps_ptr->speed_k), 
+				&(gps_ptr->course_d), 
+				&(gps_ptr->date)) >= 1)
     		return;
 
     }
     else if (!strncmp(GPSstrParse, "$GPGLL", 6)){
         if(sscanf(GPSstrParse, "$GPGLL,%f,%c,%f,%c,%f,%c", 
-				&gps_ptr->nmea_latitude, 
-				&gps_ptr->ns, 
-				&gps_ptr->nmea_longitude, 
-				&gps_ptr->ew, 
-				&gps_ptr->utc_time, 
-				&gps_ptr->gll_status) >= 1)
+				&(gps_ptr->nmea_latitude), 
+				&(gps_ptr->ns), 
+				&(gps_ptr->nmea_longitude), 
+				&(gps_ptr->ew), 
+				&(gps_ptr->utc_time), 
+				&(gps_ptr->gll_status)) >= 1)
             return;
     }
     else if (!strncmp(GPSstrParse, "$GPVTG", 6)){
         if(sscanf(GPSstrParse, "$GPVTG,%f,%c,%f,%c,%f,%c,%f,%c", 
-				&gps_ptr->course_t, 
-				&gps_ptr->course_t_unit, 
-				&gps_ptr->course_m, 
-				&gps_ptr->course_m_unit, 
-				&gps_ptr->speed_k, 
-				&gps_ptr->speed_k_unit, 
-				&gps_ptr->speed_km, 
-				&gps_ptr->speed_km_unit) >= 1)
+				&(gps_ptr->course_t), 
+				&(gps_ptr->course_t_unit), 
+				&(gps_ptr->course_m), 
+				&(gps_ptr->course_m_unit), 
+				&(gps_ptr->speed_k), 
+				&(gps_ptr->speed_k_unit), 
+				&(gps_ptr->speed_km), 
+				&(gps_ptr->speed_km_unit)) >= 1)
             return;
     }
 }
