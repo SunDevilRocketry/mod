@@ -148,24 +148,32 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     // Get initial value of the operation mode register
     uint8_t operation_mode_register;
     LORA_STATUS read_status1 = lora_read_register( LORA_REG_OPERATION_MODE, &operation_mode_register );
-    uint8_t new_opmode_register;
 
+    uint8_t new_opmode_register;
     new_opmode_register = ( operation_mode_register | 0b00000001 ); // Toggle the LoRa bit
 
     // Write new byte
     LORA_STATUS write_status1 = lora_write_register( LORA_REG_OPERATION_MODE, new_opmode_register );
 
-
+    // Get initial value of config register 2
     uint8_t modem_config2_register;
     LORA_STATUS read_status2 = lora_read_register( LORA_REG_RX_HEADER_INFO, &modem_config2_register );
 
     uint8_t new_config2_register = modem_config2_register & 0x0F; // Erase spread factor bits
-    uint8_t new_config2_register = ( modem_config2_register | ( lora_config_ptr->lora_spread << 4 ) ); // Set the spread factor
+    new_config2_register = ( modem_config2_register | ( lora_config_ptr->lora_spread << 4 ) ); // Set the spread factor
     LORA_STATUS write_status2 = lora_write_register( LORA_REG_RX_HEADER_INFO, new_config2_register ); // Write new spread factor
+
+    // Get initial value of config register 1
+    uint8_t modem_config1_register;
+    LORA_STATUS read_status3 = lora_read_register( LORA_REG_NUM_RX_BYTES, &modem_config1_register );
+    uint8_t new_config1_register = ( (lora_config_ptr->lora_bandwidth << 4) | (lora_config_ptr->lora_ecr << 1) | ( 0x01 & modem_config1_register ) ); //TODO: Check datasheet for that last bit
+
+    // Write new config1 register
+    LORA_STATUS write_status3 = lora_write_register( LORA_REG_NUM_RX_BYTES, new_config1_register );
 
     LORA_STATUS standby_status = lora_set_chip_mode( lora_config_ptr->lora_mode ); // Switch it into standby mode, which is what's convenient.
 
-    if( set_sleep_status + read_status1 + read_status2 + write_status1 + write_status2 + standby_status == 0 ) {
+    if( set_sleep_status + read_status1 + read_status2 + read_status3 + write_status1 + write_status2 + write_status3 + standby_status == 0 ) {
         return LORA_OK;
     } else {
         return LORA_FAIL;
