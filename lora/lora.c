@@ -129,11 +129,9 @@ LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode ) {
     if !( operation_mode_register & (1<<7) ){
         return LORA_FAIL;
     }
-    // Shift the chip mode bits to be the first 3 bits of the sequence
-    uint8_t shifted_chip_mode = (chip_mode << 0b00000);
 
     // Change the value of the chip register to set it to the suggested chip mode
-    uint8_t new_opmode_register = (operation_mode_register | shifted_chip_mode);
+    uint8_t new_opmode_register = (operation_mode_register | chip_mode);
 
     // Write new byte
     LORA_STATUS write_status = lora_write_register( LORA_REG_OPERATION_MODE, new_opmode_register );
@@ -151,9 +149,11 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     uint8_t operation_mode_register;
     LORA_STATUS read_status = lora_read_register( LORA_REG_OPERATION_MODE, &operation_mode_register );
     uint8_t new_opmode_register;
+
     if( lora_config_ptr->lora_enabled == LORA_ENABLED  ) {
         new_opmode_register = ( operation_mode_register | 0b00000001 ); // Toggle the LoRa bit
     }
+
     // Write new byte
     LORA_STATUS write_status = lora_write_register( LORA_REG_OPERATION_MODE, new_opmode_register );
 
