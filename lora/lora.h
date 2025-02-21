@@ -48,11 +48,6 @@ typedef enum LORA_STATUS {
    LORA_RECEIVE_FAIL
 } LORA_STATUS;
 
-typedef enum LORA_ENABLE {
-   LORA_ENABLED,
-   LORA_DISABLED
-} LORA_ENABLE;
-
 /* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)
    Note: as we are using LoRa, the FSK opcodes are not included*/
 typedef enum LORA_REGISTER_ADDR {
@@ -103,10 +98,21 @@ typedef enum LORA_REGISTER_ADDR {
    LORA_REG_AGC_THRESHOLD_4            = 0x64
 } LORA_REGISTER_ADDR;
 
+/* Datasheet page 107 */
+typedef enum LORA_SPREADING_FACTOR {
+   LORA_SPREAD_6 = 6,
+   LORA_SPREAD_7 = 7,
+   LORA_SPREAD_8 = 8,
+   LORA_SPREAD_9 = 9,
+   LORA_SPREAD_10 = 10,
+   LORA_SPREAD_11 = 11,
+   LORA_SPREAD_12 = 12
+} LORA_SPREADING_FACTOR;
+
 /* LORA CONFIG SETTINGS */
 typedef struct _LORA_CONFIG {
-   LORA_ENABLE lora_enabled; // LORA enablement status
    LORA_CHIPMODE lora_mode; // Current LORA Chipmode
+   LORA_SPREADING_FACTOR lora_spread; // LoRa Spread factor
 } LORA_CONFIG;
 
 LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr );
