@@ -183,11 +183,13 @@ typedef struct SENSOR_DATA
 		IMU_DATA imu_data;
 		float    baro_pressure;
 		float    baro_temp;
-		float	 dec_longitude;
-		float	 dec_latitude;
-		float	 nmea_longitude;
-		float	 nmea_latitude;
-		float 	 utc_time;	
+		float	 gps_dec_longitude;
+		float	 gps_dec_latitude;
+		char	 gps_ns;
+		char	 gps_ew;
+		float	 gps_altitude_ft;
+		float 	 gps_speed_kmh 
+		float 	 gps_utc_time;	
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		uint32_t pt_pressures[ NUM_PTS ];
 		uint32_t load_cell_force;
