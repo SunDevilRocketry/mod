@@ -246,7 +246,7 @@ void sensor_init
 	sensor_size_offsets_table[ 37 ].size	= 1; /* SENSOR_GPS_RMC  */
 
 
-	sensor_size_o
+	
 #elif defined( ENGINE_CONTROLLER )
 	/* Sensor offsets */
 	sensor_size_offsets_table[ 0  ].offset = 0;  /* SENSOR_PT0  */
@@ -1340,12 +1340,12 @@ for ( int i = 0; i < num_sensors; ++i )
 				{
 				sensor_data_ptr->gps_utc_time	= gps_data.utc_time;
 				}
-			case SENSOR_GPS_LONG:
+			case SENSOR_GPS_DEC_LONG:
 				{
 				sensor_data_ptr->gps_dec_longitude = gps_data.dec_longitude;
 				break;
 				}
-			case SENSOR_GPS_LAT:
+			case SENSOR_GPS_DEC_LAT:
 				{
 				sensor_data_ptr->gps_dec_latitude = gps_data.dec_latitude;
 				break;
