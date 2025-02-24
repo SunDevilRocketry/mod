@@ -28,6 +28,9 @@
 #include "lora.h"
 #include "main.h"
 
+// Debugging purposes
+#include "led.h"
+
 /*------------------------------------------------------------------------------
  Helper functions for various pin functions on the LoRa modem.
 ------------------------------------------------------------------------------*/
@@ -178,21 +181,46 @@ void lora_reset() {
     HAL_GPIO_WritePin(LORA_RST_GPIO_PORT, LORA_RST_PIN, GPIO_PIN_SET);   // Pull High
     HAL_Delay(10);  // Wait for SX1278 to stabilize
 }
-/*
-LORA_STATUS lora_transmit( uint8_t data ) {
-    LORA_STATUS data_write = lora_write_register( LORA_REG_FIFO_RW, 255 );
 
-    LORA_STATUS chip_mode_status = lora_set_chip_mode( LORA_TRANSMIT_MODE );
+LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
+    // Mode request STAND-BY
+    LORA_STATUS status = lora_set_chip_mode(LORA_STANDBY_MODE);
 
-    uint8_t transmit_status = 0b00000000; // This variable holds the IRQ register, which is checked for transmit done flag
-    while( ( transmit_status & 0b00010000 ) != 0b00010000 ) { // We use this bitmask to check the 4th bit to see if transmission is done
-        lora_read_register( LORA_REG_LORA_STATE_FLAGS, &transmit_status );
+    // TX Init TODO
+
+    // Write data to LoRA FIFO
+    uint8_t fifo_ptr_addr;
+    LORA_STATUS status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
+    if (status != LORA_OK){
+        // Error handler
+        led_set_color(LED_RED);
     }
-
-    if ( data_write + chip_mode_status == 0){
-        return LORA_OK;
-    } else {
-        return LORA_FAIL;
+    LORA_STATUS status = lora_write_register(LORA_REG_FIFO_TX_BASE_ADDR, fifo_ptr_addr); // Set fifo data pointer to TX base address
+    if (status != LORA_OK){
+        // Error handler
+        led_set_color(LED_RED);
     }
+    // Write buffer length to fifo_rw
+    LORA_STATUS status = lora_write_register(LORA_REG_FIFO_RW, buffer_len); 
+    LORA_STATUS status = lora_set_chip_mode(LORA_TRANSMIT_MODE);
+    while (1){
+        uint8_t lora_op
+        LORA_STATUS status = lora_read_register(LORA_REG_OPERATION_MODE, &lora_op);
+        if ((lora_op & 0b111) == LORA_STANDBY_MODE){
+            break;
+        } 
+    }
+    // Send each byte of the buffer
+    for (int i = 0; i<buffer_len; i++){
+        LORA_STATUS status = lora_write_register(LORA_REG_FIFO_RW, buffer_ptr[i]);
+        LORA_STATUS status = lora_set_chip_mode(LORA_TRANSMIT_MODE);
+        while (1){
+            uint8_t lora_op
+            LORA_STATUS status = lora_read_register(LORA_REG_OPERATION_MODE, &lora_op);
+            if ((lora_op & 0b111) == LORA_STANDBY_MODE){
+                break;
+            } 
+        }   
+    }
+    return LORA_OK;
 }
-*/
