@@ -187,10 +187,14 @@ void sensor_init
 	sensor_size_offsets_table[ 18 ].offset = 52; /* SENSOR_ROLL_RATE  */
 	sensor_size_offsets_table[ 19 ].offset = 56; /* SENSOR_PITCH_RATE  */
 	sensor_size_offsets_table[ 20 ].offset = 60; /* VELOCITY  */
-	sensor_size_offsets_table[ 21 ].offset = 64; /* POSITION  */
-	sensor_size_offsets_table[ 22 ].offset = 68; /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 23 ].offset = 72; /* SENSOR_TEMP  */
-
+	sensor_size_offsets_table[ 21 ].offset = 64; /* VELO_X  */
+	sensor_size_offsets_table[ 22 ].offset = 68; /* VELO_Y  */
+	sensor_size_offsets_table[ 23 ].offset = 72; /* VELO_Z  */
+	sensor_size_offsets_table[ 24 ].offset = 76; /* POSITION  */
+	sensor_size_offsets_table[ 25 ].offset = 80; /* SENSOR_PRES  */
+	sensor_size_offsets_table[ 26 ].offset = 84; /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 27 ].offset = 88; /* BARO_ALT  */
+	sensor_size_offsets_table[ 28 ].offset = 92; /* BARO_VELO  */
 
 	/* Sensor Sizes   */
 	sensor_size_offsets_table[ 0  ].size   = 2;  /* SENSOR_ACCX  */
@@ -214,9 +218,15 @@ void sensor_init
 	sensor_size_offsets_table[ 18 ].size	= 4; /* SENSOR_ROLL_RATE  */
 	sensor_size_offsets_table[ 19 ].size	= 4; /* SENSOR_PITCH_RATE  */
 	sensor_size_offsets_table[ 20 ].size	= 4; /* VELOCITY  */
-	sensor_size_offsets_table[ 21 ].size	= 4; /* POSITION  */
-	sensor_size_offsets_table[ 22 ].size   = 4;  /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 23 ].size   = 4;  /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 21 ].size	= 4; /* VELO_X  */
+	sensor_size_offsets_table[ 22 ].size	= 4; /* VELO_Y  */
+	sensor_size_offsets_table[ 23 ].size	= 4; /* VELO_Z  */
+	sensor_size_offsets_table[ 24 ].size	= 4; /* POSITION  */
+	sensor_size_offsets_table[ 25 ].size   = 4;  /* SENSOR_PRES  */
+	sensor_size_offsets_table[ 26 ].size   = 4;  /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 27 ].size   = 4;  /* BARO_ALT  */
+	sensor_size_offsets_table[ 28 ].size   = 4;  /* BARO_VELO  */
+
 #elif defined( ENGINE_CONTROLLER )
 	/* Sensor offsets */
 	sensor_size_offsets_table[ 0  ].offset = 0;  /* SENSOR_PT0  */
@@ -722,6 +732,8 @@ SENSOR_STATUS sensor_dump
 	/* Calculated velocity and position */
 	sensor_imu_velo( &(sensor_data_ptr->imu_data) );
 
+	sensor_baro_velo( sensor_data_ptr );
+
 
 #elif defined( ENGINE_CONTROLLER )
 	#ifndef L0002_REV5
@@ -868,6 +880,8 @@ SENSOR_ID* sensor_id_ptr;    /* Pointer to sensor id                */
 	bool imu_mag_read;
 	bool body_state_converted;
 	bool velo_pos_calculated;
+	bool baro_calculated;
+	bool baro_read;
 #endif
 
 /*------------------------------------------------------------------------------
@@ -898,6 +912,8 @@ sensor_id         = *(sensor_id_ptr   );
 	imu_mag_read   = false;
 	body_state_converted = false;
 	velo_pos_calculated = false;
+	baro_calculated = false;
+	baro_read = false;
 #endif
 
 /* Burst read ADC sensors on Engine controller Rev 5 */
@@ -1169,6 +1185,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					body_state_converted = true;
 					}
 				break;
 				}
@@ -1197,6 +1214,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					body_state_converted = true;
 					}
 				break;
 				}
@@ -1225,6 +1243,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					body_state_converted = true;
 					}
 				break;
 				}
@@ -1253,6 +1272,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
+					body_state_converted = true;
 					}
 				break;
 				}
@@ -1271,6 +1291,7 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						} 	
 					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
 					}
 				break;
 				}
@@ -1289,7 +1310,107 @@ for ( int i = 0; i < num_sensors; ++i )
 							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
 						} 	
 					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
 					}
+				break;
+				}
+			case SENSOR_VELO_X:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
+					}
+				break;
+				}
+			case SENSOR_VELO_Y:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
+					}
+				break;
+				}
+			case SENSOR_VELO_Z:
+				{
+				if (!velo_pos_calculated)
+					{
+					if (!imu_accel_read)
+						{
+							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							if ( imu_status != IMU_OK )
+								{
+								return SENSOR_ACCEL_ERROR;
+								}
+							imu_accel_read = true;
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+						} 	
+					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
+					velo_pos_calculated = true;
+					}
+				break;
+				}
+			case SENSOR_BARO_ALT:
+				{
+				if (!baro_calculated){
+					if (!baro_read){
+						baro_status = baro_get_temp(     &( sensor_data_ptr -> baro_temp     ) );
+						baro_status = baro_get_pressure( &( sensor_data_ptr -> baro_pressure ) );
+						if ( baro_status != BARO_OK )
+							{
+							return SENSOR_BARO_ERROR;
+							}
+						if ( baro_status != BARO_OK )
+							{
+							return SENSOR_BARO_ERROR;
+							}
+						baro_read = true;
+					} 
+					sensor_baro_velo(sensor_data_ptr);
+					baro_calculated = true;
+				}
+				break;
+				}
+			case SENSOR_BARO_VELO:
+				{
+				if (!baro_calculated){
+					if (!baro_read){
+						baro_status = baro_get_temp(     &( sensor_data_ptr -> baro_temp     ) );
+						baro_status = baro_get_pressure( &( sensor_data_ptr -> baro_pressure ) );
+						if ( baro_status != BARO_OK )
+							{
+							return SENSOR_BARO_ERROR;
+							}
+						if ( baro_status != BARO_OK )
+							{
+							return SENSOR_BARO_ERROR;
+							}
+						baro_read = true;
+					}
+					sensor_baro_velo(sensor_data_ptr);
+					baro_calculated = true;
+				}
 				break;
 				}
 		#endif /* #if defined( FLIGHT_COMPUTER ) */
@@ -1497,6 +1618,17 @@ void sensor_conv_imu(IMU_DATA* imu_data){
 		imu_data->imu_converted.accel_z = imu_data->imu_converted.accel_z + imu_offset.accel_z;
 	}
 
+	/* Truncate small values to prevent noise */
+	if (imu_data->imu_converted.accel_x < 0.1 && imu_data->imu_converted.accel_x > -0.1){
+		imu_data->imu_converted.accel_x = 0.0;
+	}
+	if (imu_data->imu_converted.accel_y < 0.1 && imu_data->imu_converted.accel_y > -0.1){
+		imu_data->imu_converted.accel_y = 0.0;
+	}
+	if (imu_data->imu_converted.accel_z < 0.1 && imu_data->imu_converted.accel_z > -0.1){
+		imu_data->imu_converted.accel_z = 0.0;
+	}
+
 	imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
 	imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
 	imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_data->gyro_z);
@@ -1519,6 +1651,16 @@ void sensor_conv_imu(IMU_DATA* imu_data){
 		imu_data->imu_converted.gyro_z = imu_data->imu_converted.gyro_z + imu_offset.gyro_z;
 	}
 
+	/* Truncate small values to prevent noise */
+	if (imu_data->imu_converted.gyro_x < 1.0 && imu_data->imu_converted.gyro_x > -1.0){
+		imu_data->imu_converted.gyro_x = 0.0;
+	}
+	if (imu_data->imu_converted.gyro_y < 1.0 && imu_data->imu_converted.gyro_y > -1.0){
+		imu_data->imu_converted.gyro_y = 0.0;
+	}
+	if (imu_data->imu_converted.gyro_z < 1.0 && imu_data->imu_converted.gyro_z > -1.0){
+		imu_data->imu_converted.gyro_z = 0.0;
+	}
 }
 
 
@@ -1634,7 +1776,10 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
 
 	imu_data->state_estimate.velocity = velocity;
-
+	imu_data->state_estimate.velo_x = velo_x;
+	imu_data->state_estimate.velo_y = velo_y;
+	imu_data->state_estimate.velo_z = velo_z;
+	
 	// Save current velocity for next computation
 	velo_x_prev = velo_x;
 	velo_y_prev = velo_y;
@@ -1642,6 +1787,44 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 
 	imu_data->state_estimate.position = 0; //TODO: Implement position
 }
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_baro_velo                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Calculate the velocity from pressure readings 								*
+*                                                                              *
+*******************************************************************************/
+float velo_prev, alt_prev = 0.0;
+void sensor_baro_velo(SENSOR_DATA* sensor_data_ptr)
+{
+	float velocity;
+
+	float pressure = sensor_data_ptr->baro_pressure;
+	float temp = sensor_data_ptr->baro_temp;
+	
+	// conv pressure to pascal for equation
+	float ts_delta = tdelta / 1000.0;
+
+	// calc altitude
+	float PRESSURE_SEA_LEVEL = 101325;
+    float EXP = 0.190294958;
+    float TEMP_LAPSE_RATE = 0.0065;
+
+    float alt = (powf(PRESSURE_SEA_LEVEL / pressure, EXP) - 1) * (temp + 273.15) / TEMP_LAPSE_RATE;
+
+	sensor_data_ptr->baro_alt = alt;
+
+	// Calculate the velocity scalar
+	velocity = (alt-alt_prev)/ts_delta;
+	alt_prev = alt;
+	velo_prev = velocity;
+
+	sensor_data_ptr->baro_velo = velocity;
+}
+
 
 #endif
 
