@@ -182,6 +182,9 @@ void lora_reset() {
     HAL_Delay(10);  // Wait for SX1278 to stabilize
 }
 
+// =============================================================================
+// lora_transmit: transmit a buffer through lora fifo
+// =============================================================================
 LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
     // Mode request STAND-BY
     LORA_STATUS status = lora_set_chip_mode(LORA_STANDBY_MODE);
@@ -223,4 +226,82 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
         }   
     }
     return LORA_OK;
+}
+
+// =============================================================================
+// lora_receive: receive a buffer from lora fifo with single mode
+// =============================================================================
+LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
+    uint8_t timeout_flag;
+    uint8_t rx_done;
+    
+    // Mode request STAND-BY
+    LORA_STATUS status = lora_set_chip_mode(LORA_STANDBY_MODE);
+
+    // RX Init TODO
+    
+    // Set lora fifo pointer to the RX base address
+    uint8_t fifo_ptr_addr;
+    LORA_STATUS status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
+    if (status != LORA_OK){
+        // Error handler
+        led_set_color(LED_RED);
+    }
+    LORA_STATUS status = lora_write_register(LORA_REG_FIFO_RX_BASE_ADDR, fifo_ptr_addr); // Set fifo data pointer to TX base address
+    if (status != LORA_OK){
+        // Error handler
+        led_set_color(LED_RED);
+    }
+
+    // Send request for RX Single mode
+    LORA_STATUS status = lora_set_chip_mode(LORA_RX_SINGLE_MODE);
+
+    // Wait for LoRA IRQ
+    uint16_t timeout = 0;
+    while(timeout<10000){
+        uint8_t irq_flag;
+        LORA_STATUS status = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
+        timeout_flag = (irq_flag & (1<<7)) >> 7;
+        rx_done = (irq_flag & (1<<6)) >> 6;
+        
+        if (timeout_flag){
+            return LORA_TIMEOUT;
+        } else if (rx_done) {
+            break;
+        }
+        timeout++;
+    }
+
+    if (rx_done){
+        LORA_STATUS status = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
+        uint8_t crc_err = (irq_flag & (1<<5)) >> 5;
+
+        if (!crc_err){
+            // Read received number of bytes
+            uint8_t num_bytes;
+            LORA_STATUS status = lora_read_register(LORA_REG_FIFO_RX_NUM_BYTES, &num_bytes);
+
+            // Set lora fifo pointer to the RX base current address
+            uint8_t fifo_ptr_addr;
+            LORA_STATUS status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
+            if (status != LORA_OK){
+                // Error handler
+                led_set_color(LED_RED);
+            }
+            LORA_STATUS status = lora_write_register(LORA_REG_FIFO_RX_BASE_CUR_ADDR, fifo_ptr_addr); // Set fifo data pointer to TX base address
+            if (status != LORA_OK){
+                // Error handler
+                led_set_color(LED_RED);
+            }
+            // Begin extracting payload
+            for (int i = 0; i < num_bytes; i++){
+                uint8_t packet;
+                LORA_STATUS status = lora_read_register(LORA_REG_FIFO_RW, &packet);  // Access LoRA FIFO data buffer pointer
+                buffer_ptr[i] = packet;
+            }
+            *buffer_len_ptr = num_bytes;
+        } 
+        return LORA_OK;
+    }
+    return LORA_FAIL;
 }
