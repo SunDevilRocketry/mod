@@ -186,11 +186,24 @@ void sensor_init
 	sensor_size_offsets_table[ 17 ].offset = 48; /* SENSOR_PITCH_DEG  */
 	sensor_size_offsets_table[ 18 ].offset = 52; /* SENSOR_ROLL_RATE  */
 	sensor_size_offsets_table[ 19 ].offset = 56; /* SENSOR_PITCH_RATE  */
-	sensor_size_offsets_table[ 20 ].offset = 60; /* VELOCITY  */
-	sensor_size_offsets_table[ 21 ].offset = 64; /* POSITION  */
-	sensor_size_offsets_table[ 22 ].offset = 68; /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 23 ].offset = 72; /* SENSOR_TEMP  */
-
+	sensor_size_offsets_table[ 20 ].offset = 60; /* SENSOR_VELOCITY  */
+	sensor_size_offsets_table[ 21 ].offset = 64; /* SENSOR_VELO_X  */
+	sensor_size_offsets_table[ 22 ].offset = 68; /* SENSOR_VELO_Y  */
+	sensor_size_offsets_table[ 23 ].offset = 72; /* SENSOR_VELO_Z  */
+	sensor_size_offsets_table[ 24 ].offset = 76; /* SENSOR_POSITION  */
+	sensor_size_offsets_table[ 25 ].offset = 80; /* SENSOR_BARO_PRES */
+	sensor_size_offsets_table[ 26 ].offset = 84; /* SENSOR_BARO_TEMP  */
+	sensor_size_offsets_table[ 27 ].offset = 88; /* SENSOR_BARO_ALT  */
+	sensor_size_offsets_table[ 28 ].offset = 92; /* SENSOR_BARO_VELO  */
+	sensor_size_offsets_table[ 29 ].offset = 96; /* SENSOR_GPS_ALT  */
+	sensor_size_offsets_table[ 30 ].offset = 100; /* SENSOR_GPS_SPEED  */
+	sensor_size_offsets_table[ 31 ].offset = 104; /* SENSOR_GPS_TIME  */
+	sensor_size_offsets_table[ 32 ].offset = 108; /* SENSOR_GPS_LONG  */
+	sensor_size_offsets_table[ 33 ].offset = 112; /* SENSOR_GPS_LAT  */
+	sensor_size_offsets_table[ 34 ].offset = 116; /* SENSOR_GPS_NS  */
+	sensor_size_offsets_table[ 35 ].offset = 117; /* SENSOR_GPS_EW  */
+	sensor_size_offsets_table[ 36 ].offset = 118; /* SENSOR_GPS_GLL  */
+	sensor_size_offsets_table[ 37 ].offset = 119; /* SENSOR_GPS_RMC  */
 
 	/* Sensor Sizes   */
 	sensor_size_offsets_table[ 0  ].size   = 2;  /* SENSOR_ACCX  */
@@ -214,9 +227,26 @@ void sensor_init
 	sensor_size_offsets_table[ 18 ].size	= 4; /* SENSOR_ROLL_RATE  */
 	sensor_size_offsets_table[ 19 ].size	= 4; /* SENSOR_PITCH_RATE  */
 	sensor_size_offsets_table[ 20 ].size	= 4; /* VELOCITY  */
-	sensor_size_offsets_table[ 21 ].size	= 4; /* POSITION  */
-	sensor_size_offsets_table[ 22 ].size   = 4;  /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 23 ].size   = 4;  /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 21 ].size	= 4; /* VELO_X  */
+	sensor_size_offsets_table[ 22 ].size	= 4; /* VELO_Y  */
+	sensor_size_offsets_table[ 23 ].size	= 4; /* VELO_Z  */
+	sensor_size_offsets_table[ 24 ].size	= 4; /* POSITION  */
+	sensor_size_offsets_table[ 25 ].size	= 4; /* SENSOR_PRES  */
+	sensor_size_offsets_table[ 26 ].size	= 4; /* SENSOR_TEMP  */
+	sensor_size_offsets_table[ 27 ].size	= 4; /* SENSOR_BARO_ALT  */
+	sensor_size_offsets_table[ 28 ].size	= 4; /* SENSOR_BARO_VELO  */
+	sensor_size_offsets_table[ 29 ].size	= 4; /* SENSOR_GPS_ALT  */
+	sensor_size_offsets_table[ 30 ].size	= 4; /* SENSOR_GPS_SPEED  */
+	sensor_size_offsets_table[ 31 ].size	= 4; /* SENSOR_GPS_TIME  */
+	sensor_size_offsets_table[ 32 ].size	= 4; /* SENSOR_GPS_LONG  */
+	sensor_size_offsets_table[ 33 ].size	= 4; /* SENSOR_GPS_LAT  */
+	sensor_size_offsets_table[ 34 ].size	= 1; /* SENSOR_GPS_NS  */
+	sensor_size_offsets_table[ 35 ].size	= 1; /* SENSOR_GPS_EW  */
+	sensor_size_offsets_table[ 36 ].size	= 1; /* SENSOR_GPS_GLL  */
+	sensor_size_offsets_table[ 37 ].size	= 1; /* SENSOR_GPS_RMC  */
+
+
+	
 #elif defined( ENGINE_CONTROLLER )
 	/* Sensor offsets */
 	sensor_size_offsets_table[ 0  ].offset = 0;  /* SENSOR_PT0  */
@@ -701,11 +731,15 @@ SENSOR_STATUS sensor_dump
 											  // as struct padding
 
 	/* GPS sensor */
-	sensor_data_ptr->dec_longitude = gps_data.dec_longitude;
-	sensor_data_ptr->nmea_longitude = gps_data.nmea_longitude;
-	sensor_data_ptr->dec_latitude = gps_data.dec_latitude;
-	sensor_data_ptr->nmea_latitude = gps_data.nmea_latitude;
-	sensor_data_ptr->utc_time = gps_data.utc_time;
+	sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
+	sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
+	sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
+	sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
+	sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
+	sensor_data_ptr->gps_ns				= gps_data.ns;
+	sensor_data_ptr->gps_ew				= gps_data.ew;
+	sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
+	sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
@@ -1288,6 +1322,51 @@ for ( int i = 0; i < num_sensors; ++i )
 						} 	
 					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
 					}
+				break;
+				}
+			case SENSOR_GPS_ALT:
+				{
+				sensor_data_ptr->gps_altitude_ft = gps_data.altitude_ft;
+				break;
+				}
+			case SENSOR_GPS_SPEED:
+				{
+				sensor_data_ptr->gps_speed_kmh	= gps_data.speed_km;
+				break;
+				}
+			case SENSOR_GPS_TIME:
+				{
+				sensor_data_ptr->gps_utc_time	= gps_data.utc_time;
+				break;
+				}
+			case SENSOR_GPS_DEC_LONG:
+				{
+				sensor_data_ptr->gps_dec_longitude = gps_data.dec_longitude;
+				break;
+				}
+			case SENSOR_GPS_DEC_LAT:
+				{
+				sensor_data_ptr->gps_dec_latitude = gps_data.dec_latitude;
+				break;
+				}
+			case SENSOR_GPS_NS:
+				{
+				sensor_data_ptr->gps_ns = gps_data.ns;
+				break;
+				}
+			case SENSOR_GPS_EW:
+				{
+				sensor_data_ptr->gps_ew = gps_data.ew;
+				break;
+				}
+			case SENSOR_GPS_GLL:
+				{
+				sensor_data_ptr->gps_gll_status = gps_data.gll_status;
+				break;
+				}
+			case SENSOR_GPS_RMC:
+				{
+				sensor_data_ptr->gps_rmc_status = gps_data.rmc_status;
 				break;
 				}
 		#endif /* #if defined( FLIGHT_COMPUTER ) */

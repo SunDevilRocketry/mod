@@ -27,6 +27,8 @@
 ------------------------------------------------------------------------------*/
 #define SER_PER 0.55555
 
+extern SERVO_PRESET servo_preset;
+
 /*------------------------------------------------------------------------------
  Procedures 
 ------------------------------------------------------------------------------*/
@@ -82,10 +84,10 @@ SERVO_STATUS servo_init()
 *******************************************************************************/
 void servo_reset()
 {
-    htim3.Instance->CCR4 = 1000*2.5/100;
-    htim3.Instance->CCR3 = 1000*2.5/100;
-    htim3.Instance->CCR1 = 1000*2.5/100;
-    htim2.Instance->CCR1 = 1000*2.5/100;
+    motor1_drive(servo_preset.rp_servo1);
+    motor2_drive(servo_preset.rp_servo2);
+    motor3_drive(servo_preset.rp_servo3);
+    motor4_drive(servo_preset.rp_servo4);
 }
 
 
@@ -225,76 +227,8 @@ void motors_drive(SERVOS_DATA servos_data)
     motor4_drive(default_angle);
 }
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		servo_cmd_execute  
-*
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Execute servo subcommand                                               *
-*                                                                              *
-*******************************************************************************/
-
-void motor_drive(uint8_t subcommand_code)
-{
-    uint8_t motor_number = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
-    uint8_t deg = usb_receive( &subcommand_code, sizeof( subcommand_code ), HAL_DEFAULT_TIMEOUT );
-
-    switch (motor_number){
-        case 1: {
-            htim3.Instance->CCR4 = deg;
-        }
-
-        case 2: {
-            htim3.Instance->CCR3 = deg;
-        }
-        case 3: {
-            htim3.Instance->CCR2 = deg;
-        }
-        case 4: {
-            htim3.Instance->CCR1 = deg;
-        }
-    }
-    
-}
-
-
-void servo_cmd_execute(uint8_t servo_cmd_opcode){
-    //TODO: Implement cases for testing servo controlling loop and testing individual servo
-    switch(servo_cmd_opcode){
-        
-        case SERVO_INIT:
-        {
-            servo_init();
-            break;
-        }
-
-        case SERVO_TURN:
-        {
-            motor_drive(servo_cmd_opcode);
-            break;
-        }
-        
-
-    }}
-
 uint8_t angle_to_pulse(uint8_t angle)
 {
     return 25 + (angle*SER_PER);
-}
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_handler                                                          *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		A function that handles a error driven from controlling servo          *
-*                                                                              *
-*******************************************************************************/
-void error_handler()
-{
-
 }
 
