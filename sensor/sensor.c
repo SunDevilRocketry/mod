@@ -738,8 +738,6 @@ SENSOR_STATUS sensor_dump
 	sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
 	sensor_data_ptr->gps_ns				= gps_data.ns;
 	sensor_data_ptr->gps_ew				= gps_data.ew;
-	sensor_data_ptr->gps_ns				= gps_data.ns;
-	sensor_data_ptr->gps_ew				= gps_data.ew;
 	sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
 	sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
@@ -1339,6 +1337,7 @@ for ( int i = 0; i < num_sensors; ++i )
 			case SENSOR_GPS_TIME:
 				{
 				sensor_data_ptr->gps_utc_time	= gps_data.utc_time;
+				break;
 				}
 			case SENSOR_GPS_DEC_LONG:
 				{
