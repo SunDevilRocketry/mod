@@ -51,7 +51,7 @@ Includes
 
 #if   defined( FLIGHT_COMPUTER   )
 	/* General */
-	#define NUM_SENSORS         ( 29   )
+	#define NUM_SENSORS         ( 38   )
 	// #define IMU_DATA_SIZE       ( 20   )
 	#define SENSOR_DATA_SIZE	( 120   )
 #elif defined( ENGINE_CONTROLLER )
