@@ -267,47 +267,47 @@ void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
     int idx = 7;
 
 	if (!strcmp(token, "$GPGGA")) {
-        gps_ptr->utc_time = gps_string_to_float(GPSstrParse, idx, &idx);
-        gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
+        gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->ns = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->ew = GPSstrParse[idx]; idx = idx + 2;
         gps_ptr->lock = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->satelites = (int)(gps_string_to_float(GPSstrParse, idx, &idx) + 0.5); // This is a decimal number.
-        gps_ptr->hdop = gps_string_to_float(GPSstrParse, idx, &idx);
-        gps_ptr->msl_altitude = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->satelites = (int)(gps_string_to_float(GPSstrParse, &idx) + 0.5); // This is a decimal number.
+        gps_ptr->hdop = gps_string_to_float(GPSstrParse, &idx);
+        gps_ptr->msl_altitude = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->msl_units = GPSstrParse[idx]; idx = idx + 2;
 	}
 
     else if (!strcmp(token, "$GPRMC")) {
-        gps_ptr->utc_time = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->rmc_status = GPSstrParse[idx]; idx = idx + 2; /* unused */
-        gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->ns = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->ew = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->speed_k = gps_string_to_float(GPSstrParse, idx, &idx);
-        gps_ptr->course_d = gps_string_to_float(GPSstrParse, idx, &idx);
-        gps_ptr->date = (int)(0.5 + gps_string_to_float(GPSstrParse, idx, &idx));
+        gps_ptr->speed_k = gps_string_to_float(GPSstrParse, &idx);
+        gps_ptr->course_d = gps_string_to_float(GPSstrParse, &idx);
+        gps_ptr->date = (int)(0.5 + gps_string_to_float(GPSstrParse, &idx));
 	}
 
     else if (!strcmp(token, "$GPGLL")) {
-        gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->ns = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->ew = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->utc_time = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->gll_status = GPSstrParse[idx]; idx = idx + 2;
     }
 
     else if (!strcmp(token, "$GPVTG")) {
-        gps_ptr->course_t = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->course_t = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->course_t_unit = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->course_m = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->course_m = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->course_m_unit = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->speed_k = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->speed_k = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->speed_k_unit = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->speed_km = gps_string_to_float(GPSstrParse, idx, &idx);
+        gps_ptr->speed_km = gps_string_to_float(GPSstrParse, &idx);
         gps_ptr->speed_km_unit = GPSstrParse[idx]; idx = idx + 2;
     }
 
@@ -319,11 +319,11 @@ void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
 * 		gps_string_to_float                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-* 	    Convert raw NMEA string to usable data                                 *
+* 	    Convert part of an NMEA string to a float                              *
 *                                                                              *
 *******************************************************************************/
-float gps_string_to_float(char *GPSstrParse, int startIdx, int* endIdx) {
-    int idx = startIdx;
+float gps_string_to_float(char *GPSstrParse, int* inputIdx) {
+    int idx = *inputIdx;
     char currChar = GPSstrParse[idx];
     char tempstr[16];
     int tempidx = 0;
@@ -338,20 +338,9 @@ float gps_string_to_float(char *GPSstrParse, int startIdx, int* endIdx) {
         idx++;
         currChar = GPSstrParse[idx];
     }
-    *endIdx = idx + 1;
+    *inputIdx = idx + 1;
     tempstr[tempidx] = '\0';
     return strtof(tempstr, NULL);
-} /* gps_string_to_float */
-
-float GPS_nmea_to_dec(float deg_coord, char nsew) {
-    int degree = (int)(deg_coord/100);
-    float minutes = deg_coord - degree*100;
-    float dec_deg = minutes / 60;
-    float decimal = degree + dec_deg;
-    if (nsew == 'S' || nsew == 'W') { // return negative
-        decimal *= -1;
-    }
-    return decimal;
 } /* gps_string_to_float */
 
 /*******************************************************************************

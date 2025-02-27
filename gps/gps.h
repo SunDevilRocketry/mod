@@ -105,7 +105,7 @@ int gps_mesg_validate(char *nmeastr);
 
 void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse);
 
-float gps_string_to_float(char *GPSstrParse, int startIdx, int* endIdx);
+float gps_string_to_float(char *GPSstrParse, int* inputIdx);
 
 float GPS_nmea_to_dec(float deg_coord, char nsew);
 
