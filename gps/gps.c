@@ -253,7 +253,7 @@ int gps_mesg_validate(char *nmeastr){
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		GPS_parse	                                                           *
+* 		GPS_parse                                                              *
 *                                                                              *
 * DESCRIPTION:                                                                 *
 * 	    Convert raw NMEA string to usable data                                 *
@@ -261,12 +261,11 @@ int gps_mesg_validate(char *nmeastr){
 *******************************************************************************/
 void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
 	/* get message type */
-	char token[7];
+	char token[8]; // Needs to be 8 chars for memory alignment
     strncpy(token, GPSstrParse, 6);
     token[7] = '\0';
     int idx = 7;
 
-	/* GGA Message */
 	if (!strcmp(token, "$GPGGA")) {
         gps_ptr->utc_time = gps_string_to_float(GPSstrParse, idx, &idx);
         gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, idx, &idx);
@@ -280,7 +279,6 @@ void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
         gps_ptr->msl_units = GPSstrParse[idx]; idx = idx + 2;
 	}
 
-	/* RMC Message */
     else if (!strcmp(token, "$GPRMC")) {
         gps_ptr->utc_time = gps_string_to_float(GPSstrParse, idx, &idx);
         gps_ptr->rmc_status = GPSstrParse[idx]; idx = idx + 2; /* unused */
@@ -293,7 +291,6 @@ void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
         gps_ptr->date = (int)(0.5 + gps_string_to_float(GPSstrParse, idx, &idx));
 	}
 
-	/* GLL Message */
     else if (!strcmp(token, "$GPGLL")) {
         gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, idx, &idx);
         gps_ptr->ns = GPSstrParse[idx]; idx = idx + 2;
@@ -303,7 +300,6 @@ void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
         gps_ptr->gll_status = GPSstrParse[idx]; idx = idx + 2;
     }
 
-	/* VTG Message */
     else if (!strcmp(token, "$GPVTG")) {
         gps_ptr->course_t = gps_string_to_float(GPSstrParse, idx, &idx);
         gps_ptr->course_t_unit = GPSstrParse[idx]; idx = idx + 2;
@@ -356,7 +352,8 @@ float GPS_nmea_to_dec(float deg_coord, char nsew) {
         decimal *= -1;
     }
     return decimal;
-}
+} /* gps_string_to_float */
+
 /*******************************************************************************
 * END OF FILE                                                                  * 
 *******************************************************************************/
