@@ -177,13 +177,13 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     uint8_t lora_freq_reg3 = ( lora_config_ptr->lora_frequency << 24 ) >> 24;
 
     // Write the frequncy registers
-    LORA_STATUS write_status4 = lora_write_register( LORA_FREQ_MSB, lora_freq_reg1 );
-    LORA_STATUS write_status5 = lora_write_register( LORA_FREQ_MSD, lora_freq_reg2 );
-    LORA_STATUS write_status6 = lora_write_register( LORA_FREQ_LSB, lora_freq_reg3 );
+    LORA_STATUS write_status4 = lora_write_register( LORA_REG_FREQ_MSB, lora_freq_reg1 );
+    LORA_STATUS write_status5 = lora_write_register( LORA_REG_FREQ_MSD, lora_freq_reg2 );
+    LORA_STATUS write_status6 = lora_write_register( LORA_REG_FREQ_LSB, lora_freq_reg3 );
 
     LORA_STATUS standby_status = lora_set_chip_mode( lora_config_ptr->lora_mode ); // Switch it into standby mode, which is what's convenient.
 
-    if( set_sleep_status + read_status1 + read_status2 + read_status3 + write_status1 + write_status2 + write_status3 + standby_status == 0 ) {
+    if( set_sleep_status + read_status1 + read_status2 + read_status3 + write_status1 + write_status2 + write_status3 + write_status4 + write_status5 + write_status6 + standby_status == 0 ) {
         return LORA_OK;
     } else {
         return LORA_FAIL;
@@ -196,6 +196,11 @@ void lora_reset() {
     HAL_GPIO_WritePin(LORA_RST_GPIO_PORT, LORA_RST_PIN, GPIO_PIN_SET);   // Pull High
     HAL_Delay(10);  // Wait for SX1278 to stabilize
 }
+
+uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq ) {
+    return ( (2^19) * mhz_freq * 10^6 )/( 32 * 10^6 );
+}
+
 /*
 LORA_STATUS lora_transmit( uint8_t data ) {
     LORA_STATUS data_write = lora_write_register( LORA_REG_FIFO_RW, 255 );

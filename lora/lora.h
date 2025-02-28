@@ -167,9 +167,7 @@ void lora_reset();
 
 
 // Convert a human-readable frequency to the unit used internally by the modem
-uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq ) {
-   return ( (2^19) * x * 10^6 )/( 32 * 10^6 );
-}
+uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq );
 
 // LORA_STATUS lora_transmit( uint8_t data );
 
