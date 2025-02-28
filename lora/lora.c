@@ -117,15 +117,13 @@ LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode ) {
     // Get initial value of the operation mode register
     uint8_t operation_mode_register;
     LORA_STATUS read_status = lora_read_register( LORA_REG_OPERATION_MODE, &operation_mode_register );
-    // if( read_status & 0b00000001 != 0b00000001 ) { // Make function automatically fail if chip is not in LoRa mode
-    //     return LORA_FAIL;
-    // }
 
     if (read_status != LORA_OK)
     {
         return LORA_FAIL;
     }
 
+    // Fail if not in LORA Mode 
     if ( !( operation_mode_register & (1<<7) ) ){
         return LORA_FAIL;
     }
