@@ -27,14 +27,17 @@ they are commented out for now and will be uncommented as they're needed.
 #define LORA_OPERATION_RESERVED    0b00
 */
 
+#define LORA_TIMEOUT                2000
+
 typedef enum LORA_CHIPMODE {
-   LORA_SLEEP_MODE = 0b000,
-   LORA_STANDBY_MODE = 0b001,
-   LORA_FREQ_SYNTH_TX_MODE = 0b010,
-   LORA_TRANSMIT_MODE = 0b011,
-   LORA_FREQ_SYNTH_RX_MODE = 0b100,
-   LORA_RX_CONTINUOUS_MODE = 0b101,
-   LORA_RX_SINGLE_MODE = 0b111,
+   LORA_SLEEP_MODE = 0x00,
+   LORA_STANDBY_MODE = 0x01,
+   LORA_FREQ_SYNTH_TX_MODE = 0x02,
+   LORA_TRANSMIT_MODE = 0x03,
+   LORA_FREQ_SYNTH_RX_MODE = 0x04,
+   LORA_RX_CONTINUOUS_MODE = 0x05,
+   LORA_RX_SINGLE_MODE = 0x06,
+   LORA_RX_CAD         = 0x07
 } LORA_CHIPMODE;
 
 typedef enum LORA_STATUS {
@@ -95,14 +98,77 @@ typedef enum LORA_REGISTER_ADDR {
    LORA_REG_AGC_THRESHOLD_4            = 0x64
 } LORA_REGISTER_ADDR;
 
+/* Datasheet page 107 */
+typedef enum LORA_SPREADING_FACTOR {
+   LORA_SPREAD_6 = 6,
+   LORA_SPREAD_7 = 7,
+   LORA_SPREAD_8 = 8,
+   LORA_SPREAD_9 = 9,
+   LORA_SPREAD_10 = 10,
+   LORA_SPREAD_11 = 11,
+   LORA_SPREAD_12 = 12
+} LORA_SPREADING_FACTOR;
+
+/* Datasheet page 106 */
+typedef enum LORA_BANDWIDTH {
+   LORA_BANDWIDTH_7_8_KHZ   = 0x00,
+   LORA_BANDWIDTH_10_4_KHZ  = 0x01,
+   LORA_BANDWIDTH_15_6_KHZ  = 0x02,
+   LORA_BANDWIDTH_20_8_KHZ  = 0x03,
+   LORA_BANDWIDTH_31_25_KHZ = 0x04,
+   LORA_BANDWIDTH_41_7_KHZ  = 0x05,
+   LORA_BANDWIDTH_62_5_KHZ  = 0x06,
+   LORA_BANDWIDTH_125_KHZ   = 0x07,
+   LORA_BANDWIDTH_250_KHZ   = 0x08,
+   LORA_BANDWIDTH_500_KHZ   = 0x09
+} LORA_BANDWIDTH;
+
+typedef enum LORA_ERROR_CODING {
+   LORA_ECR_4_5 = 0x01,
+   LORA_ECR_4_6 = 0x02,
+   LORA_ECR_4_7 = 0x03,
+   LORA_ECR_4_8 = 0x04
+} LORA_ERROR_CODING;
+
+typedef enum LORA_HEADER_MODE {// You can see this on 106 - what this actually means is on pages 26 and 27
+   LORA_IMPLICIT_HEADER = 0b1,
+   LORA_EXPLICIT_HEADER = 0b0
+} LORA_HEADER_MODE;
+
+/* LORA CONFIG SETTINGS */
+typedef struct _LORA_CONFIG {
+   LORA_CHIPMODE lora_mode; // Current LORA Chipmode
+   LORA_SPREADING_FACTOR lora_spread; // LoRa Spread factor
+   LORA_BANDWIDTH lora_bandwidth; // Signal bandwith
+   LORA_ERROR_CODING lora_ecr; // Data Error coding
+   LORA_HEADER_MODE lora_header_mode; // LORA Header mode
+   uint32_t lora_frequency; // The LORA carrier frequency. This is NOT directly in megahertz. (See datasheet page 103)
+   // To convert, use the formula (2^19 * x)/(32 * 10^6)
+   // This library provides a helper function 
+} LORA_CONFIG;
+
 LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr );
 
-LORA_STATUS LORA_SPI_Transmit( LORA_REGISTER_ADDR reg, uint8_t data );
+LORA_STATUS LORA_SPI_Transmit_Buffer( LORA_REGISTER_ADDR reg, uint8_t data );
+
+LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg );
 
 LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData);
 
 LORA_STATUS lora_write_register( LORA_REGISTER_ADDR lora_register, uint8_t data );
 
 LORA_STATUS lora_get_device_id(uint8_t* buffer_ptr);
+
+LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode );
+
+LORA_STATUS lora_init();
+
+void lora_reset();
+
+
+// Convert a human-readable frequency to the unit used internally by the modem
+uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq );
+
+// LORA_STATUS lora_transmit( uint8_t data );
 
 #endif
