@@ -166,10 +166,20 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     // Get initial value of config register 1
     uint8_t modem_config1_register;
     LORA_STATUS read_status3 = lora_read_register( LORA_REG_NUM_RX_BYTES, &modem_config1_register );
-    uint8_t new_config1_register = ( (lora_config_ptr->lora_bandwidth << 4) | (lora_config_ptr->lora_ecr << 1) | ( 0x01 & modem_config1_register ) ); //TODO: Check datasheet for that last bit
+    uint8_t new_config1_register = ( (lora_config_ptr->lora_bandwidth << 4) | (lora_config_ptr->lora_ecr << 1) | lora_config_ptr->lora_header_mode ); //TODO: Check datasheet for that last bit
 
     // Write new config1 register
     LORA_STATUS write_status3 = lora_write_register( LORA_REG_NUM_RX_BYTES, new_config1_register );
+
+    // Determine register values for the frequency registers
+    uint8_t lora_freq_reg1 = ( lora_config_ptr->lora_frequency <<  8 ) >> 24;
+    uint8_t lora_freq_reg2 = ( lora_config_ptr->lora_frequency << 16 ) >> 24;
+    uint8_t lora_freq_reg3 = ( lora_config_ptr->lora_frequency << 24 ) >> 24;
+
+    // Write the frequncy registers
+    LORA_STATUS write_status4 = lora_write_register( LORA_FREQ_MSB, lora_freq_reg1 );
+    LORA_STATUS write_status5 = lora_write_register( LORA_FREQ_MSD, lora_freq_reg2 );
+    LORA_STATUS write_status6 = lora_write_register( LORA_FREQ_LSB, lora_freq_reg3 );
 
     LORA_STATUS standby_status = lora_set_chip_mode( lora_config_ptr->lora_mode ); // Switch it into standby mode, which is what's convenient.
 

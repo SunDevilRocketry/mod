@@ -130,12 +130,21 @@ typedef enum LORA_ERROR_CODING {
    LORA_ECR_4_8 = 0x04
 } LORA_ERROR_CODING;
 
+typedef enum LORA_HEADER_MODE {// You can see this on 106 - what this actually means is on pages 26 and 27
+   LORA_IMPLICIT_HEADER = 0b1,
+   LORA_EXPLICIT_HEADER = 0b0
+} LORA_HEADER_MODE;
+
 /* LORA CONFIG SETTINGS */
 typedef struct _LORA_CONFIG {
    LORA_CHIPMODE lora_mode; // Current LORA Chipmode
    LORA_SPREADING_FACTOR lora_spread; // LoRa Spread factor
    LORA_BANDWIDTH lora_bandwidth; // Signal bandwith
    LORA_ERROR_CODING lora_ecr; // Data Error coding
+   LORA_HEADER_MODE lora_header_mode; // LORA Header mode
+   uint32_t lora_frequency; // The LORA carrier frequency. This is NOT directly in megahertz. (See datasheet page 103)
+   // To convert, use the formula (2^19 * x)/(32 * 10^6)
+   // This library provides a helper function 
 } LORA_CONFIG;
 
 LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr );
@@ -155,6 +164,12 @@ LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode );
 LORA_STATUS lora_init();
 
 void lora_reset();
+
+
+// Convert a human-readable frequency to the unit used internally by the modem
+uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq ) {
+   return ( (2^19) * x )/( 32 * 10^6 );
+}
 
 // LORA_STATUS lora_transmit( uint8_t data );
 
