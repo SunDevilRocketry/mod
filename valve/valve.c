@@ -282,9 +282,14 @@ switch( subcommand )
 		{
 		main_valve_states = valve_get_valve_states();
 		#if defined( HOTFIRE )
-			valve_transmit( &main_valve_states         , 
-			                sizeof( main_valve_states ), 
-							HAL_DEFAULT_TIMEOUT );
+			if (USB_MODE){
+				usb_transmit( &main_valve_states         , 
+								sizeof( main_valve_states ), 
+								HAL_DEFAULT_TIMEOUT );
+			} else
+				valve_transmit( &main_valve_states         , 
+								sizeof( main_valve_states ), 
+								HAL_DEFAULT_TIMEOUT );
 		#elif defined( TERMINAL )
 			usb_transmit( &main_valve_states, 
 			              sizeof( main_valve_states ),
@@ -567,6 +572,58 @@ fuel_valve_opening = true;
 HAL_TIM_PWM_Start( &( VALVE_FUEL_TIM ), VALVE_FUEL_TIM_CHANNEL );
 return VALVE_OK;
 } /* valve_open_fuel_valve */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		valve_open_fuel_valve                                                  *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Open the main fuel valve                                               *
+*                                                                              *
+*******************************************************************************/
+VALVE_STATUS valve_slow_open_fuel_valve
+	(
+	void
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables
+------------------------------------------------------------------------------*/
+VALVE_STATUS valve_status; /* Status return codes from valve API */
+
+
+/*------------------------------------------------------------------------------
+ Initializations 
+------------------------------------------------------------------------------*/
+valve_status = VALVE_OK;
+
+
+/*------------------------------------------------------------------------------
+ Implementation 
+------------------------------------------------------------------------------*/
+
+/* Check if valve is already open */
+if ( fuel_valve_pos == VALVE_OPEN_POS )
+	{
+	return VALVE_OK;
+	}
+
+/* Set the direction   */
+valve_status = fuel_driver_set_direction( STEPPER_DRIVER_CW );
+if ( valve_status != VALVE_OK )
+	{
+	return valve_status;
+	}
+
+/* Actuate the valve   */
+fuel_valve_opening = true;
+HAL_TIM_PWM_Start( &( VALVE_FUEL_TIM ), VALVE_FUEL_TIM_CHANNEL );
+return VALVE_OK;
+} /* valve_open_fuel_valve */
+
+
 
 
 /*******************************************************************************
@@ -1273,13 +1330,13 @@ main_valve_states = 0;
 /* Check the LOX valve  */
 if ( valve_get_ox_valve_state() == VALVE_OPEN )
 	{
-	main_valve_states |= ( 1 << 7 );
+	main_valve_states |= ( 1 << 6 );
 	}
 
 /* Check the fuel valve */
 if ( valve_get_fuel_valve_state() == VALVE_OPEN )
 	{
-	main_valve_states |= ( 1 << 6 );
+	main_valve_states |= ( 1 << 7 );
 	}
 
 return main_valve_states;
