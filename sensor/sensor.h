@@ -20,6 +20,7 @@ extern "C" {
 #include "stm32h7xx_hal.h"
 #if defined( FLIGHT_COMPUTER )
 	#include "imu.h"
+	#include "gps.h"
 #endif
 
 /*------------------------------------------------------------------------------
@@ -50,9 +51,9 @@ Includes
 
 #if   defined( FLIGHT_COMPUTER   )
 	/* General */
-	#define NUM_SENSORS         ( 29   )
+	#define NUM_SENSORS         ( 38   )
 	// #define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 96   )
+	#define SENSOR_DATA_SIZE	( 120   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -154,7 +155,17 @@ typedef enum
 		SENSOR_PRES  		= 0x19,
 		SENSOR_TEMP  		= 0x1A,
 		SENSOR_BARO_ALT		= 0x1B,
-		SENSOR_BARO_VELO	= 0x1C
+		SENSOR_BARO_VELO	= 0x1C,
+		SENSOR_GPS_ALT		= 0x1D,
+		SENSOR_GPS_SPEED	= 0x1E,
+		SENSOR_GPS_TIME		= 0x1F,
+		SENSOR_GPS_DEC_LONG	= 0x20,
+		SENSOR_GPS_DEC_LAT 	= 0x21,
+		SENSOR_GPS_NS		= 0x22,
+		SENSOR_GPS_EW		= 0x23,
+		SENSOR_GPS_GLL		= 0x24,
+		SENSOR_GPS_RMC		= 0x25,
+
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		SENSOR_PT0   = 0x00,
 		SENSOR_PT1   = 0x01,
@@ -179,11 +190,20 @@ typedef enum
 typedef struct SENSOR_DATA 
 	{
 	#if   defined( FLIGHT_COMPUTER      )
-		IMU_DATA imu_data; 
+		IMU_DATA imu_data;
 		float    baro_pressure; 
 		float    baro_temp;	
 		float	 baro_alt;
 		float 	 baro_velo;
+		float	 gps_altitude_ft;
+		float 	 gps_speed_kmh;
+		float 	 gps_utc_time;
+		float	 gps_dec_longitude;
+		float	 gps_dec_latitude;
+		char	 gps_ns;
+		char	 gps_ew;
+		char	 gps_gll_status;
+		char 	 gps_rmc_status;
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		uint32_t pt_pressures[ NUM_PTS ];
 		uint32_t load_cell_force;
