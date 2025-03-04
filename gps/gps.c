@@ -206,10 +206,14 @@ switch ( gps_status )
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		gps_mesg_validate                                                         *
+* 		gps_mesg_validate                                                      *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-* 	    Validate message returned from GPS                                       *
+* 	    Validate message returned from GPS                                     *
+*                                                                              *
+* TEST:                                                                        *
+*       test_gps_mesg_validate provides coverage. If this function             *
+*       is updated, make sure the test cases are updated to match.             *
 *                                                                              *
 *******************************************************************************/
 int gps_mesg_validate(char *nmeastr){
