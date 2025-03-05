@@ -112,13 +112,13 @@ void GPS_parse
     char *GPSstrParse
     );
 
-static float gps_string_to_float
+float gps_string_to_float
     (
     char *GPSstrParse, 
     int* inputIdx
     );
 
-static char gps_string_to_char
+char gps_string_to_char
     (
     char *GPSstrParse, 
     int* inputIdx

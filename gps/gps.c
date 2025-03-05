@@ -336,7 +336,7 @@ else if (!strcmp(token, "$GPVTG"))
 *       updated, please re-run the test and update if necessary                *
 *                                                                              *
 *******************************************************************************/
-static float gps_string_to_float(char *GPSstrParse, int* inputIdx) 
+float gps_string_to_float(char *GPSstrParse, int* inputIdx) 
 {
 int idx = *inputIdx;
 char currChar = GPSstrParse[idx];
@@ -378,7 +378,7 @@ return strtof(tempstr, NULL);
 *       updated, please re-run the test and update if necessary                *
 *                                                                              *
 *******************************************************************************/
-static char gps_string_to_char(char *GPSstrParse, int* inputIdx) 
+char gps_string_to_char(char *GPSstrParse, int* inputIdx) 
 {
 int idx = *inputIdx;
 char currChar = GPSstrParse[idx];
