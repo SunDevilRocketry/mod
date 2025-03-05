@@ -206,10 +206,14 @@ switch ( gps_status )
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		gps_mesg_validate                                                         *
+* 		gps_mesg_validate                                                      *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-* 	    Validate message returned from GPS                                       *
+* 	    Validate message returned from GPS                                     *
+*                                                                              *
+* TEST:                                                                        *
+*       test_gps_mesg_validate provides coverage. If this function             *
+*       is updated, make sure the test cases are updated to match.             *
 *                                                                              *
 *******************************************************************************/
 int gps_mesg_validate(char *nmeastr){
@@ -258,59 +262,65 @@ int gps_mesg_validate(char *nmeastr){
 * DESCRIPTION:                                                                 *
 * 	    Convert raw NMEA string to usable data                                 *
 *                                                                              *
+* TEST:                                                                        *
+*       test_GPS_parse provides coverage. If this function or its              *
+*       helpers are updated, make sure the test cases are updated to match.    *
+*                                                                              *
 *******************************************************************************/
 void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
-	/* get message type */
-	char token[8]; // Needs to be 8 chars for memory alignment
-    strncpy(token, GPSstrParse, 6);
-    token[7] = '\0';
-    int idx = 7;
+/* Get message type */
+char token[8]; // Needs to be 8 chars for memory alignment
+strncpy(token, GPSstrParse, 6);
+token[7] = '\0';
+int idx = 7; /* Skips "$GPXXX,"*/
+memset(gps_ptr, 0, sizeof(GPS_DATA));
 
-	if (!strcmp(token, "$GPGGA")) {
-        gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->ns = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->ew = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->lock = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->satelites = (int)(gps_string_to_float(GPSstrParse, &idx) + 0.5); // This is a decimal number.
-        gps_ptr->hdop = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->msl_altitude = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->msl_units = GPSstrParse[idx]; idx = idx + 2;
-	}
-
-    else if (!strcmp(token, "$GPRMC")) {
-        gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->rmc_status = GPSstrParse[idx]; idx = idx + 2; /* unused */
-        gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->ns = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->ew = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->speed_k = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->course_d = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->date = (int)(0.5 + gps_string_to_float(GPSstrParse, &idx));
-	}
-
-    else if (!strcmp(token, "$GPGLL")) {
-        gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->ns = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->ew = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->gll_status = GPSstrParse[idx]; idx = idx + 2;
+/* Parse by message type */
+if (!strcmp(token, "$GPGGA")) 
+    {
+    gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->ns = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->ew = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->lock = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->satelites = (int)(gps_string_to_float(GPSstrParse, &idx) + 0.5); // This is a decimal number.
+    gps_ptr->hdop = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->msl_altitude = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->msl_units = gps_string_to_char(GPSstrParse, &idx);
     }
-
-    else if (!strcmp(token, "$GPVTG")) {
-        gps_ptr->course_t = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->course_t_unit = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->course_m = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->course_m_unit = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->speed_k = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->speed_k_unit = GPSstrParse[idx]; idx = idx + 2;
-        gps_ptr->speed_km = gps_string_to_float(GPSstrParse, &idx);
-        gps_ptr->speed_km_unit = GPSstrParse[idx]; idx = idx + 2;
+else if (!strcmp(token, "$GPRMC")) 
+    {
+    gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->rmc_status = gps_string_to_char(GPSstrParse, &idx); /* unused */
+    gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->ns = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->ew = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->speed_k = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->course_d = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->date = (int)(0.5 + gps_string_to_float(GPSstrParse, &idx));
     }
-
+else if (!strcmp(token, "$GPGLL")) 
+    {
+    gps_ptr->nmea_latitude = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->ns = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->ew = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->gll_status = gps_string_to_char(GPSstrParse, &idx);
+    }
+else if (!strcmp(token, "$GPVTG")) 
+    {
+    gps_ptr->course_t = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->course_t_unit = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->course_m = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->course_m_unit = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->speed_k = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->speed_k_unit = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->speed_km = gps_string_to_float(GPSstrParse, &idx);
+    gps_ptr->speed_km_unit = gps_string_to_char(GPSstrParse, &idx);
+    }
 } /* GPS_parse */
 
 /*******************************************************************************
@@ -321,27 +331,68 @@ void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
 * DESCRIPTION:                                                                 *
 * 	    Convert part of an NMEA string to a float                              *
 *                                                                              *
+* TEST:                                                                        *
+*       test_GPS_parse provides coverage. If this function is                  *
+*       updated, please re-run the test and update if necessary                *
+*                                                                              *
 *******************************************************************************/
-float gps_string_to_float(char *GPSstrParse, int* inputIdx) {
-    int idx = *inputIdx;
-    char currChar = GPSstrParse[idx];
-    char tempstr[16];
-    int tempidx = 0;
-    while (currChar != ',') {
-        if (tempidx > 15) {
-            /* ERROR HANDLING */
-            // maybe just exit loop? and deal with bad data? or make it null.
-            return 0.0f;
-        }
-        tempstr[tempidx] = GPSstrParse[idx];
-        tempidx++;
-        idx++;
-        currChar = GPSstrParse[idx];
+float gps_string_to_float(char *GPSstrParse, int* inputIdx) 
+{
+int idx = *inputIdx;
+char currChar = GPSstrParse[idx];
+char tempstr[16];
+int tempidx = 0;
+if (GPSstrParse[idx] == ',') /* Checks if subsequent comma */
+    {
+    *inputIdx = *inputIdx + 1;
+    return 0.0f; /* null return */
     }
-    *inputIdx = idx + 1;
-    tempstr[tempidx] = '\0';
-    return strtof(tempstr, NULL);
+while (currChar != ',') 
+    {
+    if (tempidx > 15) 
+        {
+        /* ERROR HANDLING */
+        // maybe just exit loop? and deal with bad data? or make it null.
+        return 0.0f;
+        }
+    tempstr[tempidx] = GPSstrParse[idx];
+    tempidx++;
+    idx++;
+    currChar = GPSstrParse[idx];
+    }
+*inputIdx = idx + 1;
+tempstr[tempidx] = '\0';
+return strtof(tempstr, NULL);
 } /* gps_string_to_float */
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		gps_string_to_char                                                     *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 	    Get a char from an NMEA string if it exists                            *
+*                                                                              *
+* TEST:                                                                        *
+*       test_GPS_parse provides coverage. If this function is                  *
+*       updated, please re-run the test and update if necessary                *
+*                                                                              *
+*******************************************************************************/
+char gps_string_to_char(char *GPSstrParse, int* inputIdx) 
+{
+int idx = *inputIdx;
+char currChar = GPSstrParse[idx];
+if (GPSstrParse[idx] == ',') /* Checks if subsequent comma */
+    {
+    *inputIdx = *inputIdx + 1;
+    return 0; /* null return */
+    }
+else 
+    {
+    *inputIdx = *inputIdx + 2;
+    return GPSstrParse[idx];
+    }
+} /* gps_string_to_char */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 
