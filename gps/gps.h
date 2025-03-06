@@ -31,8 +31,8 @@ extern "C" {
 
 typedef struct _GPS_DATA{
     // calculated values
-    float dec_longitude;
     float dec_latitude;
+    float dec_longitude;
     float altitude_ft;
 
     // GGA - Global Positioning System Fixed Data
@@ -124,10 +124,9 @@ char gps_string_to_char
     int* inputIdx
     );
 
-float GPS_nmea_to_dec
-    (
-    float deg_coord,
-    char nsew
+void gps_conv_latitude_longitude
+    ( 
+    GPS_DATA* data 
     );
 
 void gps_listener  

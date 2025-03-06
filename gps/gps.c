@@ -38,6 +38,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 /*------------------------------------------------------------------------------
  Preprocesor Directives 
@@ -283,11 +284,12 @@ if (!strcmp(token, "$GPGGA"))
     gps_ptr->ns = gps_string_to_char(GPSstrParse, &idx);
     gps_ptr->nmea_longitude = gps_string_to_float(GPSstrParse, &idx);
     gps_ptr->ew = gps_string_to_char(GPSstrParse, &idx);
-    gps_ptr->lock = gps_string_to_char(GPSstrParse, &idx);
+    gps_ptr->lock = (int)gps_string_to_float(GPSstrParse, &idx) + 0.5;
     gps_ptr->satelites = (int)(gps_string_to_float(GPSstrParse, &idx) + 0.5); // This is a decimal number.
     gps_ptr->hdop = gps_string_to_float(GPSstrParse, &idx);
     gps_ptr->msl_altitude = gps_string_to_float(GPSstrParse, &idx);
     gps_ptr->msl_units = gps_string_to_char(GPSstrParse, &idx);
+    gps_conv_latitude_longitude( gps_ptr );
     }
 else if (!strcmp(token, "$GPRMC")) 
     {
@@ -300,6 +302,7 @@ else if (!strcmp(token, "$GPRMC"))
     gps_ptr->speed_k = gps_string_to_float(GPSstrParse, &idx);
     gps_ptr->course_d = gps_string_to_float(GPSstrParse, &idx);
     gps_ptr->date = (int)(0.5 + gps_string_to_float(GPSstrParse, &idx));
+    gps_conv_latitude_longitude( gps_ptr );
     }
 else if (!strcmp(token, "$GPGLL")) 
     {
@@ -309,6 +312,7 @@ else if (!strcmp(token, "$GPGLL"))
     gps_ptr->ew = gps_string_to_char(GPSstrParse, &idx);
     gps_ptr->utc_time = gps_string_to_float(GPSstrParse, &idx);
     gps_ptr->gll_status = gps_string_to_char(GPSstrParse, &idx);
+    gps_conv_latitude_longitude( gps_ptr );
     }
 else if (!strcmp(token, "$GPVTG")) 
     {
@@ -393,6 +397,54 @@ else
     return GPSstrParse[idx];
     }
 } /* gps_string_to_char */
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		gps_conv_latitude_longitude                                            *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 	    Convert latitude and longitude from NMEA strings to the standard       *
+*       format.                                                                *
+*                                                                              *
+* TEST:                                                                        *
+*       test_GPS_parse provides coverage. If this function is                  *
+*       updated, please re-run the test and update if necessary                *
+*                                                                              *
+*******************************************************************************/
+void gps_conv_latitude_longitude( GPS_DATA* data ) 
+{
+/* Initialize variables */
+uint8_t latitude_deg; /* Range: 0 to 90 */
+uint8_t longitude_deg; /* Range: 0 to 180 */
+float   latitude;
+float   longitude;
+
+/* Compute the degrees. Dividing by 100 drops the last two digits before the decimal.
+   Truncate -- do not round */
+latitude_deg = (uint8_t)(data->nmea_latitude / 100);
+longitude_deg = (uint8_t)(data->nmea_longitude / 100);
+
+/* Compute the minutes, divide by 100 to move after the decimal */
+latitude = (data->nmea_latitude - (100 * latitude_deg)) / 60;
+longitude = (data->nmea_longitude - (100 * longitude_deg)) / 60;
+
+/* Add the degrees */
+latitude += (float)latitude_deg;
+longitude += (float)longitude_deg;
+
+/* Compute the sign */
+if (data->ns == 'S') {
+    latitude = -latitude;
+}
+if (data->ew == 'W') {
+    longitude = -longitude;
+}
+
+/* Set the values in the struct */
+data->dec_latitude = latitude;
+data->dec_longitude = longitude;
+} /* gps_conv_latitude_longitude */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 
