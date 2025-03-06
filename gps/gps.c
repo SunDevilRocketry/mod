@@ -385,7 +385,6 @@ return strtof(tempstr, NULL);
 char gps_string_to_char(char *GPSstrParse, int* inputIdx) 
 {
 int idx = *inputIdx;
-char currChar = GPSstrParse[idx];
 if (GPSstrParse[idx] == ',') /* Checks if subsequent comma */
     {
     *inputIdx = *inputIdx + 1;
