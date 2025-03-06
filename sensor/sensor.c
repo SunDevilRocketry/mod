@@ -64,7 +64,7 @@ static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
 extern GPS_DATA gps_data;
 
 #ifdef FLIGHT_COMPUTER
-extern uint32_t tdelta;
+extern uint32_t tdelta, previous_time;
 extern IMU_OFFSET imu_offset;
 #endif
 
@@ -469,6 +469,9 @@ switch ( subcommand )
 				}
 		#endif
 
+		// Reset start time
+		previous_time = HAL_GetTick();
+
 		/* Start polling sensors */
 		while ( sensor_poll_cmd != SENSOR_POLL_STOP )
 			{
@@ -507,10 +510,12 @@ switch ( subcommand )
 			/* Execute command */
 			switch ( sensor_poll_cmd )
 				{
-
+				
 				/* Poll Sensors */
 				case SENSOR_POLL_REQUEST:
 					{
+					tdelta = HAL_GetTick() - previous_time;
+					previous_time = HAL_GetTick();
 					sensor_status = sensor_poll( &sensor_data    , 
 												 &poll_sensors[0],
 												 num_sensors );
@@ -539,7 +544,9 @@ switch ( subcommand )
 				/* STOP Executtion */
 				case SENSOR_POLL_STOP:
 					{
-					/* Do nothing */
+					// Reset timing
+					previous_time = 0;
+					tdelta = 0;
 					break;
 					} /* case SENSOR_POLL_STOP */
 
