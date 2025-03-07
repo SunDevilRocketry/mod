@@ -32,6 +32,13 @@
 #include "led.h"
 
 /*------------------------------------------------------------------------------
+ Frequency calculation helper function
+------------------------------------------------------------------------------*/
+uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq ) {
+    return ( (2^19) * mhz_freq * 10^6 )/( 32 * 10^6 );
+}
+
+/*------------------------------------------------------------------------------
  Helper functions for various pin functions on the LoRa modem.
 ------------------------------------------------------------------------------*/
 LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
@@ -198,9 +205,6 @@ void lora_reset() {
     HAL_Delay(10);  // Wait for SX1278 to stabilize
 }
 
-LORA_STATUS lora_transmit( uint8_t data ) {
-    LORA_STATUS data_write = lora_write_register( LORA_REG_FIFO_RW, 255 );
-
 // =============================================================================
 // lora_transmit: transmit a buffer through lora fifo
 // ================v=============================================================
@@ -249,14 +253,11 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
             } 
         }   
     }
-    if( fifo_status +
-        tmode_status + 
-        regop_status +
-        sendbyte_status == 0 ) {
+    if( fifo_status + tmode_status + regop_status + sendbyte_status == 0 ) {
             return LORA_OK;
-        } else {
-            return LORA_FAIL;
-        }
+    } else {
+        return LORA_FAIL;
+    }
 }
 
 // =============================================================================
@@ -346,8 +347,4 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
         return LORA_OK;
     }
     return LORA_FAIL;
-}
-
-uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq ) {
-    return ( (2^19) * mhz_freq * 10^6 )/( 32 * 10^6 );
 }
