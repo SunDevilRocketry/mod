@@ -70,7 +70,7 @@ extern "C" {
 #define FIRMWARE_HOTFIRE        ( 0x04 ) /* Hotfire Firmware     */
 #define FIRMWARE_GD_TRANSMITTER ( 0x05 ) /* Transmitter Firmware */
 #define FIRMWARE_GD_RECEIVER 	( 0x06 ) /* Receiver Firmware */
-
+#define FIRMWARE_FGD_TRANSMITTER ( 0x07 ) /* Flgiht Transmitter Firmware */
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
