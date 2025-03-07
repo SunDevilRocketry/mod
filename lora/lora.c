@@ -120,15 +120,13 @@ LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode ) {
     // Get initial value of the operation mode register
     uint8_t operation_mode_register;
     LORA_STATUS read_status = lora_read_register( LORA_REG_OPERATION_MODE, &operation_mode_register );
-    // if( read_status & 0b00000001 != 0b00000001 ) { // Make function automatically fail if chip is not in LoRa mode
-    //     return LORA_FAIL;
-    // }
 
     if (read_status != LORA_OK)
     {
         return LORA_FAIL;
     }
 
+    // Fail if not in LORA Mode 
     if ( !( operation_mode_register & (1<<7) ) ){
         return LORA_FAIL;
     }
@@ -151,24 +149,42 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     // Get initial value of the operation mode register
     uint8_t operation_mode_register;
     LORA_STATUS read_status1 = lora_read_register( LORA_REG_OPERATION_MODE, &operation_mode_register );
-    uint8_t new_opmode_register;
 
+    uint8_t new_opmode_register;
     new_opmode_register = ( operation_mode_register | 0b00000001 ); // Toggle the LoRa bit
 
     // Write new byte
     LORA_STATUS write_status1 = lora_write_register( LORA_REG_OPERATION_MODE, new_opmode_register );
 
-
+    // Get initial value of config register 2
     uint8_t modem_config2_register;
     LORA_STATUS read_status2 = lora_read_register( LORA_REG_RX_HEADER_INFO, &modem_config2_register );
 
     uint8_t new_config2_register = modem_config2_register & 0x0F; // Erase spread factor bits
-    uint8_t new_config2_register = ( modem_config2_register | ( lora_config_ptr->lora_spread << 4 ) ); // Set the spread factor
+    new_config2_register = ( modem_config2_register | ( lora_config_ptr->lora_spread << 4 ) ); // Set the spread factor
     LORA_STATUS write_status2 = lora_write_register( LORA_REG_RX_HEADER_INFO, new_config2_register ); // Write new spread factor
+
+    // Get initial value of config register 1
+    uint8_t modem_config1_register;
+    LORA_STATUS read_status3 = lora_read_register( LORA_REG_NUM_RX_BYTES, &modem_config1_register );
+    uint8_t new_config1_register = ( (lora_config_ptr->lora_bandwidth << 4) | (lora_config_ptr->lora_ecr << 1) | lora_config_ptr->lora_header_mode ); //TODO: Check datasheet for that last bit
+
+    // Write new config1 register
+    LORA_STATUS write_status3 = lora_write_register( LORA_REG_NUM_RX_BYTES, new_config1_register );
+
+    // Determine register values for the frequency registers
+    uint8_t lora_freq_reg1 = ( lora_config_ptr->lora_frequency <<  8 ) >> 24;
+    uint8_t lora_freq_reg2 = ( lora_config_ptr->lora_frequency << 16 ) >> 24;
+    uint8_t lora_freq_reg3 = ( lora_config_ptr->lora_frequency << 24 ) >> 24;
+
+    // Write the frequncy registers
+    LORA_STATUS write_status4 = lora_write_register( LORA_REG_FREQ_MSB, lora_freq_reg1 );
+    LORA_STATUS write_status5 = lora_write_register( LORA_REG_FREQ_MSD, lora_freq_reg2 );
+    LORA_STATUS write_status6 = lora_write_register( LORA_REG_FREQ_LSB, lora_freq_reg3 );
 
     LORA_STATUS standby_status = lora_set_chip_mode( lora_config_ptr->lora_mode ); // Switch it into standby mode, which is what's convenient.
 
-    if( set_sleep_status + read_status1 + read_status2 + write_status1 + write_status2 + standby_status == 0 ) {
+    if( set_sleep_status + read_status1 + read_status2 + read_status3 + write_status1 + write_status2 + write_status3 + write_status4 + write_status5 + write_status6 + standby_status == 0 ) {
         return LORA_OK;
     } else {
         return LORA_FAIL;
@@ -181,6 +197,14 @@ void lora_reset() {
     HAL_GPIO_WritePin(LORA_RST_GPIO_PORT, LORA_RST_PIN, GPIO_PIN_SET);   // Pull High
     HAL_Delay(10);  // Wait for SX1278 to stabilize
 }
+
+uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq ) {
+    return ( (2^19) * mhz_freq * 10^6 )/( 32 * 10^6 );
+}
+
+
+LORA_STATUS lora_transmit( uint8_t data ) {
+    LORA_STATUS data_write = lora_write_register( LORA_REG_FIFO_RW, 255 );
 
 // =============================================================================
 // lora_transmit: transmit a buffer through lora fifo
@@ -240,7 +264,7 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
 
     // RX Init TODO
     
-    // Set lora fifo pointer to the RX base address
+     // Set lora fifo pointer to the RX base address
     uint8_t fifo_ptr_addr;
     LORA_STATUS status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
     if (status != LORA_OK){

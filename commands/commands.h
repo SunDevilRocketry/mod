@@ -58,7 +58,7 @@ extern "C" {
 #elif defined ( A0005_REV2 ) /* Ground Station Rev 2.0 */
 	/* Rev 2 */
 	#define PING_RESPONSE_CODE    ( 0x09 ) 
-#elif defined ( A0005_REV1 ) /* Flight Ground Station Rev */
+#elif defined ( A0005_REV3 ) /* Flight Ground Station Rev */
 	#define PING_RESPONSE_CODE	  ( 0xA0 ) 
 #endif
 
@@ -70,7 +70,7 @@ extern "C" {
 #define FIRMWARE_HOTFIRE        ( 0x04 ) /* Hotfire Firmware     */
 #define FIRMWARE_GD_TRANSMITTER ( 0x05 ) /* Transmitter Firmware */
 #define FIRMWARE_GD_RECEIVER 	( 0x06 ) /* Receiver Firmware */
-
+#define FIRMWARE_FGD_TRANSMITTER ( 0x07 ) /* Flgiht Transmitter Firmware */
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
