@@ -61,12 +61,12 @@ typedef enum LORA_REGISTER_ADDR {
    LORA_REG_OVER_CURRENT_PROT_CTRL     = 0x0B,
    LORA_REG_LNA_SETTINGS               = 0x0C,
    LORA_REG_FIFO_SPI_POINTER           = 0x0D,
-   LORA_REG_FIFO_TX_DATA               = 0x0E,
-   LORA_REG_FIFO_RX_DATA               = 0x0F,
-   LORA_REG_LORA_STATE_FLAGS           = 0x10,
+   LORA_REG_FIFO_TX_BASE_ADDR          = 0x0E,
+   LORA_REG_FIFO_RX_BASE_ADDR          = 0x0F,
+   LORA_REG_FIFO_RX_BASE_CUR_ADDR      = 0x10,
    LORA_REG_LORA_FLAG_MASK             = 0x11,
-   LORA_REG_INTERMEDIATE_FREQ_MSB      = 0x12,
-   LORA_REG_INTERMEDIATE_FREQ_LSB      = 0x13,
+   LORA_REG_IRQ_FLAGS                  = 0x12,
+   LORA_REG_FIFO_RX_NUM_BYTES          = 0x13,
    LORA_REG_RCV_TIMEOUT_MSB            = 0x14,
    LORA_REG_RCV_TIMEOUT_LSB            = 0x15,
    LORA_REG_TRANS_CONFIG               = 0x16,
@@ -165,6 +165,8 @@ LORA_STATUS lora_init();
 
 void lora_reset();
 
+LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
+LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
 
 // Convert a human-readable frequency to the unit used internally by the modem
 uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq );
