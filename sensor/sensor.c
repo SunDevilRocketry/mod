@@ -1747,7 +1747,7 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 	float pressure = sen_data->baro_pressure;
 	float temp = sen_data->baro_temp;
 	// conv pressure to pascal for equation
-	pressure *= 6894.76;
+	// pressure *= 6894.76;
 	float ts_delta = tdelta / 1000.0;
 
 	// calc altitude
@@ -1762,6 +1762,9 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 	velocity = (alt-alt_prev)/ts_delta;
 	alt_prev = alt;
 	velo_prev = velocity;
+
+	sen_data->baro_alt = alt;
+	sen_data->baro_velo = velocity;
 
 }
 
