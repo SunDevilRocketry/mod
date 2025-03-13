@@ -45,7 +45,8 @@ typedef enum LORA_STATUS {
    LORA_FAIL,
    // Temporary enum additions to distinguish between transmit and receive failures
    LORA_TRANSMIT_FAIL,
-   LORA_RECEIVE_FAIL
+   LORA_RECEIVE_FAIL,
+   LORA_TIMEOUT_FAIL,
 } LORA_STATUS;
 
 /* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)

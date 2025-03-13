@@ -70,7 +70,7 @@ LORA_STATUS LORA_SPI_Transmit_Data( LORA_REGISTER_ADDR reg, uint8_t data ) {
 
     /* Takes register and data to write and writes that register. */
     uint8_t transmitBuffer[2] = { reg, data };
-    status = HAL_SPI_Transmit( &(LORA_SPI), &transmitBuffer, 1, LORA_TIMEOUT);
+    status = HAL_SPI_Transmit( &(LORA_SPI), &transmitBuffer[0], 2, LORA_TIMEOUT);
 
     if (status == HAL_OK){
         return LORA_OK;
@@ -300,7 +300,7 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
         rx_done = (irq_flag & (1<<6)) >> 6;
         
         if (timeout_flag){
-            return LORA_TIMEOUT;
+            return LORA_TIMEOUT_FAIL;
         } else if (rx_done) {
             break;
         }
