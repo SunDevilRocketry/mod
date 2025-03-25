@@ -169,7 +169,7 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     LORA_STATUS read_status2 = lora_read_register( LORA_REG_RX_HEADER_INFO, &modem_config2_register );
 
     uint8_t new_config2_register = modem_config2_register & 0x0F; // Erase spread factor bits
-    new_config2_register = ( modem_config2_register | ( lora_config_ptr->lora_spread << 4 ) ); // Set the spread factor
+    new_config2_register = ( new_config2_register | ( lora_config_ptr->lora_spread << 4 ) ); // Set the spread factor
     LORA_STATUS write_status2 = lora_write_register( LORA_REG_RX_HEADER_INFO, new_config2_register ); // Write new spread factor
 
     // Get initial value of config register 1
@@ -181,16 +181,18 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     LORA_STATUS write_status3 = lora_write_register( LORA_REG_NUM_RX_BYTES, new_config1_register );
 
     // Determine register values for the frequency registers
-    uint8_t lora_freq_reg1 = ( lora_config_ptr->lora_frequency <<  8 ) >> 24;
-    uint8_t lora_freq_reg2 = ( lora_config_ptr->lora_frequency << 16 ) >> 24;
-    uint8_t lora_freq_reg3 = ( lora_config_ptr->lora_frequency << 24 ) >> 24;
+    uint32_t frf_reg = lora_config_ptr->lora_frequency * 524288 / 32;
+
+    uint8_t lora_freq_reg1 = ( frf_reg <<  8 ) >> 24;
+    uint8_t lora_freq_reg2 = ( frf_reg << 16 ) >> 24;
+    uint8_t lora_freq_reg3 = ( frf_reg << 24 ) >> 24;
 
     // Write the frequncy registers
     LORA_STATUS write_status4 = lora_write_register( LORA_REG_FREQ_MSB, lora_freq_reg1 );
     LORA_STATUS write_status5 = lora_write_register( LORA_REG_FREQ_MSD, lora_freq_reg2 );
     LORA_STATUS write_status6 = lora_write_register( LORA_REG_FREQ_LSB, lora_freq_reg3 );
 
-    LORA_STATUS standby_status = lora_set_chip_mode( lora_config_ptr->lora_mode ); // Switch it into standby mode, which is what's convenient.
+    LORA_STATUS standby_status = lora_set_chip_mode( LORA_STANDBY_MODE ); // Switch it into standby mode, which is what's convenient.
 
     if( set_sleep_status + read_status1 + read_status2 + read_status3 + write_status1 + write_status2 + write_status3 + write_status4 + write_status5 + write_status6 + standby_status == 0 ) {
         return LORA_OK;
