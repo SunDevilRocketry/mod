@@ -217,6 +217,10 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
 
     // TX Init TODO
 
+    /* TESTING PURPOSE */
+    uint8_t operation_mode_register;
+    LORA_STATUS read_status1 = lora_read_register( LORA_REG_OPERATION_MODE, &operation_mode_register );
+
     // Write data to LoRA FIFO
     uint8_t fifo_ptr_addr;
     LORA_STATUS ptr_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
@@ -231,10 +235,21 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
         led_set_color(LED_RED);
         return LORA_FAIL;
     }
-    // Write buffer length to fifo_rw
-    LORA_STATUS fifo_status = lora_write_register(LORA_REG_FIFO_RW, buffer_len); 
-    LORA_STATUS tmode_status = lora_set_chip_mode(LORA_TRANSMIT_MODE);
 
+    // Send byte to byte to the fifo buffer
+    LORA_STATUS sendbyte_status;
+    for (int i = 0; i<buffer_len; i++){
+        sendbyte_status = lora_write_register(LORA_REG_FIFO_RW, buffer_ptr[i]);
+        
+        /* TESTING PURPOSE */
+        uint8_t fifo_ptr_addr_test;
+        LORA_STATUS ptr_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr_test);  // Access LoRA FIFO data buffer pointer
+    }
+
+    // Write buffer length to fifo_rw
+    LORA_STATUS fifo_status = lora_write_register(LORA_REG_SIGNAL_TO_NOISE, buffer_len); 
+    
+    LORA_STATUS tmode_status = lora_set_chip_mode(LORA_TRANSMIT_MODE);
     uint8_t lora_op;
     LORA_STATUS regop_status;
     while (1){ // TODO Add a timeout here
@@ -243,19 +258,7 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
             break;
         } 
     }
-    // Send each byte of the buffer
-    LORA_STATUS sendbyte_status;
-    for (int i = 0; i<buffer_len; i++){
-        sendbyte_status = lora_write_register(LORA_REG_FIFO_RW, buffer_ptr[i]);
-        sendbyte_status = lora_set_chip_mode(LORA_TRANSMIT_MODE);
-        while (1){ // TODO add timeout
-            uint8_t lora_op;
-            sendbyte_status = lora_read_register(LORA_REG_OPERATION_MODE, &lora_op);
-            if ((lora_op & 0b111) == LORA_STANDBY_MODE){
-                break;
-            } 
-        }   
-    }
+    /
     if( fifo_status + tmode_status + regop_status + sendbyte_status == 0 ) {
             return LORA_OK;
     } else {
