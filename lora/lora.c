@@ -258,7 +258,6 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
             break;
         } 
     }
-    /
     if( fifo_status + tmode_status + regop_status + sendbyte_status == 0 ) {
             return LORA_OK;
     } else {
