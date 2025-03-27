@@ -212,14 +212,10 @@ void lora_reset() {
 // lora_transmit: transmit a buffer through lora fifo
 // ================v=============================================================
 LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
+    uint8_t fifo_ptr_addr_test; // Testing fifo increment
+    
     // Mode request STAND-BY
     LORA_STATUS standby_status = lora_set_chip_mode(LORA_STANDBY_MODE);
-
-    // TX Init TODO
-
-    /* TESTING PURPOSE */
-    uint8_t operation_mode_register;
-    LORA_STATUS read_status1 = lora_read_register( LORA_REG_OPERATION_MODE, &operation_mode_register );
 
     // Write data to LoRA FIFO
     uint8_t fifo_ptr_addr;
@@ -242,14 +238,23 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
         sendbyte_status = lora_write_register(LORA_REG_FIFO_RW, buffer_ptr[i]);
         
         /* TESTING PURPOSE */
-        uint8_t fifo_ptr_addr_test;
         LORA_STATUS ptr_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr_test);  // Access LoRA FIFO data buffer pointer
     }
 
     // Write buffer length to fifo_rw
     LORA_STATUS fifo_status = lora_write_register(LORA_REG_SIGNAL_TO_NOISE, buffer_len); 
     
+    /* TESTING PURPOSE: Read payload length */
+    uint8_t test_buf;
+    lora_read_register( LORA_REG_SIGNAL_TO_NOISE, &test_buf );
+
     LORA_STATUS tmode_status = lora_set_chip_mode(LORA_TRANSMIT_MODE);
+
+    /* TESTING PURPOSE: Test op mode transition */
+    uint8_t operation_mode_register;
+    lora_read_register( LORA_REG_OPERATION_MODE, &operation_mode_register );
+    
+
     uint8_t lora_op;
     LORA_STATUS regop_status;
     while (1){ // TODO Add a timeout here
