@@ -22,6 +22,7 @@
 #include "servo.h"
 #include "led.h"
 #include "init.h"
+#include "usb.h"
 /*------------------------------------------------------------------------------
  Global Variables 
 ------------------------------------------------------------------------------*/
@@ -215,18 +216,52 @@ void motor4_drive(uint8_t angle)
 * 		motors_drive                                                           *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		A complete function that drives each servo in this board               *
+* 		A complete function that drives all servos in this board                *
 *                                                                              *
 *******************************************************************************/
-void motors_drive(SERVOS_DATA servos_data)
+void motors_drive(uint8_t angle)
 {
-    uint8_t default_angle = angle_to_pulse(0);
-    motor1_drive(default_angle);
-    motor2_drive(default_angle);
-    motor3_drive(default_angle);
-    motor4_drive(default_angle);
+    uint8_t turn_degree1 = angle + servo_preset.rp_servo1;
+    uint8_t turn_degree2 = angle + servo_preset.rp_servo2;
+    uint8_t turn_degree3 = angle + servo_preset.rp_servo3;
+    uint8_t turn_degree4 = angle + servo_preset.rp_servo4;
+
+    motor1_drive(turn_degree1);
+    motor2_drive(turn_degree2);
+    motor3_drive(turn_degree3);
+    motor4_drive(turn_degree4);
 }
 
+void servo_cmd_execute(uint8_t subcommand){
+    USB_STATUS usb_status;
+
+    switch (subcommand){
+        case SERVO_SWEEP:
+        {
+            uint8_t degree;
+            usb_receive(&degree, sizeof(uint8_t), HAL_DEFAULT_TIMEOUT);
+            motors_drive(degree);
+            break;
+        }
+        case SERVO_RESET:
+        {
+            servo_reset();
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		angle_to_pulse                                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Convert turn angle degree into PWM pulse                               *
+*                                                                              *
+*******************************************************************************/
 uint8_t angle_to_pulse(uint8_t angle)
 {
     return 25 + (angle*SER_PER);
