@@ -52,6 +52,12 @@ typedef enum SERVO_STATUS
     SERVO_FAIL
     } SERVO_STATUS;
 
+typedef enum SERVO_OPCODE
+    {
+    SERVO_SWEEP = 0x00,
+    SERVO_RESET = 0x01   
+    } SERVO_OPCODE;
+
 typedef struct _SERVO_PRESET
     {
     uint8_t rp_servo1;
@@ -85,11 +91,11 @@ void motor3_drive(uint8_t angle);
 /* Drive the forth servo motor with a desired value (0-100) */
 void motor4_drive(uint8_t angle);
 
-/* A complete function that drives each servo in this board  */
-// void motors_drive(SERVOS_DATA servos_data);
+/* A complete function that drives all servos in this board  */
+void motors_drive(uint8_t angle);
 
 /* Execute servo subcommand */
-// void servo_cmd_execute(uint8_t subcommand);
+void servo_cmd_execute(uint8_t subcommand);
 
 uint8_t angle_to_pulse(uint8_t angle);
 
