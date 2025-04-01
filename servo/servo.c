@@ -34,7 +34,6 @@ extern SERVO_PRESET servo_preset;
  Procedures 
 ------------------------------------------------------------------------------*/
 
-
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
@@ -161,7 +160,7 @@ void motor4_pwm_drive(uint8_t pulse)
 *******************************************************************************/
 void motor1_drive(uint8_t angle)
 {
-    uint8_t pulse = angle_to_pulse(angle);
+    uint8_t pulse = angle_to_pulse(motor_snap_to_bound(angle, 180, 0));
     htim3.Instance->CCR4 = pulse;
 }
 
@@ -176,7 +175,7 @@ void motor1_drive(uint8_t angle)
 *******************************************************************************/
 void motor2_drive(uint8_t angle)
 {
-    uint8_t pulse = angle_to_pulse(angle);
+    uint8_t pulse = angle_to_pulse(motor_snap_to_bound(angle, 180, 0));
     htim3.Instance->CCR3 = pulse;
 }
 
@@ -191,7 +190,7 @@ void motor2_drive(uint8_t angle)
 *******************************************************************************/
 void motor3_drive(uint8_t angle)
 {
-    uint8_t pulse = angle_to_pulse(angle);
+    uint8_t pulse = angle_to_pulse(motor_snap_to_bound(angle, 180, 0));
     htim3.Instance->CCR1 = pulse;
 }
 
@@ -206,7 +205,7 @@ void motor3_drive(uint8_t angle)
 *******************************************************************************/
 void motor4_drive(uint8_t angle)
 {
-    uint8_t pulse = angle_to_pulse(angle);
+    uint8_t pulse = angle_to_pulse(motor_snap_to_bound(angle, 180, 0));
     htim2.Instance->CCR1 = pulse;
 }
 
@@ -232,24 +231,33 @@ void motors_drive(uint8_t angle)
     motor4_drive(turn_degree4);
 }
 
-void servo_cmd_execute(uint8_t subcommand){
+SERVO_STATUS servo_cmd_execute(uint8_t subcommand){
     USB_STATUS usb_status;
 
     switch (subcommand){
         case SERVO_SWEEP:
         {
             uint8_t degree;
-            usb_receive(&degree, sizeof(uint8_t), HAL_DEFAULT_TIMEOUT);
+            usb_status = usb_receive(&degree, sizeof(uint8_t), 1000);
             motors_drive(degree);
-            break;
+            if (usb_status == USB_OK) 
+                {
+                return SERVO_OK;
+                }
+            else
+                {
+                led_set_color( LED_YELLOW );
+                HAL_Delay( 5000 );
+                return SERVO_FAIL;
+                }
         }
         case SERVO_RESET:
         {
             servo_reset();
-            break;
+            return SERVO_OK;
         }
         default:
-            break;
+            return SERVO_FAIL;
     }
 }
 
@@ -267,3 +275,13 @@ uint8_t angle_to_pulse(uint8_t angle)
     return 25 + (angle*SER_PER);
 }
 
+uint8_t motor_snap_to_bound(uint8_t angle, uint8_t upper, uint8_t lower)
+{
+    if (angle >= lower && angle <= upper) {
+        return angle;
+    } else if (angle > upper && servo_preset.rp_servo1 <= (upper + ((255 - upper) / 2))) {
+        return upper;
+    } else {
+        return lower;
+    }
+}

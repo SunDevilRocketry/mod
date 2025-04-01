@@ -95,10 +95,11 @@ void motor4_drive(uint8_t angle);
 void motors_drive(uint8_t angle);
 
 /* Execute servo subcommand */
-void servo_cmd_execute(uint8_t subcommand);
+SERVO_STATUS servo_cmd_execute(uint8_t subcommand);
 
 uint8_t angle_to_pulse(uint8_t angle);
 
+uint8_t motor_snap_to_bound(uint8_t angle, uint8_t upper, uint8_t lower);
 
 /* A function that handles a error driven from controlling servo */
 void error_handler();
