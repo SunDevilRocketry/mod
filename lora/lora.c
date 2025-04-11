@@ -232,6 +232,9 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
         return LORA_FAIL;
     }
 
+    // Write buffer length to fifo_rw
+    LORA_STATUS fifo_status = lora_write_register(LORA_REG_SIGNAL_TO_NOISE, buffer_len); 
+
     // Send byte to byte to the fifo buffer
     LORA_STATUS sendbyte_status;
     for (int i = 0; i<buffer_len; i++){
@@ -240,9 +243,6 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
         /* TESTING PURPOSE */
         LORA_STATUS ptr_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr_test);  // Access LoRA FIFO data buffer pointer
     }
-
-    // Write buffer length to fifo_rw
-    LORA_STATUS fifo_status = lora_write_register(LORA_REG_SIGNAL_TO_NOISE, buffer_len); 
     
     /* TESTING PURPOSE: Read payload length */
     uint8_t test_buf;
