@@ -166,19 +166,19 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
 
     // Get initial value of config register 2
     uint8_t modem_config2_register;
-    LORA_STATUS read_status2 = lora_read_register( LORA_REG_RX_HEADER_INFO, &modem_config2_register );
+    LORA_STATUS read_status2 = lora_read_register( LORA_REG_MODEM_CONFIG_2, &modem_config2_register );
 
     uint8_t new_config2_register = modem_config2_register & 0x0F; // Erase spread factor bits
     new_config2_register = ( new_config2_register | ( lora_config_ptr->lora_spread << 4 ) ); // Set the spread factor
-    LORA_STATUS write_status2 = lora_write_register( LORA_REG_RX_HEADER_INFO, new_config2_register ); // Write new spread factor
+    LORA_STATUS write_status2 = lora_write_register( LORA_REG_MODEM_CONFIG_2, new_config2_register ); // Write new spread factor
 
     // Get initial value of config register 1
     uint8_t modem_config1_register;
-    LORA_STATUS read_status3 = lora_read_register( LORA_REG_NUM_RX_BYTES, &modem_config1_register );
+    LORA_STATUS read_status3 = lora_read_register( LORA_REG_MODEM_CONFIG_1, &modem_config1_register );
     uint8_t new_config1_register = ( (lora_config_ptr->lora_bandwidth << 4) | (lora_config_ptr->lora_ecr << 1) | lora_config_ptr->lora_header_mode ); //TODO: Check datasheet for that last bit
 
     // Write new config1 register
-    LORA_STATUS write_status3 = lora_write_register( LORA_REG_NUM_RX_BYTES, new_config1_register );
+    LORA_STATUS write_status3 = lora_write_register( LORA_REG_MODEM_CONFIG_1, new_config1_register );
 
     // Determine register values for the frequency registers
     uint32_t frf_reg = lora_config_ptr->lora_frequency * 524288 / 32;
@@ -233,7 +233,7 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
     }
 
     // Write buffer length to fifo_rw
-    LORA_STATUS fifo_status = lora_write_register(LORA_REG_SIGNAL_TO_NOISE, buffer_len); 
+    LORA_STATUS fifo_status = lora_write_register(LORA_REG_PAYLOAD_LENGTH, buffer_len); 
 
     // Send byte to byte to the fifo buffer
     LORA_STATUS sendbyte_status;
@@ -246,7 +246,7 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
     
     /* TESTING PURPOSE: Read payload length */
     uint8_t test_buf;
-    lora_read_register( LORA_REG_SIGNAL_TO_NOISE, &test_buf );
+    lora_read_register( LORA_REG_PAYLOAD_LENGTH, &test_buf );
 
     LORA_STATUS tmode_status = lora_set_chip_mode(LORA_TRANSMIT_MODE);
 

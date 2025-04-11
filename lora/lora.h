@@ -5,8 +5,11 @@
 *
 * DESCRIPTION: 
 * 		Contains register definitions and functions for controlling the LoRa
-*       radio module.
+*     radio module.
 *
+*     Datasheet:
+*     https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf
+*     
 *******************************************************************************/
 
 #ifndef LORA_H
@@ -49,8 +52,7 @@ typedef enum LORA_STATUS {
    LORA_TIMEOUT_FAIL,
 } LORA_STATUS;
 
-/* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)
-   Note: as we are using LoRa, the FSK opcodes are not included*/
+/* Radio register addresses (Pg. 86-87, 102-107)*/
 typedef enum LORA_REGISTER_ADDR {
    LORA_REG_FIFO_RW                    = 0x00,
    LORA_REG_OPERATION_MODE             = 0x01,
@@ -65,28 +67,28 @@ typedef enum LORA_REGISTER_ADDR {
    LORA_REG_FIFO_TX_BASE_ADDR          = 0x0E,
    LORA_REG_FIFO_RX_BASE_ADDR          = 0x0F,
    LORA_REG_FIFO_RX_BASE_CUR_ADDR      = 0x10,
-   LORA_REG_LORA_FLAG_MASK             = 0x11,
+   LORA_REG_IRQ_FLAGS_MASK             = 0x11,
    LORA_REG_IRQ_FLAGS                  = 0x12,
    LORA_REG_FIFO_RX_NUM_BYTES          = 0x13,
-   LORA_REG_RCV_TIMEOUT_MSB            = 0x14,
-   LORA_REG_RCV_TIMEOUT_LSB            = 0x15,
-   LORA_REG_TRANS_CONFIG               = 0x16,
-   LORA_REG_TRANS_PAYLOAD_LENGTH       = 0x17,
-   LORA_REG_PREAMBLE_SIZE_MSB          = 0x18,
-   LORA_REG_PREAMBLE_SIZE_LSB          = 0x19,
-   LORA_REG_MODULATION_CONFIG          = 0x1A,
-   LORA_REG_RF_MODE                    = 0x1B,
-   LORA_REG_FHSS_HOP_PERIOD            = 0x1C,
-   LORA_REG_NUM_RX_BYTES               = 0x1D,
-   LORA_REG_RX_HEADER_INFO             = 0x1E,
-   LORA_REG_NUM_RX_VALID_HEADERS       = 0x1F,
-   LORA_REG_NUM_RX_VALID_PACKETS       = 0x20,
-   LORA_REG_MODEM_STATUS               = 0x21,
-   LORA_REG_SIGNAL_TO_NOISE            = 0x22,
-   LORA_REG_CURRENT_RSSI               = 0x23,
-   LORA_REG_LAST_PACKET_RSSI           = 0x24,
-   LORA_REG_FREQ_HOP_START_CHANNEL     = 0x25,
-   LORA_REG_RX_DATA_POINTER            = 0x26,
+   LORA_REG_RX_HEADER_CNT_MSB          = 0x14,
+   LORA_REG_RX_HEADER_CNT_LSB          = 0x15,
+   LORA_REG_RX_PACKET_CNT_MSB          = 0x16,
+   LORA_REG_RX_PACKET_CNT_LSB          = 0x17,
+   LORA_REG_MODEM_STATUS               = 0x18,
+   LORA_REG_PACKET_SNR                 = 0x19,
+   LORA_REG_PACKET_RSSI                = 0x1A,
+   LORA_REG_CURRENT_RSSI               = 0x1B,
+   LORA_REG_HOP_CHANNEL                = 0x1C,
+   LORA_REG_MODEM_CONFIG_1             = 0x1D,
+   LORA_REG_MODEM_CONFIG_2             = 0x1E,
+   LORA_REG_SYMBOL_TIMOUT_LSB          = 0x1F,
+   LORA_REG_PREAMBLE_MSB               = 0x20,
+   LORA_REG_PREAMBLE_LSB               = 0x21,
+   LORA_REG_PAYLOAD_LENGTH             = 0x22,
+   LORA_REG_MAX_PAYLOAD_LENGTH         = 0x23,
+   LORA_REG_HOP_PERIOD                 = 0x24,
+   LORA_REG_FIFO_RX_BYTE_ADDR          = 0x25,
+   LORA_REG_MODEM_CONFIG_3             = 0x26,
    LORA_REG_DIO_MAPPING_MODE_1         = 0x40,
    LORA_REG_DIO_MAPPING_MODE_2         = 0x41,
    LORA_REG_ID_VERSION                 = 0x42,
