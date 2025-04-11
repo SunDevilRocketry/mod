@@ -12,26 +12,25 @@
 *     
 *******************************************************************************/
 
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef LORA_H
 #define LORA_H
 
-/* Project includes */
+/*------------------------------------------------------------------------------
+Includes 
+------------------------------------------------------------------------------*/
 
-/* Operation Mode Register Values */
-/* These are just random parts of the operation register that may or not get used
-To avoid any chance they're in the final binary without being used,
-they are commented out for now and will be uncommented as they're needed.
-
-#define LORA_LORA_MODE             0b1
-#define LORA_LORA_REGISTER_PAGE    0b0
-#define LORA_FSK_REGISTER_PAGE     0b1
-#define LORA_HIGH_FREQ_MODE        0b1
-#define LORA_LOW_FREQ_MODE         0b0
-#define LORA_OPERATION_RESERVED    0b00
-*/
+/*------------------------------------------------------------------------------
+ Macros 
+------------------------------------------------------------------------------*/
 
 #define LORA_TIMEOUT                2000
 
+/*------------------------------------------------------------------------------
+ Typdefs 
+------------------------------------------------------------------------------*/
+
+/* Device Modes (See Pg. 102, Reg 0x01, Bits 0-2) */
 typedef enum LORA_CHIPMODE {
    LORA_SLEEP_MODE = 0x00,
    LORA_STANDBY_MODE = 0x01,
@@ -43,12 +42,10 @@ typedef enum LORA_CHIPMODE {
    LORA_RX_CAD         = 0x07
 } LORA_CHIPMODE;
 
+/* LoRa return value codes */
 typedef enum LORA_STATUS {
    LORA_OK = 0,
    LORA_FAIL,
-   // Temporary enum additions to distinguish between transmit and receive failures
-   LORA_TRANSMIT_FAIL,
-   LORA_RECEIVE_FAIL,
    LORA_TIMEOUT_FAIL,
 } LORA_STATUS;
 
@@ -101,18 +98,7 @@ typedef enum LORA_REGISTER_ADDR {
    LORA_REG_AGC_THRESHOLD_4            = 0x64
 } LORA_REGISTER_ADDR;
 
-/* Datasheet page 107 */
-typedef enum LORA_SPREADING_FACTOR {
-   LORA_SPREAD_6 = 6,
-   LORA_SPREAD_7 = 7,
-   LORA_SPREAD_8 = 8,
-   LORA_SPREAD_9 = 9,
-   LORA_SPREAD_10 = 10,
-   LORA_SPREAD_11 = 11,
-   LORA_SPREAD_12 = 12
-} LORA_SPREADING_FACTOR;
-
-/* Datasheet page 106 */
+/* Bandwith, Pg. 106 */
 typedef enum LORA_BANDWIDTH {
    LORA_BANDWIDTH_7_8_KHZ   = 0x00,
    LORA_BANDWIDTH_10_4_KHZ  = 0x01,
@@ -126,6 +112,7 @@ typedef enum LORA_BANDWIDTH {
    LORA_BANDWIDTH_500_KHZ   = 0x09
 } LORA_BANDWIDTH;
 
+/* Error Coding Rate, Pg. 106  */
 typedef enum LORA_ERROR_CODING {
    LORA_ECR_4_5 = 0x01,
    LORA_ECR_4_6 = 0x02,
@@ -133,10 +120,22 @@ typedef enum LORA_ERROR_CODING {
    LORA_ECR_4_8 = 0x04
 } LORA_ERROR_CODING;
 
-typedef enum LORA_HEADER_MODE {// You can see this on 106 - what this actually means is on pages 26 and 27
+// Explicit or Implicit Header, Pg. 106 (More info 26-27)
+typedef enum LORA_HEADER_MODE {
    LORA_IMPLICIT_HEADER = 0b1,
    LORA_EXPLICIT_HEADER = 0b0
 } LORA_HEADER_MODE;
+
+/* Spreading factor, Pg. 107 */
+typedef enum LORA_SPREADING_FACTOR {
+   LORA_SPREAD_6 = 6,
+   LORA_SPREAD_7 = 7,
+   LORA_SPREAD_8 = 8,
+   LORA_SPREAD_9 = 9,
+   LORA_SPREAD_10 = 10,
+   LORA_SPREAD_11 = 11,
+   LORA_SPREAD_12 = 12
+} LORA_SPREADING_FACTOR;
 
 /* LORA CONFIG SETTINGS */
 typedef struct _LORA_CONFIG {
@@ -145,35 +144,85 @@ typedef struct _LORA_CONFIG {
    LORA_BANDWIDTH lora_bandwidth; // Signal bandwith
    LORA_ERROR_CODING lora_ecr; // Data Error coding
    LORA_HEADER_MODE lora_header_mode; // LORA Header mode
-   uint32_t lora_frequency; // The LORA carrier frequency. This is NOT directly in megahertz. (See datasheet page 103)
-   // To convert, use the formula (2^19 * x)/(32 * 10^6)
-   // This library provides a helper function 
+   uint32_t lora_frequency; // The LORA carrier frequency in MHz
 } LORA_CONFIG;
 
-LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr );
+/*------------------------------------------------------------------------------
+ Functions 
+------------------------------------------------------------------------------*/
 
-LORA_STATUS LORA_SPI_Transmit_Buffer( LORA_REGISTER_ADDR reg, uint8_t data );
+/* Wrapper function for HAL SPI Receive Call, 
+   For Library Development Convenience */
+LORA_STATUS LORA_SPI_Receive
+   (
+   uint8_t* read_buffer_ptr
+   );
 
-LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg );
+/* Wrapper function for HAL SPI Transmit Call, 
+   For Library Development Convenience,
+   Multiple Bytes */
+LORA_STATUS LORA_SPI_Transmit_Data
+   (
+   LORA_REGISTER_ADDR reg,
+   uint8_t data
+   );
 
-LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData);
+/* Wrapper function for HAL SPI Transmit Call, 
+   For Library Development Convenience,
+   Single Byte */
+LORA_STATUS LORA_SPI_Transmit_Byte
+   (
+   LORA_REGISTER_ADDR reg
+   );
 
-LORA_STATUS lora_write_register( LORA_REGISTER_ADDR lora_register, uint8_t data );
+/* Read LoRa register value */
+LORA_STATUS lora_read_register
+   (
+   LORA_REGISTER_ADDR lora_register,
+   uint8_t* regData
+   );
 
-LORA_STATUS lora_get_device_id(uint8_t* buffer_ptr);
+/* Write value to LoRa register */
+LORA_STATUS lora_write_register
+   (
+   LORA_REGISTER_ADDR lora_register,
+   uint8_t data
+   );
 
-LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode );
+/* Get sillicon revision ID */
+LORA_STATUS lora_get_device_id
+   (
+   uint8_t* buffer_ptr
+   );
 
-LORA_STATUS lora_init();
+LORA_STATUS lora_set_chip_mode
+   (
+   LORA_CHIPMODE chip_mode
+   );
 
-void lora_reset();
+/* Initialize LoRa chip with LoRa config */
+LORA_STATUS lora_init
+   (
+   LORA_CONFIG *lora_config_ptr
+   );
 
-LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len);
-LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr);
+/* Reset LoRa chip */
+void lora_reset
+   (
+   void
+   );
 
-// Convert a human-readable frequency to the unit used internally by the modem
-uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq );
+/* Transmit Data Over LoRa Protocol */
+LORA_STATUS lora_transmit
+   (
+   uint8_t* buffer_ptr, uint8_t buffer_len
+   );
 
-// LORA_STATUS lora_transmit( uint8_t data );
+/* Receive Data over LoRa Protocol */
+LORA_STATUS lora_receive
+   (
+   uint8_t* buffer_ptr,
+   uint8_t* buffer_len_ptr
+   );
 
 #endif
