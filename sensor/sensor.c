@@ -1622,7 +1622,7 @@ void sensor_body_state(IMU_DATA* imu_data){
 	// Calculate body state angles (pitch, roll)
 	float pitch, roll;
 	float g = 9.8;
-	roll = atanf( imu_data->imu_converted.accel_y / imu_data->imu_converted.accel_y );
+	roll = atanf( imu_data->imu_converted.accel_z / imu_data->imu_converted.accel_y );
 	pitch = atanf( imu_data->imu_converted.accel_x / g );
 
 	// Calculate body state anglular rate
