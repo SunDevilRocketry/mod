@@ -820,7 +820,6 @@ for ( int i = 2; i < pflash_handle -> num_bytes; i += 2 )
 		else
 			{
 			timeout_ctr++;
-			HAL_Delay( 1 );
 			}
 		}
 
@@ -841,6 +840,7 @@ for ( int i = 2; i < pflash_handle -> num_bytes; i += 2 )
 		{
 		return FLASH_WRITE_ERROR;
 		}
+
 	} /* for ( i < pflash_handle -> num_bytes )*/
 
 /* Wait for AAI to complete */
