@@ -44,6 +44,7 @@
 #endif
 #include "usb.h"
 #include "sensor.h"
+#include "sensor_fusion.h"
 #if defined( ENGINE_CONTROLLER )
 	#include "pressure.h"
 	#include "loadcell.h"
