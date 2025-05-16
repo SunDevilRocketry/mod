@@ -33,6 +33,8 @@ extern "C" {
 #define DUAL_DEPLOY_OP 0xA0    /* dual-deploy command opcode */
 #define SERVO_OP	   0x08
 
+#define FIN_OP		   0x21    /* fin calibrate opcode (NOTE: DUPLICATE OF POWER_OP) */
+
 /* Board identifier code */
 #if   defined( A0002_REV1 ) /* Flight Computer Rev 1.0 */
 	/* Rev 1 */
