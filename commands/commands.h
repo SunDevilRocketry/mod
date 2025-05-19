@@ -32,6 +32,7 @@ extern "C" {
 #define VALVE_OP       0x52    /* Valve command opcode       */
 #define DUAL_DEPLOY_OP 0xA0    /* dual-deploy command opcode */
 #define SERVO_OP	   0x08
+#define PRESET_OP	   0x24
 
 #define FIN_OP		   0x21    /* fin calibrate opcode (NOTE: DUPLICATE OF POWER_OP) */
 
