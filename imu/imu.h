@@ -401,6 +401,14 @@ IMU_STATUS imu_get_gyro_xyz
     IMU_DATA *pIMU
     );
 
+#ifdef A0002_REV2
+/* Return a pointer to the struct that houses accel and gyro values from the IMU */
+IMU_STATUS imu_get_accel_and_gyro
+    (
+    IMU_DATA *pIMU
+    );
+#endif
+
 /* Return the pointer to structure that updates the x,y,z magnetometer values from 
    the IMU */
 IMU_STATUS imu_get_mag_xyz
