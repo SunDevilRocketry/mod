@@ -19,6 +19,10 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "common.h"
+#include "sdr_error.h"
+#include "stm32h7xx_hal.h"
+
+
 
 
 /*------------------------------------------------------------------------------
@@ -42,7 +46,7 @@
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		Returns a 32bit checksum from the given data.                          *
-*                                                                              *                                                     *
+*                                                                              *
 *******************************************************************************/
 uint32_t crc32
     (
@@ -59,4 +63,41 @@ while (len--)
     }
 return ~crc;
 
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		Error_Code                                                             *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		In case of error occurrence, this function passes the error            *
+*       code to the error handler                                              *
+*                                                                              *
+*******************************************************************************/
+void Error_Code
+    (
+    volatile ERROR_CODE error_code
+    )
+{
+    Error_Handler(error_code);
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		Delay_Ms                                                               *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Minimum delay in miliseconds                                           *
+*                                                                              *
+*******************************************************************************/
+void Delay_Ms
+    (
+    uint32_t delay
+    )
+{
+    HAL_Delay(delay);
 }
