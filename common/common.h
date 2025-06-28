@@ -122,13 +122,13 @@ uint32_t crc32
     );
 
 
-void Error_Code
+void error_fail_fast
     (
     volatile ERROR_CODE error_code
     );
 
 
-void Delay_Ms
+void delay_ms
     (
     uint32_t delay
     );
