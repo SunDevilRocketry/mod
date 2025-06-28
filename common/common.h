@@ -121,12 +121,10 @@ uint32_t crc32
     size_t len
     );
 
-
 void error_fail_fast
     (
     volatile ERROR_CODE error_code
     );
-
 
 void delay_ms
     (
