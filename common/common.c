@@ -23,8 +23,6 @@
 #include "stm32h7xx_hal.h"
 
 
-
-
 /*------------------------------------------------------------------------------
  Global Variables  
 ------------------------------------------------------------------------------*/
@@ -69,35 +67,37 @@ return ~crc;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		Error_Code                                                             *
+* 		error_fail_fast                                                        *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		In case of error occurrence, this function passes the error            *
 *       code to the error handler                                              *
 *                                                                              *
 *******************************************************************************/
-void Error_Code
+void error_fail_fast
     (
     volatile ERROR_CODE error_code
     )
 {
-    Error_Handler(error_code);
-}
+Error_Handler(error_code);
+
+} /* error_fail_fast */
 
 
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		Delay_Ms                                                               *
+* 		delay_ms                                                               *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		Minimum delay in miliseconds                                           *
 *                                                                              *
 *******************************************************************************/
-void Delay_Ms
+void delay_ms
     (
     uint32_t delay
     )
 {
-    HAL_Delay(delay);
-}
+HAL_Delay(delay);
+
+} /* delay_ms */
