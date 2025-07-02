@@ -90,65 +90,6 @@ void servo_reset()
     motor4_drive(servo_preset.rp_servo4);
 }
 
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		motor1_pwm_drive                                                           *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Drive the first servo motor with a desired value (250-1250)            *
-*                                                                              *
-*******************************************************************************/
-void motor1_pwm_drive(uint8_t pulse)
-{
-    htim3.Instance->CCR4 = pulse;
-}
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		motor2_pwm_drive                                                           *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Drive the second servo motor with a desired value (250-1250)           *
-*                                                                              *
-*******************************************************************************/
-void motor2_pwm_drive(uint8_t pulse)
-{
-    htim3.Instance->CCR3 = pulse;
-}
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		motor3_pwm_drive                                                           *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Drive the third servo motor with a desired value (250-1250)            *
-*                                                                              *
-*******************************************************************************/
-void motor3_pwm_drive(uint8_t pulse)
-{
-    htim3.Instance->CCR1 = pulse;
-
-}
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		motor4_pwm_drive                                                           *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Drive the forth servo motor with a desired value (250-1250)            *
-*                                                                              *
-*******************************************************************************/
-void motor4_pwm_drive(uint8_t pulse)
-{
-    htim2.Instance->CCR1 = pulse;
-}
-
-
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
@@ -215,22 +156,27 @@ void motor4_drive(uint8_t angle)
 * 		motors_drive                                                           *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		A complete function that drives all servos in this board                *
+* 		A complete function that drives all servos in this board               *
 *                                                                              *
 *******************************************************************************/
 void motors_drive(uint8_t angle)
 {
-    uint8_t turn_degree1 = angle + servo_preset.rp_servo1;
-    uint8_t turn_degree2 = angle + servo_preset.rp_servo2;
-    uint8_t turn_degree3 = angle + servo_preset.rp_servo3;
-    uint8_t turn_degree4 = angle + servo_preset.rp_servo4;
-
-    motor1_drive(turn_degree1);
-    motor2_drive(turn_degree2);
-    motor3_drive(turn_degree3);
-    motor4_drive(turn_degree4);
+    motor1_drive(angle);
+    motor2_drive(angle);
+    motor3_drive(angle);
+    motor4_drive(angle);
 }
 
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		servo_cmd_execute                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Executes a servo command given from the terminal.                      *
+*                                                                              *
+*******************************************************************************/
 SERVO_STATUS servo_cmd_execute(uint8_t subcommand){
     USB_STATUS usb_status;
 
@@ -279,7 +225,7 @@ uint8_t motor_snap_to_bound(uint8_t angle, uint8_t upper, uint8_t lower)
 {
     if (angle >= lower && angle <= upper) {
         return angle;
-    } else if (angle > upper && servo_preset.rp_servo1 <= (upper + ((255 - upper) / 2))) {
+    } else if (angle > upper && angle <= (upper + ((255 - upper) / 2))) {
         return upper;
     } else {
         return lower;
