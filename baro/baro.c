@@ -607,6 +607,35 @@ else
 
 } /* write_reg */
 
+#ifdef DMA
+// TODO: Check if these newfangled DMA functions work
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+*       write_reg_dma                                                          *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+*       Write to one of the baro's registers at a specified address            *
+*		Non-blocking version												   *
+*                                                                              *
+*******************************************************************************/
+static BARO_STATUS write_reg_dma	(
+	uint8_t  reg_addr, /* In: Register address            */
+	uint8_t  data      /* In: Register contents           */
+	)
+{
+HAL_StatusTypeDef hal_status = HAL_I2C_Master_Transmit_DMA( &( BARO_I2C ), reg_addr, &data, sizeof( uint8_t ) );
+if( if hal_status != HAL_OK ) { /* I'm trying to figure out if this is right
+	Function signature is diffrent from standard blocking ones in an odd way*/
+		return BARO_I2C_ERROR;
+}
+return BARO_OK;
+}
+
+// TODO: Implement wrapper for HAL_I2C_GetState
+#endif
+
 
 /*******************************************************************************
 *                                                                              *
