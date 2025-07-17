@@ -22,36 +22,31 @@ extern "C" {
  Typdefs 
 ------------------------------------------------------------------------------*/
 
-/* Which camera to use based on parachute terminals */
-/* May or may not use something like this */
-// typedef enum _CAMERA_SELECTION
-// {
-//     CAMERA_MAIN    = MAIN_GPIO_PORT,
-//     CAMERA_DROGUE  = DROGUE_GPIO_PORT
-// } CAMERA_SELECTION;
+/* Camera selection */
+typedef enum _CAMERA_SELECTION
+    {
+    CAMERA_MAIN,
+    CAMERA_DROGUE
+    } CAMERA_SELECTION;
 
 
 /* Whether the camera is powered on or off */
 typedef enum _CAMERA_STATE 
-{
+    {
     CAMERA_OFF = 0,
     CAMERA_ON
-} CAMERA_STATE;
+    } CAMERA_STATE;
 
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
-void set_camera_main
-(
-    CAMERA_STATE state
-);
 
-
-void set_camera_drogue
-(
-    CAMERA_STATE state
-);
+/* Turns the selected camera on or off */
+void set_camera_state
+    (
+    CAMERA_SELECTION camera, CAMERA_STATE state
+    );
 
 
 #ifdef __cplusplus

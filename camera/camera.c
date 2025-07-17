@@ -28,53 +28,50 @@
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		set_camera_main                                                        *
+* 		set_camera_state                                                       *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Turns the camera connected to the main terminal on or off              *
+* 		Turns the selected camera on or off                                    *
 *                                                                              *
 *******************************************************************************/
-void set_camera_main
+void set_camera_state
     (
-    CAMERA_STATE state
+    CAMERA_SELECTION camera, CAMERA_STATE state
     )
 {
-if ( state ) /* on */
-    {
-    HAL_GPIO_WritePin( MAIN_GPIO_PORT, MAIN_PIN, GPIO_PIN_SET ); 
-    }
-else         /* off */
-    {
-    HAL_GPIO_WritePin( MAIN_GPIO_PORT, MAIN_PIN, GPIO_PIN_RESET );
-    }
+GPIO_PinState pin_state;
 
-} /* set_camera_drogue */
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		set_camera_drogue                                                      *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Turns the camera connected to the drougue terminal on or off           *
-*                                                                              *
-*******************************************************************************/
-void set_camera_drogue
-    (
-    CAMERA_STATE state
-    )
-{
-if ( state ) /* on */
+if ( state == CAMERA_ON )
     {
-    HAL_GPIO_WritePin( DROGUE_GPIO_PORT, DROGUE_PIN, GPIO_PIN_SET ); 
+    pin_state = GPIO_PIN_SET;
     }
-else         /* off */
+else
     {
-    HAL_GPIO_WritePin( DROGUE_GPIO_PORT, DROGUE_PIN, GPIO_PIN_RESET );
+    pin_state = GPIO_PIN_RESET;
     }
 
-} /* set_camera_drogue */
+/* Write pin state to selected GPIO pin */
+switch ( camera )
+    {
+    case CAMERA_MAIN:
+        {
+	    HAL_GPIO_WritePin( MAIN_GPIO_PORT, MAIN_PIN, pin_state );
+        break;
+        }
+
+    case CAMERA_DROGUE:
+        {
+        HAL_GPIO_WritePin( DROGUE_GPIO_PORT, DROGUE_PIN, pin_state );
+        break;
+        }
+
+    default:
+        {
+        /* Error? */
+        }
+    }
+
+} /* set_camera_state */
 
 
 /*******************************************************************************
