@@ -1,7 +1,6 @@
 /*******************************************************************************
 *
 * FILE: 
-* 		servo.h
 *
 * DESCRIPTION: 
 * 		Contains API functions to get access to the servo motors driver
@@ -18,21 +17,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-/*------------------------------------------------------------------------------
- Defines 
-------------------------------------------------------------------------------*/
-
-
-/*------------------------------------------------------------------------------
- Defines subcommand codes
-------------------------------------------------------------------------------*/
-
-/*------------------------------------------------------------------------------
- Registers
-------------------------------------------------------------------------------*/
-
   
 /*------------------------------------------------------------------------------
  Typdefs 
@@ -66,6 +50,18 @@ typedef struct _SERVO_PRESET
     uint8_t rp_servo4;
     } SERVO_PRESET;
 
+/*** NEW: ServoID enum ***/
+/*** replaces hard-coded motor 1/2/3/4 functions ***/
+typedef enum {
+    SERVO_1,
+    SERVO_2,
+    SERVO_3,
+    SERVO_4
+} ServoID;
+
+/*** NEW: consolidated function prototype ***/
+void motor_drive(ServoID servo, uint8_t angle);
+
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
@@ -78,18 +74,6 @@ void motor1_pwm_drive(uint8_t pulse);
 void motor2_pwm_drive(uint8_t pulse);
 void motor3_pwm_drive(uint8_t pulse);
 void motor4_pwm_drive(uint8_t pulse);
-
-/* Drive the first servo motor with a desired value (0-100) */
-void motor1_drive(uint8_t angle);
-
-/* Drive the second servo motor with a desired value (0-100) */
-void motor2_drive(uint8_t angle);
-
-/* Drive the third servo motor with a desired value (0-100) */
-void motor3_drive(uint8_t angle);
-
-/* Drive the forth servo motor with a desired value (0-100) */
-void motor4_drive(uint8_t angle);
 
 /* A complete function that drives all servos in this board  */
 void motors_drive(uint8_t angle);
