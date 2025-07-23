@@ -729,10 +729,16 @@ SENSOR_STATUS sensor_dump
 
 /* Poll Sensors  */
 #if defined( FLIGHT_COMPUTER )
+	#if defined( A0002_REV2 )
+	memset( &(sensor_data_ptr->imu_data), 0, sizeof( IMU_DATA ) );
+	accel_status = imu_get_accel_and_gyro( &(sensor_data_ptr->imu_data) );
+	#else
 	/* IMU sensors */
 	accel_status = imu_get_accel_xyz( &(sensor_data_ptr->imu_data) ); 
 	gyro_status  = imu_get_gyro_xyz ( &(sensor_data_ptr->imu_data) );
+
 	mag_status   = imu_get_mag_xyz  ( &(sensor_data_ptr->imu_data) );
+	#endif
 	sensor_data_ptr -> imu_data.temp = 0;     // Figure out what to do with this 
 											  // readout, temporarily being used 
 											  // as struct padding

@@ -54,8 +54,16 @@ static IMU_STATUS read_imu_regs
     uint8_t  num_regs  /* Number of registers */
     ); 
 
-/* Write to a specified IMU register */
 #if defined( A0002_REV2 )
+/* Read IMU registers using interrupt HAL function */
+// static IMU_STATUS read_imu_regs_IT /* POSTPONED */
+//     (
+//     uint8_t  reg_addr, /* Register address    */
+//     uint8_t* data_ptr, /* Register data       */
+//     uint8_t  num_regs  /* Number of registers */
+//     ); 
+
+/* Write to a specified IMU register */
 static IMU_STATUS write_imu_reg 
     (
     uint8_t reg_addr, /* Register address    */
@@ -387,6 +395,73 @@ return IMU_OK;
 } /* imu_get_gyro_xyz */
 
 
+#ifdef A0002_REV2
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		imu_get_accel_and_gyro                                                 *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Return a pointer to the struct that houses accel and gyro values       *
+*       from the IMU                                                           *
+*                                                                              *
+*******************************************************************************/
+IMU_STATUS imu_get_accel_and_gyro
+    (
+    IMU_DATA *pIMU
+    )
+{
+/*------------------------------------------------------------------------------
+ Local variables 
+------------------------------------------------------------------------------*/
+uint8_t     regRaw[12];  /* Bytes from raw registers */
+uint16_t    accel_x_raw;   /* Raw accel sensor readouts  */
+uint16_t    accel_y_raw; 
+uint16_t    accel_z_raw; 
+uint16_t    gyro_x_raw;   /* Raw gyro sensor readouts  */
+uint16_t    gyro_y_raw; 
+uint16_t    gyro_z_raw; 
+IMU_STATUS  imu_status;   /* IMU status return codes   */
+
+
+/*------------------------------------------------------------------------------
+ API function implementation 
+------------------------------------------------------------------------------*/
+
+/* Read ACCEL and GYRO high byte and low byte registers */
+
+/* when interrupt is ready, switch this to read_imu_regs_IT */
+imu_status = read_imu_regs( IMU_REG_DATA_8, 
+                                &regRaw[0]    , 
+                                sizeof( regRaw ) );
+ 
+/* Check for HAL IMU error */
+if ( imu_status != IMU_OK )
+	{
+	return imu_status;
+	}
+
+/* Combine high byte and low byte to 16 bit data  */
+accel_x_raw = ( (uint16_t) regRaw[1] ) << 8 | regRaw[0];
+accel_y_raw = ( (uint16_t) regRaw[3] ) << 8 | regRaw[2];
+accel_z_raw = ( (uint16_t) regRaw[5] ) << 8 | regRaw[4];
+gyro_x_raw = ( (uint16_t) regRaw[7] ) << 8 | regRaw[6];
+gyro_y_raw = ( (uint16_t) regRaw[9] ) << 8 | regRaw[8];
+gyro_z_raw = ( (uint16_t) regRaw[11] ) << 8 | regRaw[10];
+
+/* Export Sensor Readouts */
+pIMU->accel_x = accel_x_raw;
+pIMU->accel_y = accel_y_raw;
+pIMU->accel_z = accel_z_raw; 
+pIMU->gyro_x = gyro_x_raw;
+pIMU->gyro_y = gyro_y_raw;
+pIMU->gyro_z = gyro_z_raw; 
+
+return IMU_OK;
+} /* imu_get_gyro_xyz */
+#endif
+
+
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
@@ -682,6 +757,53 @@ else
 
 
 #if defined( A0002_REV2 )
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		read_imu_regs_IT                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Read the specific numbers of registers at one time from acceleration   *
+*       and gyroscope module in the IMU with interrupt                         *
+*                                                                              *
+*******************************************************************************/
+// static IMU_STATUS read_imu_regs_IT /* POSTPONED */
+//     (
+//     uint8_t  reg_addr, /* Register address            */
+//     uint8_t* data_ptr, /* Register data               */ 
+//     uint8_t  num_regs  /* Number of registers to read */
+//     )
+// {
+// /*------------------------------------------------------------------------------
+//  Local variables  
+// ------------------------------------------------------------------------------*/
+// HAL_StatusTypeDef hal_status;    /* Status of I2C HAL */
+
+
+// /*------------------------------------------------------------------------------
+//  Implementation 
+// ------------------------------------------------------------------------------*/
+
+// /* Read I2C register */
+// hal_status = HAL_I2C_Mem_Read_IT( &( IMU_I2C )        , 
+//                                IMU_ADDR            , 
+//                                reg_addr            , 
+//                                I2C_MEMADD_SIZE_8BIT, 
+//                                data_ptr            , 
+//                                num_regs );
+
+// if ( hal_status != HAL_OK )
+// 	{
+// 	return IMU_ERROR;
+// 	}
+// else
+// 	{
+// 	return IMU_OK;
+// 	}
+
+// } /* read_imu_regs_IT */
+
+
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
