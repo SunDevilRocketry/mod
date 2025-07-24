@@ -70,6 +70,14 @@ static BARO_STATUS write_reg
 	uint8_t  data      /* In: Register contents           */
 	);
 
+
+/* Write to one of the baro's registers at a specified address with dma */
+static BARO_STATUS write_reg_dma
+	(
+	uint8_t  reg_addr, /* In: Register address            */
+	uint8_t  data      /* In: Register contents           */
+	);
+
 /* Load the compensation data from the baro sensor */
 static BARO_STATUS load_cal_data
 	(
@@ -607,7 +615,7 @@ else
 
 } /* write_reg */
 
-#ifdef DMA
+// #ifdef DMA
 // TODO: Check if these newfangled DMA functions work
 
 /*******************************************************************************
@@ -626,7 +634,7 @@ static BARO_STATUS write_reg_dma	(
 	)
 {
 HAL_StatusTypeDef hal_status = HAL_I2C_Master_Transmit_DMA( &( BARO_I2C ), reg_addr, &data, sizeof( uint8_t ) );
-if( if hal_status != HAL_OK ) { /* I'm trying to figure out if this is right
+if( hal_status != HAL_OK ) { /* I'm trying to figure out if this is right
 	Function signature is diffrent from standard blocking ones in an odd way*/
 		return BARO_I2C_ERROR;
 }
@@ -634,7 +642,7 @@ return BARO_OK;
 }
 
 // TODO: Implement wrapper for HAL_I2C_GetState
-#endif
+// #endif
 
 
 /*******************************************************************************
@@ -867,7 +875,9 @@ return write_reg( BARO_REG_CMD, BARO_CMD_FIFO_FLUSH );
 } /* baro_flush_fifo */
 
 BARO_STATUS baro_dma_test() {
-	return write_reg( BARO_REG_PWR_CTRL, 2 );
+	BARO_STATUS result;
+	result = write_reg_dma( BARO_REG_PWR_CTRL, 2 );
+	return result;
 }
 
 
