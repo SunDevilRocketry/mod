@@ -866,6 +866,10 @@ static BARO_STATUS baro_flush_fifo
 return write_reg( BARO_REG_CMD, BARO_CMD_FIFO_FLUSH );
 } /* baro_flush_fifo */
 
+BARO_STATUS baro_dma_test() {
+	return write_reg( BARO_REG_PWR_CTRL, 2 );
+}
+
 
 /*******************************************************************************
 * END OF FILE                                                                  * 

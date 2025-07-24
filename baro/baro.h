@@ -258,6 +258,7 @@ BARO_STATUS baro_get_pressure
     float* pressure_ptr 
 	);
 
+BARO_STATUS baro_dma_test( void ); // TODO make this much less jank
 /* gets temp data from sensor */
 BARO_STATUS baro_get_temp
 	(
