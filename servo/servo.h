@@ -1,7 +1,7 @@
 /*******************************************************************************
 *
 * FILE: 
-*       servo.h
+* 		servo.h
 *
 * DESCRIPTION: 
 * 		Contains API functions to get access to the servo motors driver
@@ -9,7 +9,7 @@
 *******************************************************************************/
 
 
-/* Define to prevent recursive inclusion -------------------------------------*/
+// /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef SERVO_H
 #define SERVO_H
 
@@ -18,12 +18,26 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+/*------------------------------------------------------------------------------
+ Defines 
+------------------------------------------------------------------------------*/
+
+
+/*------------------------------------------------------------------------------
+ Defines subcommand codes
+------------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------------
+ Registers
+------------------------------------------------------------------------------*/
+
   
 /*------------------------------------------------------------------------------
  Typdefs 
 ------------------------------------------------------------------------------*/
-
-/* Structure containing PWM duty cycle (0-100) for each servo */
+/* Structure containing PWM duty cycle (0-100) for each servo*/
 typedef struct _SERVOS_DATA 
 	{
     uint8_t motor1_duty;
@@ -52,31 +66,43 @@ typedef struct _SERVO_PRESET
     uint8_t rp_servo4;
     } SERVO_PRESET;
 
-typedef enum 
-    {
-    SERVO_1,
-    SERVO_2,
-    SERVO_3,
-    SERVO_4
-    } SERVO_ID;
-
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-SERVO_STATUS servo_init
-    (
-    void
-    );
-void servo_reset
-    (
-    void
-    );
-void motor_drive(SERVO_ID servo, uint8_t angle);
+/* Initialize/Reset servo rotate to default */
+SERVO_STATUS servo_init();
+void servo_reset();
+
+void motor1_pwm_drive(uint8_t pulse);
+void motor2_pwm_drive(uint8_t pulse);
+void motor3_pwm_drive(uint8_t pulse);
+void motor4_pwm_drive(uint8_t pulse);
+
+/* Drive the first servo motor with a desired value (0-100) */
+void motor1_drive(uint8_t angle);
+
+/* Drive the second servo motor with a desired value (0-100) */
+void motor2_drive(uint8_t angle);
+
+/* Drive the third servo motor with a desired value (0-100) */
+void motor3_drive(uint8_t angle);
+
+/* Drive the forth servo motor with a desired value (0-100) */
+void motor4_drive(uint8_t angle);
+
+/* A complete function that drives all servos in this board  */
 void motors_drive(uint8_t angle);
+
+/* Execute servo subcommand */
 SERVO_STATUS servo_cmd_execute(uint8_t subcommand);
+
 uint8_t angle_to_pulse(uint8_t angle);
+
 uint8_t motor_snap_to_bound(uint8_t angle, uint8_t upper, uint8_t lower);
+
+/* A function that handles a error driven from controlling servo */
+void error_handler();
 
 #endif /* SERVO_H */
 
