@@ -34,9 +34,10 @@
 * 		Turns the selected camera on or off                                    *
 *                                                                              *
 *******************************************************************************/
-void set_camera_state
+CAMERA_STATUS set_camera_state
     (
-    CAMERA_SELECTION camera, CAMERA_STATE state
+    CAMERA_SELECTION camera, 
+    CAMERA_STATE state
     )
 {
 GPIO_PinState pin_state;
@@ -67,9 +68,11 @@ switch ( camera )
 
     default:
         {
-        /* Error? */
+        return CAMERA_INVALID_SELECTION;
         }
     }
+
+return CAMERA_SUCCESS;
 
 } /* set_camera_state */
 

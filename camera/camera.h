@@ -38,14 +38,23 @@ typedef enum _CAMERA_STATE
     } CAMERA_STATE;
 
 
+/* Status response for error handling */
+typedef enum _CAMERA_STATUS 
+    {
+    CAMERA_SUCCESS = 0,
+    CAMERA_INVALID_SELECTION
+    } CAMERA_STATUS;
+
+
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
 /* Turns the selected camera on or off */
-void set_camera_state
+CAMERA_STATUS set_camera_state
     (
-    CAMERA_SELECTION camera, CAMERA_STATE state
+    CAMERA_SELECTION camera, 
+    CAMERA_STATE state
     );
 
 
