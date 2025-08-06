@@ -88,7 +88,8 @@ typedef enum _BARO_STATUS
 	BARO_CAL_ERROR              ,
 	BARO_I2C_ERROR              ,
 	BARO_CANNOT_RESET           ,
-	BARO_FIFO_ERROR
+	BARO_FIFO_ERROR,
+	BARO_WORKING
 	} BARO_STATUS;
 
 /* Sensor enable encodings */
@@ -258,7 +259,6 @@ BARO_STATUS baro_get_pressure
     float* pressure_ptr 
 	);
 
-BARO_STATUS baro_dma_test( void ); // TODO make this much less jank
 /* gets temp data from sensor */
 BARO_STATUS baro_get_temp
 	(
@@ -271,6 +271,11 @@ BARO_STATUS baro_get_altitude
     void
 	);
 
+/* Get the state of current DMA operations */
+BARO_STATUS baro_get_dma_state
+	(
+	vod
+	);
 
 #ifdef __cplusplus
 }

@@ -640,8 +640,6 @@ if( hal_status != HAL_OK ) { /* I'm trying to figure out if this is right
 }
 return BARO_OK;
 }
-
-// TODO: Implement wrapper for HAL_I2C_GetState
 // #endif
 
 
@@ -880,6 +878,40 @@ BARO_STATUS baro_dma_test() {
 	return result;
 }
 
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+*       baro_get_dma_state                                                     *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+*       Check state of pending DMA barometer operations						   *
+*                                                                              *
+*******************************************************************************/
+static BARO_STATUS baro_get_dma_state() {
+	HAL_StateTypeDef state = HAL_I2C_GetState( &( BARO_I2C ) );
+	// Based off this HAL enum: https://sourcevu.sysprogs.com/stm32/HAL/symbols/HAL_I2C_StateTypeDef
+	// May need to be tweaked in future
+	if( state == HAL_I2C_STATE_READY ||
+		state == HAL_I2C_STATE_LISTEN ) {
+		return BARO_OK;
+	} else if( state == HAL_I2C_BUSY ||
+			   state == HAL_I2C_STATE_BUSY_TX ||
+			   state == HAL_I2C_STATE_BUSY_RX ||
+			   state == HAL_I2C_STATE_BUSY_TX_LISTEN ||
+			   state == HAL_I2C_STATE_BUSY_RX_LISTEN ||
+			   )
+	{
+		return BARO_WORKING;
+	} else if( state == HAL_I2C_STATE_ABORT ||
+			   state == HAL_I2C_STATE_ERROR )
+	{
+		return BARO_ERROR;
+	} else if( state == HAL_I2C_STATE_TIMEOUT ) {
+		return BARO_TIMEOUT;
+	} else {
+		return BARO_UNRECOGNIZED_HAL_STATUS;
+	}
+}
 
 /*******************************************************************************
 * END OF FILE                                                                  * 
