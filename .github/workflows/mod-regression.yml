@@ -25,7 +25,7 @@ jobs:
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
   GPS-unit-test:
-    needs: FCF-regression
+    needs: mod-regression
     runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
@@ -74,7 +74,7 @@ jobs:
       
       - run: echo "🍏 This job's status is ${{ job.status }}."
   servo-unit-test:
-    needs: FCF-regression
+    needs: mod-regression
     runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
