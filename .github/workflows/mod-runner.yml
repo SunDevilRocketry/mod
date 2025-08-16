@@ -123,7 +123,7 @@ jobs:
         uses: actions/upload-artifact@v4
         id: promote-results
         with:
-          name: gps-artifacts
+          name: servo-artifacts
           path: Flight-Computer-Firmware/test/mod/servo/coverage/
       - name: Output artifact ID
         run: echo 'Artifact ID is ${{ steps.promote-results.outputs.artifact-id }}'
