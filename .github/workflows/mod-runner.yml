@@ -118,7 +118,7 @@ jobs:
         run: |
           cd Flight-Computer-Firmware/test/mod/servo
           make test
-      - run: mv Flight-Computer-Firmware/test/mod/servo/results.txt Flight-Computer-Firmware/test/mod/gps/coverage/results.txt
+      - run: mv Flight-Computer-Firmware/test/mod/servo/results.txt Flight-Computer-Firmware/test/mod/servo/coverage/results.txt
       - name: "Promote Artifacts"
         uses: actions/upload-artifact@v4
         id: promote-results
