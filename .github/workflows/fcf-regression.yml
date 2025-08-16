@@ -61,21 +61,14 @@ jobs:
         run: |
           cd Flight-Computer-Firmware/test/mod/gps
           make test
-      - name: "Promote Artifact: Results"
+      - run: mv Flight-Computer-Firmware/test/mod/gps/results.txt Flight-Computer-Firmware/test/mod/gps/coverage/results.txt
+      - name: "Promote Artifacts"
         uses: actions/upload-artifact@v4
         id: promote-results
         with:
-          name: gps-results.txt
-          path: Flight-Computer-Firmware/test/mod/gps/results.txt
-      - name: Output artifact ID from results
-        run:  echo 'Artifact ID is ${{ steps.promote-results.outputs.artifact-id }}'
-      - name: "Promote Artifact: Coverage"
-        uses: actions/upload-artifact@v4
-        id: promote-coverage
-        with:
-          name: coverage
+          name: gps-artifacts
           path: Flight-Computer-Firmware/test/mod/gps/coverage/
-      - name: Output artifact ID from coverage
-        run:  echo 'Artifact ID is ${{ steps.promote-coverage.outputs.artifact-id }}'
+      - name: Output artifact ID
+        run:  echo 'Artifact ID is ${{ steps.promote-results.outputs.artifact-id }}'
       
       - run: echo "🍏 This job's status is ${{ job.status }}."
