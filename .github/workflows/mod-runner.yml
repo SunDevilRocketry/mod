@@ -8,7 +8,7 @@ on:
       - main
       - integration/**
 jobs:
-  mod-regression:
+  mod-runner:
     runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
@@ -25,7 +25,7 @@ jobs:
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
   GPS-unit-test:
-    needs: mod-regression
+    needs: mod-runner
     runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
@@ -74,7 +74,7 @@ jobs:
       
       - run: echo "🍏 This job's status is ${{ job.status }}."
   servo-unit-test:
-    needs: mod-regression
+    needs: mod-runner
     runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
