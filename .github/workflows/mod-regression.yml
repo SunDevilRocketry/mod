@@ -8,7 +8,7 @@ on:
       - main
       - integration/**
 jobs:
-  FCF-regression:
+  mod-regression:
     runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
