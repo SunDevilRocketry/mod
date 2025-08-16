@@ -10,6 +10,9 @@ on:
 jobs:
   mod-runner:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tests: [gps, servo]
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
@@ -51,40 +54,19 @@ jobs:
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
-  GPS-unit-test:
-    needs: mod-runner
-    runs-on: ubuntu-latest
-    steps:
-      - name: Build and run the GPS tests
+
+      - name: Build and run the ${{ matrix.tests }} tests
         run: |
-          cd Flight-Computer-Firmware/test/mod/gps
+          cd Flight-Computer-Firmware/test/mod/${{ matrix.tests }}
           make test
-      - run: mv Flight-Computer-Firmware/test/mod/gps/results.txt Flight-Computer-Firmware/test/mod/gps/coverage/results.txt
+      - name: Consolidate ${{ matrix.tests }} artifacts
+        run: mv Flight-Computer-Firmware/test/mod/${{ matrix.tests }}/results.txt Flight-Computer-Firmware/test/mod/${{ matrix.tests }}/coverage/results.txt
       - name: "Promote Artifacts"
         uses: actions/upload-artifact@v4
         id: promote-results
         with:
-          name: gps-artifacts
-          path: Flight-Computer-Firmware/test/mod/gps/coverage/
-      - name: Output artifact ID
-        run: echo 'Artifact ID is ${{ steps.promote-results.outputs.artifact-id }}'
-      - run: echo "🍏 This job's status is ${{ job.status }}."
-  servo-unit-test:
-    needs: mod-runner
-    runs-on: ubuntu-latest
-    steps:
-      - name: Build and run the servo tests
-        run: |
-          cd Flight-Computer-Firmware/test/mod/servo
-          make test
-      - run: mv Flight-Computer-Firmware/test/mod/servo/results.txt Flight-Computer-Firmware/test/mod/servo/coverage/results.txt
-      - name: "Promote Artifacts"
-        uses: actions/upload-artifact@v4
-        id: promote-results
-        with:
-          name: servo-artifacts
-          path: Flight-Computer-Firmware/test/mod/servo/coverage/
+          name: ${{ matrix.tests }}-artifacts
+          path: Flight-Computer-Firmware/test/mod/${{ matrix.tests }}/coverage/
       - name: Output artifact ID
         run: echo 'Artifact ID is ${{ steps.promote-results.outputs.artifact-id }}'
       - run: echo "🍏 This job's status is ${{ job.status }}."
