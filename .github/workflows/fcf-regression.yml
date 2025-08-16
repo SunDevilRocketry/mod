@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         id: promote-coverage
         with:
-          name: gps-results.txt
+          name: coverage
           path: Flight-Computer-Firmware/test/mod/gps/coverage/
       - name: Output artifact ID from coverage
         run:  echo 'Artifact ID is ${{ steps.promote-coverage.outputs.artifact-id }}'
