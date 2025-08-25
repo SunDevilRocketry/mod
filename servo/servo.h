@@ -54,10 +54,10 @@ typedef struct _SERVO_PRESET
 
 typedef enum 
     {
-    SERVO_1,
-    SERVO_2,
-    SERVO_3,
-    SERVO_4
+    SERVO_1 = 1u,
+    SERVO_2 = 2u,
+    SERVO_3 = 3u,
+    SERVO_4 = 4u
     } SERVO_ID;
 
 /*------------------------------------------------------------------------------
