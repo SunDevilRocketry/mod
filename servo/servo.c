@@ -51,13 +51,13 @@ SERVO_STATUS servo_init
     void
     )
 {
-// GPIO Initialization
+/* GPIO Initialization */
 HAL_GPIO_WritePin(MOTOR1_EN_PORT, MOTOR1_EN, GPIO_PIN_SET);
 HAL_GPIO_WritePin(MOTOR2_EN_PORT, MOTOR2_EN, GPIO_PIN_SET);
 HAL_GPIO_WritePin(MOTOR3_EN_PORT, MOTOR3_EN, GPIO_PIN_SET);
 HAL_GPIO_WritePin(MOTOR4_EN_PORT, MOTOR4_EN, GPIO_PIN_SET);
 
-// Timer intialization
+/* Timer intialization */
 HAL_StatusTypeDef hal_status1, hal_status2, hal_status3, hal_status4;
 
 hal_status1 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
@@ -112,7 +112,7 @@ switch (servo)
         htim2.Instance->CCR1 = pulse;
         break;
     default:
-        // Optionally: handle error
+        /* Optionally: handle error */
         break;
     }
 
@@ -139,6 +139,7 @@ motor_drive(SERVO_3, servo_preset.rp_servo3);
 motor_drive(SERVO_4, servo_preset.rp_servo4);
 
 } /* servo_reset */
+
 
 /*******************************************************************************
 *                                                                              *
