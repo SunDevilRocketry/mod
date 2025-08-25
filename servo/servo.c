@@ -21,14 +21,17 @@
 #include "led.h"
 #include "init.h"
 #include "usb.h"
+
 /*------------------------------------------------------------------------------
- Local Constants (macros, #defines)
+ Literal Constants
 ------------------------------------------------------------------------------*/
 #define SER_PER 0.55555
+
 /*------------------------------------------------------------------------------
- Global Variables (memory objects shared across files)
+ Global Variables
 ------------------------------------------------------------------------------*/
 extern SERVO_PRESET servo_preset;
+
 /*------------------------------------------------------------------------------
  Procedures 
 ------------------------------------------------------------------------------*/
@@ -36,40 +39,42 @@ extern SERVO_PRESET servo_preset;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		servo_init                                                             *                                                                      *
+* 		servo_init                                                             *
+*                                                                              *                                                                      *
 * DESCRIPTION:                                                                 * 
-* 		Initialize/Reset servo                                                 *                                                                 *
+* 		Initialize/Reset servo                                                 *   
+*                                                                              *                                                               *
 *******************************************************************************/
 SERVO_STATUS servo_init
     (
     void
     )
 {
-    // GPIO Initialization
-    HAL_GPIO_WritePin(MOTOR1_EN_PORT, MOTOR1_EN, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(MOTOR2_EN_PORT, MOTOR2_EN, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(MOTOR3_EN_PORT, MOTOR3_EN, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(MOTOR4_EN_PORT, MOTOR4_EN, GPIO_PIN_SET);
+// GPIO Initialization
+HAL_GPIO_WritePin(MOTOR1_EN_PORT, MOTOR1_EN, GPIO_PIN_SET);
+HAL_GPIO_WritePin(MOTOR2_EN_PORT, MOTOR2_EN, GPIO_PIN_SET);
+HAL_GPIO_WritePin(MOTOR3_EN_PORT, MOTOR3_EN, GPIO_PIN_SET);
+HAL_GPIO_WritePin(MOTOR4_EN_PORT, MOTOR4_EN, GPIO_PIN_SET);
 
-    // Timer intialization
-    HAL_StatusTypeDef hal_status1, hal_status2, hal_status3, hal_status4;
+// Timer intialization
+HAL_StatusTypeDef hal_status1, hal_status2, hal_status3, hal_status4;
 
-    hal_status1 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-    hal_status2 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-    hal_status3 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-    hal_status4 = HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+hal_status1 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+hal_status2 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+hal_status3 = HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+hal_status4 = HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
-    if ( hal_status1 == HAL_OK &&
-        hal_status2 == HAL_OK &&
-        hal_status3 == HAL_OK &&
-        hal_status4 == HAL_OK )
-        {
-        return SERVO_OK;
-        }
-        else
-        {
-        return SERVO_FAIL;
-        }
+if ( hal_status1 == HAL_OK &&
+    hal_status2 == HAL_OK &&
+    hal_status3 == HAL_OK &&
+    hal_status4 == HAL_OK )
+    {
+    return SERVO_OK;
+    }
+else
+    {
+    return SERVO_FAIL;
+    }
 
 } /* servo_init */
 
@@ -203,6 +208,7 @@ switch ( subcommand )
 
 } /* servo_cmd_execute */
 
+
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
@@ -243,11 +249,11 @@ if (angle >= lower && angle <= upper)
     {
     return angle;
     } 
-    else if ( angle > upper && angle <= ( upper + ( ( 255 - upper ) / 2 ) ) ) 
+else if ( angle > upper && angle <= ( upper + ( ( 255 - upper ) / 2 ) ) ) 
     {
     return upper;
     } 
-    else 
+else 
     {
     return lower;
     }
