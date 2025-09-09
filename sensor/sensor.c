@@ -61,9 +61,10 @@
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
 
-extern GPS_DATA gps_data;
+
 
 #ifdef FLIGHT_COMPUTER
+extern GPS_DATA gps_data;
 extern uint32_t tdelta, previous_time;
 extern IMU_OFFSET imu_offset;
 #endif
@@ -469,8 +470,10 @@ switch ( subcommand )
 				}
 		#endif
 
+		#if defined( FLIGHT_COMPUTER )
 		// Reset start time
 		previous_time = HAL_GetTick();
+		#endif
 
 		/* Start polling sensors */
 		while ( sensor_poll_cmd != SENSOR_POLL_STOP )
@@ -514,8 +517,10 @@ switch ( subcommand )
 				/* Poll Sensors */
 				case SENSOR_POLL_REQUEST:
 					{
+					#if defined( FLIGHT_COMPUTER )
 					tdelta = HAL_GetTick() - previous_time;
 					previous_time = HAL_GetTick();
+					#endif
 					sensor_status = sensor_poll( &sensor_data    , 
 												 &poll_sensors[0],
 												 num_sensors );
@@ -545,8 +550,10 @@ switch ( subcommand )
 				case SENSOR_POLL_STOP:
 					{
 					// Reset timing
+					#if defined( FLIGHT_COMPUTER )
 					previous_time = 0;
 					tdelta = 0;
+					#endif
 					break;
 					} /* case SENSOR_POLL_STOP */
 
@@ -2203,8 +2210,9 @@ sConfig.Offset                 = 0;
 sConfig.OffsetSignedSaturation = DISABLE;
 HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 } /* pt6_adc_channel_select */
+#endif /* #ifdef L0002_REV5 */
 
-
+#if defined( FLIGHT_COMPUTER )
 static void imu_get_state_estimate(IMU_DATA* imu_data){
     float roll_angle = atan(imu_data->accel_y/imu_data->accel_z);
 	float pitch_angle = atan(imu_data->accel_x/9.81);
@@ -2217,10 +2225,7 @@ static void imu_get_state_estimate(IMU_DATA* imu_data){
 	imu_data->state_estimate->roll_rate = roll_rate;
 	imu_data->state_estimate->pitch_rate = pitch_rate;
 }
-
-
-#endif /* #ifdef L0002_REV5 */
-
+#endif /* #if defined( FLIGHT_COMPUTER ) */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 
