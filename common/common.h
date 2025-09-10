@@ -34,18 +34,6 @@ extern "C" {
 #define util_set_bit(orig, idx) (orig | (1 << idx))
 
 
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       util_set_bit_and_assign                                                *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Sets a certain bit and assigns the new value to orig                   *
-*                                                                              *
-*******************************************************************************/
-#define util_set_bit_and_assign(orig, idx) (orig |= (1 << idx))
-
-
 /*------------------------------------------------------------------------------
  Typdefs 
 ------------------------------------------------------------------------------*/
@@ -103,13 +91,13 @@ typedef enum _ERROR_CODE
     ERROR_FSM_INVALID_STATE_TRANSITION_ERROR,  /* Error changing state         */
     ERROR_GPS_UART4_INITIALIZATION     , /* Error initializing UART for GPS */
     ERROR_GPS_UART4_DEMSP              ,  /* Error initializing DEMSP UART for GPS */
-    ERROR_PWM4_ERROR,
-    ERROR_PWM123_ERROR,
-    ERROR_SERVO_INIT_ERROR,
-    ERROR_SENSOR_FORMAT_ERROR,
-    ERROR_INVALID_STATE_ERROR,
-    ERROR_CONFIG_VALIDITY_ERROR,
-    ERROR_IGNITION_CONTINUITY_ERROR
+    ERROR_PWM4_ERROR,                    /* Error with PWM timer 4 */
+    ERROR_PWM123_ERROR,                    /* Error with PWM timer 1,2,3 */
+    ERROR_SERVO_INIT_ERROR,                 /* Error initializing servos */
+    ERROR_SENSOR_FORMAT_ERROR,            /* unused */
+    ERROR_INVALID_STATE_ERROR,           /* FSM has reached a state that it shouldn't */
+    ERROR_CONFIG_VALIDITY_ERROR,         /* Loaded configuration is invalid */
+    ERROR_IGNITION_CONTINUITY_ERROR      /* Parachute terminals do not have continuity */
     } ERROR_CODE;
 
 
