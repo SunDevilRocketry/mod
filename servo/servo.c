@@ -40,10 +40,10 @@ extern SERVO_PRESET servo_preset;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		servo_init                                                             *
+* 		servo_init                                                     *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Initialize/Reset servo                                                 *   
+* 		Initialize/Reset servo                                         *   
 *                                                                              *
 *******************************************************************************/
 SERVO_STATUS servo_init
@@ -83,10 +83,10 @@ else
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		motor_drive                                                            *
+* 		motor_drive                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Drives the specified servo motor to the desired angle (0-180).         *
+* 		Drives the specified servo motor to the desired angle (0-180). *
 *                                                                              *
 *******************************************************************************/
 void motor_drive
@@ -122,10 +122,10 @@ switch (servo)
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		servo_reset                                                            *
+* 		servo_reset                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Resets all servos to their preset positions                            *
+* 		Resets all servos to their preset positions                    *
 *                                                                              *
 *******************************************************************************/
 void servo_reset
