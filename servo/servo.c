@@ -31,7 +31,13 @@
 /*------------------------------------------------------------------------------
  Global Variables
 ------------------------------------------------------------------------------*/
+#ifdef CANARD
 extern SERVO_PRESET servo_preset;
+#endif
+
+#ifdef APPA
+extern PRESET_DATA preset_data;
+#endif
 
 /*------------------------------------------------------------------------------
  Procedures 
@@ -133,10 +139,19 @@ void servo_reset
     void
     )
 {
+#ifdef CANARD
 motor_drive(SERVO_1, servo_preset.rp_servo1);
 motor_drive(SERVO_2, servo_preset.rp_servo2);
 motor_drive(SERVO_3, servo_preset.rp_servo3);
 motor_drive(SERVO_4, servo_preset.rp_servo4);
+#endif
+
+#ifdef APPA
+motor_drive(SERVO_1, preset_data.servo_preset.rp_servo1);
+motor_drive(SERVO_2, preset_data.servo_preset.rp_servo2);
+motor_drive(SERVO_3, preset_data.servo_preset.rp_servo3);
+motor_drive(SERVO_4, preset_data.servo_preset.rp_servo4);
+#endif
 
 } /* servo_reset */
 
