@@ -57,7 +57,7 @@ while (len--)
     {
     crc ^= *data++;
     for (int i = 0; i < 8; ++i)
-        crc = (crc >> 1) ^ (0xEDB88320 & -(crc & 1));
+        crc = (crc >> 1) ^ (0x82F63B78 & -(crc & 1));
     }
 return ~crc;
 
