@@ -13,7 +13,7 @@
 #define LORA_H
 
 /* Project includes */
-
+#include <stdint.h>
 /* Operation Mode Register Values */
 /* These are just random parts of the operation register that may or not get used
 To avoid any chance they're in the final binary without being used,

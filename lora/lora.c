@@ -31,12 +31,6 @@
 // Debugging purposes
 // #include "led.h"
 
-/*------------------------------------------------------------------------------
- Frequency calculation helper function
-------------------------------------------------------------------------------*/
-uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq ) {
-    return ( (2^19) * mhz_freq * 10^6 )/( 32 * 10^6 );
-}
 
 /*------------------------------------------------------------------------------
  Helper functions for various pin functions on the LoRa modem.
@@ -236,7 +230,7 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
     LORA_STATUS fifo_status = lora_write_register(LORA_REG_SIGNAL_TO_NOISE, buffer_len); 
 
     // Send byte to byte to the fifo buffer
-    LORA_STATUS sendbyte_status;
+    LORA_STATUS sendbyte_status = LORA_OK;
     for (int i = 0; i<buffer_len; i++){
         sendbyte_status = lora_write_register(LORA_REG_FIFO_RW, buffer_ptr[i]);
         
@@ -341,14 +335,14 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
                 return LORA_FAIL;
             }
             // Begin extracting payload
-            LORA_STATUS pld_xtr_status;
+            LORA_STATUS pld_xtr_status = LORA_OK;
             for (int i = 0; i < num_bytes; i++){
                 uint8_t packet;
                 pld_xtr_status = lora_read_register(LORA_REG_FIFO_RW, &packet);  // Access LoRA FIFO data buffer pointer
                 buffer_ptr[i] = packet;
             }
             *buffer_len_ptr = num_bytes;
-            if( pld_xtr_status == LORA_OK ) {
+            if (pld_xtr_status == LORA_OK ) {
                 return LORA_OK;
             } else {
                 return LORA_FAIL;
