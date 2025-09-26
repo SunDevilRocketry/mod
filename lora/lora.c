@@ -28,6 +28,10 @@
 #include "lora.h"
 #include "main.h"
 
+extern SPI_HandleTypeDef hspi1;
+#define LORA_SPI hspi1
+
+
 // Debugging purposes
 // #include "led.h"
 
