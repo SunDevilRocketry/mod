@@ -104,17 +104,6 @@ typedef enum _ERROR_CODE
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
-uint32_t crc32
-    (
-    const uint8_t *data, 
-    size_t len
-    );
-
-void error_fail_fast
-    (
-    volatile ERROR_CODE error_code
-    );
-
 void delay_ms
     (
     uint32_t delay
