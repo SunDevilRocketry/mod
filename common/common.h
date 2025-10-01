@@ -109,6 +109,11 @@ void delay_ms
     uint32_t delay
     );
 
+void error_fail_fast
+    (
+    volatile ERROR_CODE error_code
+    );
+
     
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
 *
 * FILE: 
-* 		error.c
+* 		common_error.c
 *
 * DESCRIPTION: 
 * 		Contains error-related functions for SDR code.
