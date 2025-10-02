@@ -78,7 +78,7 @@ extern "C" {
 /* Return codes for API functions */
 typedef enum _BARO_STATUS
 	{
-	BARO_OK                     ,
+	BARO_OK                   =0,
 	BARO_FAIL                   , 
 	BARO_TIMEOUT                ,
 	BARO_UNRECOGNIZED_HAL_STATUS,
@@ -88,7 +88,8 @@ typedef enum _BARO_STATUS
 	BARO_CAL_ERROR              ,
 	BARO_I2C_ERROR              ,
 	BARO_CANNOT_RESET           ,
-	BARO_FIFO_ERROR
+	BARO_FIFO_ERROR				,
+	BARO_BUSY
 	} BARO_STATUS;
 
 /* Sensor enable encodings */

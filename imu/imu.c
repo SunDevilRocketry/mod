@@ -35,6 +35,16 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ Local Variables 
+------------------------------------------------------------------------------*/
+
+#if defined( USE_I2C_IT )
+uint8_t imu_raw_buffer[12];
+IMU_RAW imu_raw_processed;
+bool imu_data_ready;
+#endif
+
+/*------------------------------------------------------------------------------
  Internal function prototypes 
 ------------------------------------------------------------------------------*/
 
@@ -88,6 +98,15 @@ static IMU_STATUS write_mag_reg
     ); 
 #endif 
 
+#if defined( USE_I2C_IT )
+static IMU_STATUS read_imu_regs_IT
+    (
+    uint8_t  reg_addr, /* Register address            */
+    uint8_t* data_ptr, /* Register data               */ 
+    uint8_t  num_regs  /* Number of registers to read */
+    );
+#endif
+
 
 /*------------------------------------------------------------------------------
  Procedures 
@@ -132,6 +151,12 @@ imu_gyr_conf   = ( imu_config_ptr -> gyro_odr        ) |
                  ( imu_config_ptr -> gyro_filter     ) |
                  ( 1 << 7 );
 memset( &imu_sensor_data[0], 0, sizeof( imu_sensor_data ) );
+
+/* clear double buffer if using IMU with IT */
+#if defined( USE_I2C_IT )
+memset( &imu_raw_buffer, 0, sizeof( imu_raw_buffer ) );
+imu_data_ready = false;
+#endif
 
 
 /*------------------------------------------------------------------------------
@@ -406,6 +431,7 @@ IMU_STATUS imu_get_accel_and_gyro
 /*------------------------------------------------------------------------------
  Local variables 
 ------------------------------------------------------------------------------*/
+#ifndef USE_I2C_IT 
 uint8_t     regRaw[12];  /* Bytes from raw registers */
 uint16_t    accel_x_raw;   /* Raw accel sensor readouts  */
 uint16_t    accel_y_raw; 
@@ -413,6 +439,7 @@ uint16_t    accel_z_raw;
 uint16_t    gyro_x_raw;   /* Raw gyro sensor readouts  */
 uint16_t    gyro_y_raw; 
 uint16_t    gyro_z_raw; 
+#endif
 IMU_STATUS  imu_status;   /* IMU status return codes   */
 
 
@@ -422,10 +449,18 @@ IMU_STATUS  imu_status;   /* IMU status return codes   */
 
 /* Read ACCEL and GYRO high byte and low byte registers */
 
-/* when interrupt is ready, switch this to read_imu_regs_IT */
+#if defined(USE_I2C_IT)
+imu_data_ready = false;
+imu_status = read_imu_regs_IT( IMU_REG_DATA_8, 
+                                imu_raw_buffer  , 
+                                sizeof( imu_raw_buffer ) );
+
+return imu_status;
+#else
 imu_status = read_imu_regs( IMU_REG_DATA_8, 
-                                &regRaw[0]    , 
+                                &regRaw[0]     , 
                                 sizeof( regRaw ) );
+
  
 /* Check for HAL IMU error */
 if ( imu_status != IMU_OK )
@@ -448,6 +483,7 @@ pIMU->accel_z = accel_z_raw;
 pIMU->gyro_x = gyro_x_raw;
 pIMU->gyro_y = gyro_y_raw;
 pIMU->gyro_z = gyro_z_raw; 
+#endif
 
 return IMU_OK;
 } /* imu_get_gyro_xyz */
@@ -895,6 +931,73 @@ else
 
 
 #endif /* #if defined( A0002_REV2 ) */
+
+#if defined( USE_I2C_IT )
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		read_imu_regs_IT                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Read the IMU registers in interrupt mode.                              *
+*                                                                              *
+*******************************************************************************/
+static IMU_STATUS read_imu_regs_IT
+    (
+    uint8_t  reg_addr, /* Register address            */
+    uint8_t* data_ptr, /* Register data               */ 
+    uint8_t  num_regs  /* Number of registers to read */
+    )
+{
+HAL_StatusTypeDef hal_status = HAL_OK;
+/* Read I2C register */
+hal_status = HAL_I2C_Mem_Read_IT( &( IMU_I2C )        , 
+                               IMU_ADDR            , 
+                               reg_addr            , 
+                               I2C_MEMADD_SIZE_8BIT, 
+                               data_ptr            , 
+                               num_regs            );
+
+if ( hal_status != HAL_OK )
+	{
+	return IMU_ERROR;
+	}
+else
+	{
+	return IMU_OK;
+	}
+}
+
+IMU_STATUS imu_it_handler()
+{
+/*------------------------------------------------------------------------------
+ Handle IT signal
+------------------------------------------------------------------------------*/
+/* Combine high byte and low byte to 16 bit data  */
+imu_raw_processed.accel_x = ( (uint16_t) imu_raw_buffer[1] ) << 8 | imu_raw_buffer[0];
+imu_raw_processed.accel_y = ( (uint16_t) imu_raw_buffer[3] ) << 8 | imu_raw_buffer[2];
+imu_raw_processed.accel_z = ( (uint16_t) imu_raw_buffer[5] ) << 8 | imu_raw_buffer[4];
+imu_raw_processed.gyro_x = ( (uint16_t) imu_raw_buffer[7] ) << 8 | imu_raw_buffer[6];
+imu_raw_processed.gyro_y = ( (uint16_t) imu_raw_buffer[9] ) << 8 | imu_raw_buffer[8];
+imu_raw_processed.gyro_z = ( (uint16_t) imu_raw_buffer[11] ) << 8 | imu_raw_buffer[10];
+
+imu_data_ready = true;
+
+return IMU_OK;
+}
+
+IMU_STATUS get_imu_it(IMU_RAW* cpy_ptr)
+{
+if( !imu_data_ready )
+    {
+    return IMU_BUSY;
+    }
+
+memcpy( cpy_ptr, &imu_raw_processed, sizeof( IMU_RAW ) );
+
+return IMU_OK;
+}
+#endif /* #if defined( USE_I2C_IT ) */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 

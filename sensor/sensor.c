@@ -144,6 +144,14 @@ static void pt6_adc_channel_select
 	);
 #endif /* #ifdef L0002_REV5 */
 
+#ifdef USE_I2C_IT
+static IMU_STATUS sensor_it_imu_baro
+	(
+	uint32_t timeout, 
+	SENSOR_DATA* sensor_data_ptr
+	);
+#endif
+
 
 /*------------------------------------------------------------------------------
  API Functions 
@@ -757,6 +765,10 @@ SENSOR_STATUS sensor_dump
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
 	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
+
+	#if defined( USE_I2C_IT )
+	accel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
+	#endif
 
 	/* Calculated and retrieve converted IMU data */
 	sensor_conv_imu( &(sensor_data_ptr->imu_data) );
@@ -2220,6 +2232,54 @@ static void imu_get_state_estimate(IMU_DATA* imu_data){
 
 
 #endif /* #ifdef L0002_REV5 */
+
+#ifdef USE_I2C_IT
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_it_imu_baro											           *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Collect data from the double buffers and put it in sensor_data.        *
+*                                                                              *
+*******************************************************************************/
+static IMU_STATUS sensor_it_imu_baro
+	(
+	uint32_t timeout,
+	SENSOR_DATA* sensor_data_ptr
+	)
+{
+/* set up timeout */
+uint32_t starting_time = HAL_GetTick();
+uint32_t curr_time = HAL_GetTick();
+IMU_STATUS imu_ready = IMU_BUSY;
+BARO_STATUS baro_ready = BARO_BUSY;
+while( curr_time <= starting_time + timeout )
+	{
+	/* determine if ready */
+	if( imu_ready == IMU_BUSY )
+		{
+		imu_ready = get_imu_it( (IMU_RAW*)(&sensor_data_ptr) ); /* cast to IMU_RAW, fill the first 12 bytes */
+		}
+	if( baro_ready == BARO_BUSY )
+		{
+		/* doing IMU first. return ready. */
+		baro_ready = BARO_OK;
+		}
+
+	/* compute return if ready */
+	if( baro_ready != BARO_BUSY && imu_ready != IMU_BUSY )
+		{
+		return baro_ready | imu_ready;
+		}
+
+	/* update timeout poll */
+	curr_time = HAL_GetTick();
+	}
+
+return IMU_BUSY;
+}
+#endif /* #ifdef USE_I2C_IT */
 
 
 /*******************************************************************************
