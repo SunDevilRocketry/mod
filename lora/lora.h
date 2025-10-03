@@ -136,6 +136,13 @@ typedef enum LORA_HEADER_MODE {// You can see this on 106 - what this actually m
    LORA_EXPLICIT_HEADER = 0b0
 } LORA_HEADER_MODE;
 
+
+// PaConfig options - See datasheet pages 79 and 103
+typedef enum LORA_PA_SELECT {
+   LORA_RFO      = 0x00,
+   LORA_PA_BOOST = 0x01
+} LORA_PA_SELECT;
+
 /* LORA CONFIG SETTINGS */
 typedef struct _LORA_CONFIG {
    LORA_CHIPMODE lora_mode; // Current LORA Chipmode
@@ -143,6 +150,7 @@ typedef struct _LORA_CONFIG {
    LORA_BANDWIDTH lora_bandwidth; // Signal bandwith
    LORA_ERROR_CODING lora_ecr; // Data Error coding
    LORA_HEADER_MODE lora_header_mode; // LORA Header mode
+   LORA_PA_SELECT lora_pa_select; // Amplifier Selection
    uint32_t lora_frequency; // The LORA carrier frequency. This is NOT directly in megahertz. (See datasheet page 103)
    // To convert, use the formula (2^19 * x)/(32 * 10^6)
    // This library provides a helper function 

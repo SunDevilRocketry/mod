@@ -185,14 +185,22 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     uint8_t lora_freq_reg2 = ( frf_reg << 16 ) >> 24;
     uint8_t lora_freq_reg3 = ( frf_reg << 24 ) >> 24;
 
-    // Write the frequncy registers
+    // Write the frequency registers
     LORA_STATUS write_status4 = lora_write_register( LORA_REG_FREQ_MSB, lora_freq_reg1 );
     LORA_STATUS write_status5 = lora_write_register( LORA_REG_FREQ_MSD, lora_freq_reg2 );
     LORA_STATUS write_status6 = lora_write_register( LORA_REG_FREQ_LSB, lora_freq_reg3 );
 
+    // Determine register values for the PA Config Register
+    uint8_t pa_select_reg;
+    LORA_STATUS read_status4 = lora_read_register( LORA_REG_PA_CONFIG, &pa_select_reg );
+    uint8_t new_pa_select_reg =  pa_select_reg | lora_config_ptr->lora_pa_select;
+
+    // Write the PA Config Register
+    LORA_STATUS write_status7 = lora_write_register( LORA_REG_PA_CONFIG, new_pa_select_reg );
+
     LORA_STATUS standby_status = lora_set_chip_mode( LORA_STANDBY_MODE ); // Switch it into standby mode, which is what's convenient.
 
-    if( set_sleep_status + read_status1 + read_status2 + read_status3 + write_status1 + write_status2 + write_status3 + write_status4 + write_status5 + write_status6 + standby_status == 0 ) {
+    if( set_sleep_status + read_status1 + read_status2 + read_status3 + read_status4 + write_status1 + write_status2 + write_status3 + write_status4 + write_status5 + write_status6 + write_status7 + standby_status == 0 ) {
         return LORA_OK;
     } else {
         return LORA_FAIL;
