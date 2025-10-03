@@ -1,10 +1,10 @@
 /*******************************************************************************
 *
 * FILE: 
-* 		common.c
+* 		common_error.c
 *
 * DESCRIPTION: 
-* 		Contains utility functions for SDR code.
+* 		Contains error-related functions for SDR code.
 *
 *******************************************************************************/
 
@@ -41,20 +41,21 @@
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		delay_ms                                                               *
+* 		error_fail_fast                                                        *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Minimum delay in miliseconds                                           *
+* 		In case of error occurrence, this function passes the error            *
+*       code to the error handler                                              *
 *                                                                              *
 *******************************************************************************/
-void delay_ms
+void error_fail_fast
     (
-    uint32_t delay
+    volatile ERROR_CODE error_code
     )
 {
-HAL_Delay(delay);
+Error_Handler(error_code);
 
-} /* delay_ms */
+} /* error_fail_fast */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 
