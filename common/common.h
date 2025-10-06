@@ -31,7 +31,7 @@ extern "C" {
 * 		Sets a certain bit and returns the new value                           *
 *                                                                              *
 *******************************************************************************/
-#define util_set_bit(orig, idx) (orig | (1 << idx))
+#define util_set_bit( orig, idx ) ( orig | ( 1 << idx ) )
 
 
 /*******************************************************************************
@@ -43,7 +43,19 @@ extern "C" {
 * 		Sets a certain bit and assigns the new value to orig                   *
 *                                                                              *
 *******************************************************************************/
-#define util_set_bit_and_assign(orig, idx) (orig |= (1 << idx))
+#define util_set_bit_and_assign( orig, idx ) ( orig |= ( 1 << idx ) )
+
+
+/*******************************************************************************
+*                                                                              *
+* MACRO:                                                                       * 
+*       assert_fail_fast                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Checks condition, if false calls error_fail_fast with error            *
+*                                                                              *
+*******************************************************************************/
+#define assert_fail_fast( condition, error ) if ( !condition ) error_fail_fast( error )
 
 
 /*------------------------------------------------------------------------------
