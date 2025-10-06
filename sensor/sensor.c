@@ -60,11 +60,10 @@
 
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
-
-extern GPS_DATA gps_data;
+extern volatile uint32_t tdelta, previous_time;
 
 #ifdef FLIGHT_COMPUTER
-extern uint32_t tdelta, previous_time;
+extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
 #endif
 
@@ -2204,7 +2203,9 @@ sConfig.OffsetSignedSaturation = DISABLE;
 HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 } /* pt6_adc_channel_select */
 
+#endif /* #ifdef L0002_REV5 */
 
+#ifdef A0002_REV2
 static void imu_get_state_estimate(IMU_DATA* imu_data){
     float roll_angle = atan(imu_data->accel_y/imu_data->accel_z);
 	float pitch_angle = atan(imu_data->accel_x/9.81);
@@ -2217,9 +2218,7 @@ static void imu_get_state_estimate(IMU_DATA* imu_data){
 	imu_data->state_estimate->roll_rate = roll_rate;
 	imu_data->state_estimate->pitch_rate = pitch_rate;
 }
-
-
-#endif /* #ifdef L0002_REV5 */
+#endif /* #ifdef A0002_REV2*/
 
 
 /*******************************************************************************
