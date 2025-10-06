@@ -740,6 +740,9 @@ SENSOR_STATUS sensor_dump
 	#if defined( A0002_REV2 )
 	memset( &(sensor_data_ptr->imu_data), 0, sizeof( IMU_DATA ) );
 	accel_status = imu_get_accel_and_gyro( &(sensor_data_ptr->imu_data) );
+		#if defined( USE_I2C_IT )
+		press_status = start_baro_read_IT();
+		#endif
 	#else
 	/* IMU sensors */
 	accel_status = imu_get_accel_xyz( &(sensor_data_ptr->imu_data) ); 
@@ -762,11 +765,11 @@ SENSOR_STATUS sensor_dump
 	sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
 	sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
+	#ifndef USE_I2C_IT
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
 	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
-
-	#if defined( USE_I2C_IT )
+	#else
 	accel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
 	#endif
 
@@ -2264,7 +2267,7 @@ while( curr_time <= starting_time + timeout )
 	if( baro_ready == BARO_BUSY )
 		{
 		/* doing IMU first. return ready. */
-		baro_ready = BARO_OK;
+		baro_ready = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
 		}
 
 	/* compute return if ready */

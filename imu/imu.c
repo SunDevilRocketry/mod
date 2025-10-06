@@ -165,7 +165,7 @@ imu_data_ready = false;
 
 #ifdef USE_I2C_IT
 /* disable interrupts while initializing */
-HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
+HAL_NVIC_DisableIRQ(I2C2_EV_IRQn);
 #endif
 
 /* Read IMU ID and verify correct ID */
@@ -281,7 +281,7 @@ if ( imu_status != IMU_OK )
 
 #ifdef USE_I2C_IT
 /* re-enable interrupts while initializing */
-HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
+HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
 #endif
 
 /* IMU Inititialization Successful */

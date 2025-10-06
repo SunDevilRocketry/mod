@@ -271,6 +271,10 @@ BARO_STATUS baro_get_altitude
     void
 	);
 
+BARO_STATUS start_baro_read_IT();
+BARO_STATUS baro_IT_handler();
+BARO_STATUS get_baro_it(float* pres_ptr, float* temp_ptr);
+
 
 #ifdef __cplusplus
 }
