@@ -51,7 +51,7 @@ extern "C" {
 * MACRO:                                                                       * 
 *       assert_fail_fast                                                       *
 *                                                                              *
-* DESCRIPTION:                                                                 * 
+* DESCRIPTION:                                                                 *
 * 		Checks condition, if false calls error_fail_fast with error            *
 *                                                                              *
 *******************************************************************************/
