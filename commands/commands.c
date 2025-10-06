@@ -82,13 +82,12 @@ response = PING_RESPONSE_CODE; /* Code specific to board and revision */
                         HAL_DEFAULT_TIMEOUT );
         }
 
-#elifdef ENGINE_CONTROLLER
+#elif defined(ENGINE_CONTROLLER)
     #if defined( USE_RS485 )
         rs485_transmit( &response, sizeof( response ), RS485_DEFAULT_TIMEOUT );
     #else
         usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
     #endif
-
 #else
 
     usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
