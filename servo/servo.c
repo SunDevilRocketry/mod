@@ -31,7 +31,13 @@
 /*------------------------------------------------------------------------------
  Global Variables
 ------------------------------------------------------------------------------*/
+#ifdef CANARD
 extern SERVO_PRESET servo_preset;
+#endif
+
+#ifdef APPA
+extern PRESET_DATA preset_data;
+#endif
 
 /*------------------------------------------------------------------------------
  Procedures 
@@ -40,10 +46,10 @@ extern SERVO_PRESET servo_preset;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		servo_init                                                             *
+* 		servo_init                                                     *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Initialize/Reset servo                                                 *   
+* 		Initialize/Reset servo                                         *   
 *                                                                              *
 *******************************************************************************/
 SERVO_STATUS servo_init
@@ -83,10 +89,10 @@ else
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		motor_drive                                                            *
+* 		motor_drive                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Drives the specified servo motor to the desired angle (0-180).         *
+* 		Drives the specified servo motor to the desired angle (0-180). *
 *                                                                              *
 *******************************************************************************/
 void motor_drive
@@ -122,10 +128,10 @@ switch (servo)
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		servo_reset                                                            *
+* 		servo_reset                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Resets all servos to their preset positions                            *
+* 		Resets all servos to their preset positions                    *
 *                                                                              *
 *******************************************************************************/
 void servo_reset
@@ -133,10 +139,19 @@ void servo_reset
     void
     )
 {
+#ifdef CANARD
 motor_drive(SERVO_1, servo_preset.rp_servo1);
 motor_drive(SERVO_2, servo_preset.rp_servo2);
 motor_drive(SERVO_3, servo_preset.rp_servo3);
 motor_drive(SERVO_4, servo_preset.rp_servo4);
+#endif
+
+#ifdef APPA
+motor_drive(SERVO_1, preset_data.servo_preset.rp_servo1);
+motor_drive(SERVO_2, preset_data.servo_preset.rp_servo2);
+motor_drive(SERVO_3, preset_data.servo_preset.rp_servo3);
+motor_drive(SERVO_4, preset_data.servo_preset.rp_servo4);
+#endif
 
 } /* servo_reset */
 

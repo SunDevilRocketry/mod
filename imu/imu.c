@@ -55,14 +55,6 @@ static IMU_STATUS read_imu_regs
     ); 
 
 #if defined( A0002_REV2 )
-/* Read IMU registers using interrupt HAL function */
-// static IMU_STATUS read_imu_regs_IT /* POSTPONED */
-//     (
-//     uint8_t  reg_addr, /* Register address    */
-//     uint8_t* data_ptr, /* Register data       */
-//     uint8_t  num_regs  /* Number of registers */
-//     ); 
-
 /* Write to a specified IMU register */
 static IMU_STATUS write_imu_reg 
     (
@@ -757,53 +749,6 @@ else
 
 
 #if defined( A0002_REV2 )
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		read_imu_regs_IT                                                       *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		Read the specific numbers of registers at one time from acceleration   *
-*       and gyroscope module in the IMU with interrupt                         *
-*                                                                              *
-*******************************************************************************/
-// static IMU_STATUS read_imu_regs_IT /* POSTPONED */
-//     (
-//     uint8_t  reg_addr, /* Register address            */
-//     uint8_t* data_ptr, /* Register data               */ 
-//     uint8_t  num_regs  /* Number of registers to read */
-//     )
-// {
-// /*------------------------------------------------------------------------------
-//  Local variables  
-// ------------------------------------------------------------------------------*/
-// HAL_StatusTypeDef hal_status;    /* Status of I2C HAL */
-
-
-// /*------------------------------------------------------------------------------
-//  Implementation 
-// ------------------------------------------------------------------------------*/
-
-// /* Read I2C register */
-// hal_status = HAL_I2C_Mem_Read_IT( &( IMU_I2C )        , 
-//                                IMU_ADDR            , 
-//                                reg_addr            , 
-//                                I2C_MEMADD_SIZE_8BIT, 
-//                                data_ptr            , 
-//                                num_regs );
-
-// if ( hal_status != HAL_OK )
-// 	{
-// 	return IMU_ERROR;
-// 	}
-// else
-// 	{
-// 	return IMU_OK;
-// 	}
-
-// } /* read_imu_regs_IT */
-
-
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
