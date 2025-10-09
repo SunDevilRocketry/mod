@@ -31,7 +31,8 @@ extern "C" {
 * 		Sets a certain bit and returns the new value                           *
 *                                                                              *
 *******************************************************************************/
-#define util_set_bit(orig, idx) (orig | (1 << idx))
+#define util_set_bit( orig, idx ) ( orig | ( 1 << idx ) )
+
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
