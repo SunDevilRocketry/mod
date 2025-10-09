@@ -210,7 +210,6 @@ if ( baro_status != BARO_OK )
 
 /* Configure the sensor */
 baro_status = baro_config( config_ptr );
-return baro_status;
 
 /* Set up double buffer */
 #if defined( USE_I2C_IT )
@@ -218,6 +217,8 @@ baro_data_ready = false;
 memset( baro_raw_buffer, 0, sizeof( baro_raw_buffer ) );
 HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
 #endif
+
+return baro_status;
 
 } /* baro_init */
 
@@ -901,6 +902,7 @@ hal_status = HAL_I2C_Mem_Read_IT( &( BARO_I2C )    ,
 				               I2C_MEMADD_SIZE_8BIT,
 				               baro_raw_buffer     ,
 				               6 /* pres + temp */ );
+
 if ( hal_status != HAL_OK )
 	{
 	return BARO_I2C_ERROR;
@@ -919,7 +921,8 @@ else
 * 		baro_IT_handler                                                  	   *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		ISR for baro data reception. Heavy ISR.		                           *
+* 		ISR for baro data reception. Heavy ISR.	Consider moving processing to  *
+*		get_baro_IT.								                           *
 *                                                                              *
 *******************************************************************************/
 BARO_STATUS baro_IT_handler
