@@ -1839,7 +1839,8 @@ if( start_baro_read_IT() != BARO_OK )
 	return SENSOR_BARO_ERROR;
 	}
 return SENSOR_OK;
-}
+
+} /* sensor_start_IT */
 
 
 /*******************************************************************************
@@ -1934,7 +1935,7 @@ else
 	{
 	return SENSOR_OK;
 	}
-}
+} /* sensor_dump_IT */
 #endif
 
 

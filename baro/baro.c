@@ -912,7 +912,7 @@ else
 	return baro_status;
 	}
 
-} /* read_baro_regs_IT */
+} /* start_baro_read_IT */
 
 
 /*******************************************************************************
@@ -972,7 +972,20 @@ return baro_status;
 } /* baro_start_pressure_IT */
 
 
-BARO_STATUS get_baro_it(float* pres_ptr, float* temp_ptr)
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		get_baro_it                   		                               	   *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Getter function for IT baro data.				                       *
+*                                                                              *
+*******************************************************************************/
+BARO_STATUS get_baro_it
+	(
+	float* pres_ptr, /* o: pressure */
+	float* temp_ptr  /* o: temperature */
+	)
 {
 if( !baro_data_ready )
     {
@@ -983,7 +996,7 @@ if( !baro_data_ready )
 *temp_ptr = baro_temp_proc;
 
 return BARO_OK;
-}
+} /* get_baro_it */
 #endif
 
 

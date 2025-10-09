@@ -978,7 +978,20 @@ else
 	}
 }
 
-IMU_STATUS imu_it_handler()
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		imu_it_handler                                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Handle a memory_rx interupt signal from the IMU.                       *
+*                                                                              *
+*******************************************************************************/
+IMU_STATUS imu_it_handler
+    (
+    void
+    )
 {
 /*------------------------------------------------------------------------------
  Handle IT signal
@@ -994,9 +1007,22 @@ imu_raw_processed.gyro_z = ( (uint16_t) imu_raw_buffer[11] ) << 8 | imu_raw_buff
 imu_data_ready = true;
 
 return IMU_OK;
-}
+} /* imu_it_handler */
 
-IMU_STATUS get_imu_it(IMU_RAW* cpy_ptr)
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		get_imu_it                                                             *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Getter function for IMU sensor data (IT).                              *
+*                                                                              *
+*******************************************************************************/
+IMU_STATUS get_imu_it
+    (
+    IMU_RAW* cpy_ptr
+    )
 {
 if( !imu_data_ready )
     {
@@ -1006,7 +1032,8 @@ if( !imu_data_ready )
 memcpy( cpy_ptr, &imu_raw_processed, sizeof( IMU_RAW ) );
 
 return IMU_OK;
-}
+}/* get_imu_it */
+
 #endif /* #if defined( USE_I2C_IT ) */
 
 /*******************************************************************************
