@@ -145,7 +145,7 @@ static void pt6_adc_channel_select
 #endif /* #ifdef L0002_REV5 */
 
 #ifdef USE_I2C_IT
-static IMU_STATUS sensor_it_imu_baro
+static SENSOR_STATUS sensor_it_imu_baro
 	(
 	uint32_t timeout, 
 	SENSOR_DATA* sensor_data_ptr
@@ -1815,6 +1815,128 @@ else
 } /* sensor_conv_pressure */
 #endif
 
+#if defined( USE_I2C_IT )
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_start_IT                                                   	   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Signal IT enabled peripherals to collect data.                         *
+*                                                                              *
+*******************************************************************************/
+SENSOR_STATUS sensor_start_IT
+	( 
+	SENSOR_DATA* sensor_data_ptr 
+	)
+{
+if( imu_get_accel_and_gyro( &(sensor_data_ptr->imu_data) ) != IMU_OK )
+	{
+	return SENSOR_IMU_FAIL;
+	}
+if( start_baro_read_IT() != BARO_OK )
+	{
+	return SENSOR_BARO_ERROR;
+	}
+return SENSOR_OK;
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_dump_IT                                                   	   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Process data and update sensor_data struct.                            *
+*                                                                              *
+*******************************************************************************/
+SENSOR_STATUS sensor_dump_IT
+	( 
+	SENSOR_DATA* sensor_data_ptr 
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables 
+------------------------------------------------------------------------------*/
+SENSOR_STATUS parallel_status = SENSOR_OK;
+IMU_STATUS accel_status = IMU_OK;
+IMU_STATUS gyro_status = IMU_OK;
+BARO_STATUS press_status = BARO_OK;
+BARO_STATUS temp_status = BARO_OK;
+
+/*------------------------------------------------------------------------------
+ Clear Structs
+------------------------------------------------------------------------------*/
+
+memset( &(sensor_data_ptr->imu_data), 0, sizeof( IMU_DATA ) );
+sensor_data_ptr -> imu_data.temp = 0;   // Figure out what to do with this 
+										// readout, temporarily being used 
+										// as struct padding
+
+/*------------------------------------------------------------------------------
+ Collect Data 
+------------------------------------------------------------------------------*/
+
+/* GPS sensor */
+sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
+sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
+sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
+sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
+sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
+sensor_data_ptr->gps_ns				= gps_data.ns;
+sensor_data_ptr->gps_ew				= gps_data.ew;
+sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
+sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
+
+parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
+
+/*------------------------------------------------------------------------------
+ Compute State Estimations
+------------------------------------------------------------------------------*/
+
+/* Calculated and retrieve converted IMU data */
+sensor_conv_imu( &(sensor_data_ptr->imu_data) );
+
+/* Calculated to get body state */
+sensor_body_state( &(sensor_data_ptr->imu_data) );
+
+/* Calculated velocity and position */
+sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+
+/* Calculated velocity from barometer */
+sensor_baro_velo( sensor_data_ptr );
+
+/*------------------------------------------------------------------------------
+ Start next measurement and return status
+------------------------------------------------------------------------------*/
+
+parallel_status |= sensor_start_IT( sensor_data_ptr );
+
+if( accel_status != IMU_OK )
+	{
+	return SENSOR_ACCEL_ERROR;
+	}
+else if ( gyro_status  != IMU_OK )
+	{
+	return SENSOR_GYRO_ERROR;
+	}
+else if ( press_status != BARO_OK ||
+		temp_status  != BARO_OK  )
+	{
+	return SENSOR_BARO_ERROR;
+	}
+else if ( parallel_status != SENSOR_OK )
+	{
+	return SENSOR_IT_TIMEOUT;
+	}
+else
+	{
+	return SENSOR_OK;
+	}
+}
+#endif
+
 
 /*------------------------------------------------------------------------------
  Internal procedures 
@@ -2246,7 +2368,7 @@ static void imu_get_state_estimate(IMU_DATA* imu_data){
 *       Collect data from the double buffers and put it in sensor_data.        *
 *                                                                              *
 *******************************************************************************/
-static IMU_STATUS sensor_it_imu_baro
+static SENSOR_STATUS sensor_it_imu_baro
 	(
 	uint32_t timeout,
 	SENSOR_DATA* sensor_data_ptr
@@ -2280,7 +2402,7 @@ while( curr_time <= starting_time + timeout )
 	curr_time = HAL_GetTick();
 	}
 
-return IMU_BUSY;
+return SENSOR_IT_TIMEOUT;
 }
 #endif /* #ifdef USE_I2C_IT */
 
