@@ -441,7 +441,6 @@ IMU_STATUS imu_get_accel_and_gyro
 /*------------------------------------------------------------------------------
  Local variables 
 ------------------------------------------------------------------------------*/
-#ifndef USE_I2C_IT 
 uint8_t     regRaw[12];  /* Bytes from raw registers */
 uint16_t    accel_x_raw;   /* Raw accel sensor readouts  */
 uint16_t    accel_y_raw; 
@@ -449,7 +448,6 @@ uint16_t    accel_z_raw;
 uint16_t    gyro_x_raw;   /* Raw gyro sensor readouts  */
 uint16_t    gyro_y_raw; 
 uint16_t    gyro_z_raw; 
-#endif
 IMU_STATUS  imu_status;   /* IMU status return codes   */
 
 
@@ -458,15 +456,6 @@ IMU_STATUS  imu_status;   /* IMU status return codes   */
 ------------------------------------------------------------------------------*/
 
 /* Read ACCEL and GYRO high byte and low byte registers */
-
-#if defined(USE_I2C_IT)
-imu_data_ready = false;
-imu_status = read_imu_regs_IT( IMU_REG_DATA_8, 
-                                imu_raw_buffer  , 
-                                sizeof( imu_raw_buffer ) );
-
-return imu_status;
-#else
 imu_status = read_imu_regs( IMU_REG_DATA_8, 
                                 &regRaw[0]     , 
                                 sizeof( regRaw ) );
@@ -493,7 +482,6 @@ pIMU->accel_z = accel_z_raw;
 pIMU->gyro_x = gyro_x_raw;
 pIMU->gyro_y = gyro_y_raw;
 pIMU->gyro_z = gyro_z_raw; 
-#endif
 
 return IMU_OK;
 } /* imu_get_gyro_xyz */
@@ -943,6 +931,27 @@ else
 #endif /* #if defined( A0002_REV2 ) */
 
 #if defined( USE_I2C_IT )
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		start_imu_read_IT                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Read the accel and gyro registers in interrupt mode.                   *
+*                                                                              *
+*******************************************************************************/
+IMU_STATUS start_imu_read_IT
+    (
+    void
+    )
+{
+imu_data_ready = false;
+return read_imu_regs_IT( IMU_REG_DATA_8, 
+                         imu_raw_buffer, 
+                         sizeof( imu_raw_buffer ) );
+} /* start_imu_read_IT */
+
+
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *

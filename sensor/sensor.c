@@ -739,8 +739,8 @@ SENSOR_STATUS sensor_dump
 #if defined( FLIGHT_COMPUTER )
 	#if defined( A0002_REV2 )
 	memset( &(sensor_data_ptr->imu_data), 0, sizeof( IMU_DATA ) );
-	accel_status = imu_get_accel_and_gyro( &(sensor_data_ptr->imu_data) );
 		#if defined( USE_I2C_IT )
+		accel_status = start_imu_read_IT();
 		press_status = start_baro_read_IT();
 		#endif
 	#else
@@ -765,11 +765,14 @@ SENSOR_STATUS sensor_dump
 	sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
 	sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
-	#ifndef USE_I2C_IT
+	#ifndef USE_I2C_IT /* Use legacy (blocking mode) transfer for compatibility */
+	/* IMU */
+	accel_status = imu_get_accel_and_gyro( &(sensor_data_ptr->imu_data) );
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
 	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
 	#else
+	/* wait for interrupt return */
 	accel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
 	#endif
 
@@ -1830,7 +1833,7 @@ SENSOR_STATUS sensor_start_IT
 	SENSOR_DATA* sensor_data_ptr 
 	)
 {
-if( imu_get_accel_and_gyro( &(sensor_data_ptr->imu_data) ) != IMU_OK )
+if( start_imu_read_IT() != IMU_OK )
 	{
 	return SENSOR_IMU_FAIL;
 	}
