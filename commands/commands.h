@@ -72,6 +72,9 @@ extern "C" {
 #define FIRMWARE_CANARD			( 0x05 ) /* Canard Firmware      */
 #define FIRMWARE_APPA			( 0x06 ) /* APPA Firmware     	 */
 
+/* Other macros */
+#define DASHBOARD_DUMP_SIZE	( 66 )
+
 
 /*------------------------------------------------------------------------------
  Function Prototypes 

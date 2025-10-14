@@ -122,7 +122,7 @@ USB_STATUS dashboard_dump
 /*------------------------------------------------------------------------------
  Local variables                                                                     
 ------------------------------------------------------------------------------*/
-uint8_t buffer[SENSOR_DASH_SIZE];
+uint8_t buffer[DASHBOARD_DUMP_SIZE];
 uint8_t idx = 0;
 SENSOR_STATUS sensor_status = SENSOR_OK;
 
@@ -165,7 +165,7 @@ idx++;
 memcpy( &buffer[idx], &(sensor_data.gps_ew), sizeof(char));
 idx++;
 
-// assert_fail_fast( idx == SENSOR_DASH_SIZE )
+// assert_fail_fast( idx == DASHBOARD_DUMP_SIZE )
 
 return usb_transmit( buffer, 
                         idx, 
