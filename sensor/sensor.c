@@ -650,57 +650,7 @@ switch ( subcommand )
 			return( SENSOR_FAIL );
             }
         } /* SENSOR_DUMP_CODE */
-	
-	/*--------------------------------------------------------------------------
-	 SENSOR DASH 
-	--------------------------------------------------------------------------*/
-	#ifdef A0002_REV2 /* TODO: Replace with IT-based system once merged */
-	case SENSOR_DASH_CODE:
-		{
-		/* Special sensor poll case, cuts processing and transmission overhead */
-	    sensor_status = sensor_dump( &sensor_data );
-		uint8_t buffer[SENSOR_DASH_SIZE];
-		uint8_t idx = 0;
 
-		/* IMU (6 axes) */
-		memcpy( &buffer[idx],
-			&(sensor_data.imu_data.imu_converted),
-			sizeof( IMU_CONVERTED ));
-		idx += sizeof( IMU_CONVERTED );
-
-		/* Baro */
-		memcpy( &buffer[idx], &(sensor_data.baro_pressure), sizeof(float));
-		idx += 4;
-		memcpy( &buffer[idx], &(sensor_data.baro_temp), sizeof(float));
-		idx += 4;
-		memcpy( &buffer[idx], &(sensor_data.baro_alt), sizeof(float));
-		idx += 4;
-		memcpy( &buffer[idx], &(sensor_data.baro_velo), sizeof(float));
-		idx += 4;
-		
-		/* Roll/Pitch + Rates */
-		memcpy( &buffer[idx],
-				&(sensor_data.imu_data.state_estimate),
-				4 * sizeof( FLOAT )); /* just the first 4 */
-		idx += 4 * sizeof( FLOAT );
-		
-		/* GPS */
-		memcpy( &buffer[idx], &(sensor_data.gps_dec_longitude), sizeof(float));
-		idx += 4;
-		memcpy( &buffer[idx], &(sensor_data.gps_dec_latitude), sizeof(float));
-		idx += 4;
-		memcpy( &buffer[idx], &(sensor_data.gps_ns), sizeof(char));
-		idx++;
-		memcpy( &buffer[idx], &(sensor_data.gps_ew), sizeof(char));
-		idx++;
-		
-		// assert_fail_fast( idx == SENSOR_DASH_SIZE )
-
-		return usb_transmit( buffer, 
-					  		 idx, 
-					  		 HAL_SENSOR_TIMEOUT /* more forgiving HW timeout */ );
-		}
-	#endif
 	/*--------------------------------------------------------------------------
 	 UNRECOGNIZED SUBCOMMAND 
 	--------------------------------------------------------------------------*/

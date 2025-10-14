@@ -45,7 +45,6 @@ Includes
 /* Sensor subcommand codes */
 #define SENSOR_DUMP_CODE        ( 0x01 )
 #define SENSOR_POLL_CODE        ( 0x02 )
-#define SENSOR_DASH_CODE		( 0x03 )
 
 /* Max allowed number of sensors for polling */
 #define SENSOR_MAX_NUM_POLL     ( 5    )
@@ -55,7 +54,6 @@ Includes
 	#define NUM_SENSORS         ( 38   )
 	// #define IMU_DATA_SIZE       ( 20   )
 	#define SENSOR_DATA_SIZE	( 120   )
-	#define SENSOR_DASH_SIZE	( 66 )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
