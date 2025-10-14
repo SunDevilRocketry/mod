@@ -13,6 +13,7 @@
  Standard Includes                                                               
 ------------------------------------------------------------------------------*/
 #include <stdbool.h>
+#include <string.h>
 
 /*------------------------------------------------------------------------------
  Project Includes                                                               
@@ -152,8 +153,8 @@ idx += 4;
 /* Roll/Pitch + Rates */
 memcpy( &buffer[idx],
         &(sensor_data.imu_data.state_estimate),
-        4 * sizeof( FLOAT )); /* just the first 4 */
-idx += 4 * sizeof( FLOAT );
+        4 * sizeof( float )); /* just the first 4 */
+idx += 4 * sizeof( float );
 
 /* GPS */
 memcpy( &buffer[idx], &(sensor_data.gps_dec_longitude), sizeof(float));
