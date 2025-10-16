@@ -140,6 +140,12 @@ memcpy( &buffer[idx],
     sizeof( IMU_CONVERTED ));
 idx += sizeof( IMU_CONVERTED );
 
+/* Roll/Pitch + Rates */
+memcpy( &buffer[idx],
+        &(sensor_data.imu_data.state_estimate),
+        4 * sizeof( float )); /* just the first 4 */
+idx += 4 * sizeof( float );
+
 /* Baro */
 memcpy( &buffer[idx], &(sensor_data.baro_pressure), sizeof(float));
 idx += 4;
@@ -149,12 +155,6 @@ memcpy( &buffer[idx], &(sensor_data.baro_alt), sizeof(float));
 idx += 4;
 memcpy( &buffer[idx], &(sensor_data.baro_velo), sizeof(float));
 idx += 4;
-
-/* Roll/Pitch + Rates */
-memcpy( &buffer[idx],
-        &(sensor_data.imu_data.state_estimate),
-        4 * sizeof( float )); /* just the first 4 */
-idx += 4 * sizeof( float );
 
 /* GPS */
 memcpy( &buffer[idx], &(sensor_data.gps_dec_longitude), sizeof(float));
