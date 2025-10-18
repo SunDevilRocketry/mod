@@ -31,8 +31,9 @@ extern "C" {
 #define SOL_OP         0x51    /* solenoid command opcode    */
 #define VALVE_OP       0x52    /* Valve command opcode       */
 #define DUAL_DEPLOY_OP 0xA0    /* dual-deploy command opcode */
-#define SERVO_OP	   0x08
-#define PRESET_OP	   0x24
+#define SERVO_OP	   0x08	   /* servo command opcode		 */
+#define PRESET_OP	   0x24	   /* preset command opcode 	 */
+#define DASHBOARD_OP   0x30	   /* dashboard command opcode 	 */
 
 #define FIN_OP		   0x21    /* fin calibrate opcode (NOTE: DUPLICATE OF POWER_OP) */
 
@@ -71,6 +72,9 @@ extern "C" {
 #define FIRMWARE_CANARD			( 0x05 ) /* Canard Firmware      */
 #define FIRMWARE_APPA			( 0x06 ) /* APPA Firmware     	 */
 
+/* Other macros */
+#define DASHBOARD_DUMP_SIZE	( 66 )
+
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
@@ -85,6 +89,13 @@ void ping
 		CMD_SOURCE cmd_source
 	#endif
 	);
+
+#ifdef A0002_REV2
+USB_STATUS dashboard_dump
+    (
+    void
+    );
+#endif
 
 #ifdef __cplusplus
 }
