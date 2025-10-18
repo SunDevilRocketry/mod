@@ -225,14 +225,14 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
 
     // Write data to LoRA FIFO
     uint8_t fifo_ptr_addr;
-    LORA_STATUS ptr_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
-    if (ptr_status + standby_status != LORA_OK){
+    LORA_STATUS tx_base_status = lora_read_register(LORA_REG_FIFO_TX_BASE_ADDR, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
+    if (tx_base_status + standby_status != LORA_OK){
         // Error handler
         // led_set_color(// led_RED);
         return LORA_FAIL;
     }
-    LORA_STATUS tx_base_status = lora_write_register(LORA_REG_FIFO_TX_BASE_ADDR, fifo_ptr_addr); // Set fifo data pointer to TX base address
-    if (tx_base_status != LORA_OK){
+    LORA_STATUS ptr_status = lora_write_register(LORA_REG_FIFO_SPI_POINTER, fifo_ptr_addr); // Set fifo data pointer to TX base address
+    if (ptr_status != LORA_OK){
         // Error handler
         // led_set_color(// led_RED);
         return LORA_FAIL;
@@ -334,14 +334,14 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
 
             // Set lora fifo pointer to the RX base current address
             uint8_t fifo_ptr_addr;
-            LORA_STATUS ptr2_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
-            if (ptr2_status != LORA_OK){
+            LORA_STATUS base_adr_status = lora_read_register(LORA_REG_FIFO_RX_BASE_CUR_ADDR, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
+            if (base_adr_status != LORA_OK){
                 // Error handler
                 // led_set_color(// led_RED);
                 return LORA_FAIL;
             }
-            LORA_STATUS base_adr_status = lora_write_register(LORA_REG_FIFO_RX_BASE_CUR_ADDR, fifo_ptr_addr); // Set fifo data pointer to TX base address
-            if (base_adr_status != LORA_OK){
+            LORA_STATUS ptr2_status = lora_write_register(LORA_REG_FIFO_SPI_POINTER, fifo_ptr_addr); // Set fifo data pointer to TX base address
+            if (ptr2_status != LORA_OK){
                 // Error handler
                 // led_set_color(// led_RED);
                 return LORA_FAIL;
