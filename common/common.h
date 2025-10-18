@@ -90,12 +90,13 @@ typedef enum _ERROR_CODE
     } ERROR_CODE;
 
 /* UID serial number (packed struct inhibits padding) */
-typedef struct __attribute__((packed)) _ST_UID_TYPE {
+typedef struct __attribute__((packed)) _ST_UID_TYPE 
+    {
     uint32_t wafer_coords;
     char lot_num_1[3];
     uint8_t wafer_num;
     char lot_num_2[4];
-} ST_UID_TYPE;
+    } ST_UID_TYPE;
 _Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
 
 /*------------------------------------------------------------------------------
