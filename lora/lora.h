@@ -12,20 +12,8 @@
 #ifndef LORA_H
 #define LORA_H
 
-/* Project includes */
+/* Standard includes */
 #include <stdint.h>
-/* Operation Mode Register Values */
-/* These are just random parts of the operation register that may or not get used
-To avoid any chance they're in the final binary without being used,
-they are commented out for now and will be uncommented as they're needed.
-
-#define LORA_LORA_MODE             0b1
-#define LORA_LORA_REGISTER_PAGE    0b0
-#define LORA_FSK_REGISTER_PAGE     0b1
-#define LORA_HIGH_FREQ_MODE        0b1
-#define LORA_LOW_FREQ_MODE         0b0
-#define LORA_OPERATION_RESERVED    0b00
-*/
 
 #define LORA_TIMEOUT                2000
 
@@ -158,12 +146,6 @@ typedef struct _LORA_CONFIG {
    // This library provides a helper function 
 } LORA_CONFIG;
 
-LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr );
-
-LORA_STATUS LORA_SPI_Transmit_Buffer( LORA_REGISTER_ADDR reg, uint8_t data );
-
-LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg );
-
 LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData);
 
 LORA_STATUS lora_write_register( LORA_REGISTER_ADDR lora_register, uint8_t data );
@@ -181,8 +163,5 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len);
 LORA_STATUS lora_receive_ready();
 
 LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr);
-
-// Convert a human-readable frequency to the unit used internally by the modem
-uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq );
 
 #endif

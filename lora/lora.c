@@ -51,7 +51,7 @@ void serial_printlnx(unsigned char* mesg, size_t mesg_len){
 /*------------------------------------------------------------------------------
  Helper functions for various pin functions on the LoRa modem.
 ------------------------------------------------------------------------------*/
-LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
+static LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
     HAL_StatusTypeDef status;
 
     /* Takes pointer to the read buffer. and puts output there */
@@ -63,7 +63,7 @@ LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
         return LORA_FAIL;
 }
 
-LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg ) {
+static LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg ) {
     HAL_StatusTypeDef status;
 
     /* Takes register and data to write (1 byte) and writes that register. */
@@ -75,7 +75,7 @@ LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg ) {
     } else return LORA_FAIL;
 }
 
-LORA_STATUS LORA_SPI_Transmit_Data( LORA_REGISTER_ADDR reg, uint8_t data ) {
+static LORA_STATUS LORA_SPI_Transmit_Data( LORA_REGISTER_ADDR reg, uint8_t data ) {
     HAL_StatusTypeDef status;
 
     /* Takes register and data to write and writes that register. */
