@@ -47,6 +47,8 @@ typedef enum LORA_STATUS {
    LORA_TRANSMIT_FAIL,
    LORA_RECEIVE_FAIL,
    LORA_TIMEOUT_FAIL,
+   LORA_READY,
+   LORA_WAITING
 } LORA_STATUS;
 
 /* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)
@@ -182,7 +184,5 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr);
 
 // Convert a human-readable frequency to the unit used internally by the modem
 uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq );
-
-// LORA_STATUS lora_transmit( uint8_t data );
 
 #endif

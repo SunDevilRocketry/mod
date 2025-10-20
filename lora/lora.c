@@ -15,13 +15,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "usb_device.h"
-#include "usbd_cdc_if.h"
-
-
-void serial_printlnx(unsigned char* mesg, size_t mesg_len){
-    while(CDC_Transmit_FS(mesg, mesg_len)==USBD_BUSY);
-}
 
 /*------------------------------------------------------------------------------
  MCU Pins 
@@ -38,13 +31,22 @@ void serial_printlnx(unsigned char* mesg, size_t mesg_len){
 #include "lora.h"
 #include "main.h"
 
+#if defined( STM32F103xB ) // For the LoRa testbeds
+#include "usb_device.h"
+#include "usbd_cdc_if.h"
+
 extern SPI_HandleTypeDef hspi1;
 #define LORA_SPI hspi1
 
+void serial_printlnx(unsigned char* mesg, size_t mesg_len){
+    while(CDC_Transmit_FS(mesg, mesg_len)==USBD_BUSY);
+}
+#endif
 
-// Debugging purposes
-// #include "led.h"
 
+#ifndef STM32F103xB // The LoRa testbeds don't support our LED library
+    #include "led.h"
+#endif
 
 /*------------------------------------------------------------------------------
  Helper functions for various pin functions on the LoRa modem.
@@ -140,11 +142,6 @@ LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode ) {
     {
         return LORA_FAIL;
     }
-
-    // // Fail if not in LORA Mode 
-    // if ( !( operation_mode_register & (1<<7) ) ){
-    //     return LORA_FAIL;
-    // }
 
     // Change the value of the chip register to set it to the suggested chip mode
     uint8_t new_opmode_register = (operation_mode_register & ~(0x7));
@@ -291,25 +288,32 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
 LORA_STATUS lora_receive_ready() {
     uint8_t mode;
 
-    lora_read_register( LORA_REG_OPERATION_MODE, &mode );
-
+    LORA_STATUS mode_check = lora_read_register( LORA_REG_OPERATION_MODE, &mode );
     mode = mode & 0x07;
 
-    char bufy[255];
-    int len = sprintf( bufy, "Mode: %d\n", mode);
-    serial_printlnx( bufy, len );
+    #if defined( STM32F103xB ) // LoRa testbed test code
+        char buf[255];
+        int len = sprintf( buf, "Mode: %d\n", mode);
+        serial_printlnx( buf, len );
+    #endif
 
-    if( mode == LORA_RX_CONTINUOUS_MODE ) {
+    if( mode_check == LORA_OK && mode == LORA_RX_CONTINUOUS_MODE ) {
         uint8_t irq_flag;
-        lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
-        uint8_t rx_done = (irq_flag & (1<<6)) >> 6;
-        
-        char bufx[255];
-        int len = sprintf( bufx, "Register: %d\n", irq_flag);
-        serial_printlnx( bufx, len );
 
-        if( rx_done ) {
-            return LORA_OK;
+        LORA_STATUS irq_check = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
+
+        if( irq_check = LORA_OK ) {
+            uint8_t rx_done = (irq_flag & (1<<6)) >> 6;
+            
+            char bufx[255];
+            int len = sprintf( bufx, "Register: %d\n", irq_flag);
+            serial_printlnx( bufx, len );
+
+            if( rx_done ) {
+                return LORA_READY;
+            } else {
+                return LORA_WAITING;
+            }
         } else {
             return LORA_FAIL;
         }
@@ -319,64 +323,21 @@ LORA_STATUS lora_receive_ready() {
 }
 
 // =============================================================================
-// lora_receive: receive a buffer from lora fifo with single mode
+// lora_receive: receive a buffer from lora fifo with continuous mode
 // =============================================================================
 LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
     uint8_t timeout_flag;
-    uint8_t rx_done;
-    
-    // Mode request STAND-BY
-    // LORA_STATUS standby_status = lora_set_chip_mode(LORA_STANDBY_MODE);
 
-    // RX Init TODO
-    uint8_t reset_irq = 0;
-    lora_write_register( LORA_REG_IRQ_FLAGS, reset_irq );
-    
-     // Set lora fifo pointer to the RX base address
-    /* uint8_t fifo_ptr_addr;
-    LORA_STATUS ptr_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
-    if (ptr_status != LORA_OK){
-        // Error handler
-        // led_set_color(// led_RED);
-        return LORA_FAIL;
-    }
-    LORA_STATUS fifo_status = lora_write_register(LORA_REG_FIFO_RX_BASE_ADDR, fifo_ptr_addr); // Set fifo data pointer to TX base address
-    if (fifo_status != LORA_OK){
-        // Error handler
-        // led_set_color(// led_RED);
-        return LORA_FAIL;
-    } */
+    LORA_STATUS rx_done = lora_receive_ready(); // We check if we've received a packet.
+    // If we haven't received a packet, the output will be similar to lora_receive_ready in that case.
 
-    // Send request for RX Single mode
-    // LORA_STATUS rmode_status = lora_set_chip_mode(LORA_RX_SINGLE_MODE);
+    if ( rx_done == LORA_READY ){
+        // Reset IRQ register. TODO: Not sure if I actually need to this; will investigate.
+        uint8_t reset_irq = 0;
+        lora_write_register( LORA_REG_IRQ_FLAGS, reset_irq );
 
-    // Wait for LoRA IRQ
-    uint16_t timeout = 0;
-    uint8_t irq_flag;
-    LORA_STATUS irq_status;
-    
+        uint8_t irq_flag;
 
-    // while(timeout<10000){
-        irq_status = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
-    //  timeout_flag = (irq_flag & (1<<7)) >> 7;
-        rx_done = (irq_flag & (1<<6)) >> 6;
-
-        char buf[6];
-        int len = sprintf( buf, "Register Value: %d\r\n", irq_flag );
-        serial_printlnx( buf, len );
-        
-        /* if (timeout_flag){
-            return LORA_TIMEOUT_FAIL;
-        } else if (rx_done) {
-            char buf2[255];
-            len = sprintf( buf2, "Tuh-dah!\r\n" );
-            serial_printlnx( buf, len );
-            break;
-        } */
-        timeout++;
-    // }
-
-    if (rx_done){
         LORA_STATUS irq_status2 = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
         uint8_t crc_err = (irq_flag & (1<<5)) >> 5;
 
@@ -385,9 +346,11 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
             uint8_t num_bytes;
             LORA_STATUS fifo2_status = lora_read_register(LORA_REG_FIFO_RX_NUM_BYTES, &num_bytes);
 
-            char buf3[255];
-            int len = sprintf( buf3, "Numbytes: %d\r\n", num_bytes );
-            serial_printlnx( buf3, len );
+            #if defined( STM32F103xB )
+            char buf[255];
+            int len = sprintf( buf, "Numbytes: %d\r\n", num_bytes );
+            serial_printlnx( buf, len );
+            #endif
 
             // Set lora fifo pointer to the RX base current address
             uint8_t fifo_ptr_addr;
@@ -418,6 +381,8 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
             }
         }
         return LORA_OK;
+    } else if( rx_done == LORA_WAITING ) {
+        return LORA_WAITING;
     }
     return LORA_FAIL;
 }
