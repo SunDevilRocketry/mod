@@ -13,6 +13,16 @@
  Standard Includes  
 ------------------------------------------------------------------------------*/
 
+#include <stdlib.h>
+#include <string.h>
+#include "usb_device.h"
+#include "usbd_cdc_if.h"
+
+
+void serial_printlnx(unsigned char* mesg, size_t mesg_len){
+    while(CDC_Transmit_FS(mesg, mesg_len)==USBD_BUSY);
+}
+
 /*------------------------------------------------------------------------------
  MCU Pins 
 ------------------------------------------------------------------------------*/
@@ -198,7 +208,7 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     // Write the PA Config Register
     LORA_STATUS write_status7 = lora_write_register( LORA_REG_PA_CONFIG, new_pa_select_reg );
 
-    LORA_STATUS standby_status = lora_set_chip_mode( LORA_STANDBY_MODE ); // Switch it into standby mode, which is what's convenient.
+    LORA_STATUS standby_status = lora_set_chip_mode( lora_config_ptr->lora_mode ); // Switch it into standby mode, which is what's convenient.
 
     if( set_sleep_status + read_status1 + read_status2 + read_status3 + read_status4 + write_status1 + write_status2 + write_status3 + write_status4 + write_status5 + write_status6 + write_status7 + standby_status == 0 ) {
         return LORA_OK;
@@ -275,6 +285,38 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
         return LORA_FAIL;
     }
 }
+// =============================================================================
+// lora_receive_ready: Check if transmission has been received
+// =============================================================================
+LORA_STATUS lora_receive_ready() {
+    uint8_t mode;
+
+    lora_read_register( LORA_REG_OPERATION_MODE, &mode );
+
+    mode = mode & 0x07;
+
+    char bufy[255];
+    int len = sprintf( bufy, "Mode: %d\n", mode);
+    serial_printlnx( bufy, len );
+
+    if( mode == LORA_RX_CONTINUOUS_MODE ) {
+        uint8_t irq_flag;
+        lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
+        uint8_t rx_done = (irq_flag & (1<<6)) >> 6;
+        
+        char bufx[255];
+        int len = sprintf( bufx, "Register: %d\n", irq_flag);
+        serial_printlnx( bufx, len );
+
+        if( rx_done ) {
+            return LORA_OK;
+        } else {
+            return LORA_FAIL;
+        }
+    } else {
+        return LORA_FAIL;
+    }
+}
 
 // =============================================================================
 // lora_receive: receive a buffer from lora fifo with single mode
@@ -284,14 +326,16 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
     uint8_t rx_done;
     
     // Mode request STAND-BY
-    LORA_STATUS standby_status = lora_set_chip_mode(LORA_STANDBY_MODE);
+    // LORA_STATUS standby_status = lora_set_chip_mode(LORA_STANDBY_MODE);
 
     // RX Init TODO
+    uint8_t reset_irq = 0;
+    lora_write_register( LORA_REG_IRQ_FLAGS, reset_irq );
     
      // Set lora fifo pointer to the RX base address
-    uint8_t fifo_ptr_addr;
+    /* uint8_t fifo_ptr_addr;
     LORA_STATUS ptr_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
-    if (standby_status + ptr_status != LORA_OK){
+    if (ptr_status != LORA_OK){
         // Error handler
         // led_set_color(// led_RED);
         return LORA_FAIL;
@@ -301,27 +345,36 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
         // Error handler
         // led_set_color(// led_RED);
         return LORA_FAIL;
-    }
+    } */
 
     // Send request for RX Single mode
-    LORA_STATUS rmode_status = lora_set_chip_mode(LORA_RX_SINGLE_MODE);
+    // LORA_STATUS rmode_status = lora_set_chip_mode(LORA_RX_SINGLE_MODE);
 
     // Wait for LoRA IRQ
     uint16_t timeout = 0;
     uint8_t irq_flag;
     LORA_STATUS irq_status;
-    while(timeout<10000){
+    
+
+    // while(timeout<10000){
         irq_status = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
-        timeout_flag = (irq_flag & (1<<7)) >> 7;
+    //  timeout_flag = (irq_flag & (1<<7)) >> 7;
         rx_done = (irq_flag & (1<<6)) >> 6;
+
+        char buf[6];
+        int len = sprintf( buf, "Register Value: %d\r\n", irq_flag );
+        serial_printlnx( buf, len );
         
-        if (timeout_flag){
+        /* if (timeout_flag){
             return LORA_TIMEOUT_FAIL;
         } else if (rx_done) {
+            char buf2[255];
+            len = sprintf( buf2, "Tuh-dah!\r\n" );
+            serial_printlnx( buf, len );
             break;
-        }
+        } */
         timeout++;
-    }
+    // }
 
     if (rx_done){
         LORA_STATUS irq_status2 = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
@@ -331,6 +384,10 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
             // Read received number of bytes
             uint8_t num_bytes;
             LORA_STATUS fifo2_status = lora_read_register(LORA_REG_FIFO_RX_NUM_BYTES, &num_bytes);
+
+            char buf3[255];
+            int len = sprintf( buf3, "Numbytes: %d\r\n", num_bytes );
+            serial_printlnx( buf3, len );
 
             // Set lora fifo pointer to the RX base current address
             uint8_t fifo_ptr_addr;

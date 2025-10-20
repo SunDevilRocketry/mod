@@ -175,6 +175,9 @@ LORA_STATUS lora_init();
 void lora_reset();
 
 LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len);
+
+LORA_STATUS lora_receive_ready();
+
 LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr);
 
 // Convert a human-readable frequency to the unit used internally by the modem
