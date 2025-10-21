@@ -95,6 +95,11 @@ USB_STATUS dashboard_dump
     (
     void
     );
+
+void dashboard_construct_dump
+    (
+    uint8_t* buffer /* must be DASHBOARD_DUMP_SIZE */
+    );
 #endif
 
 #ifdef __cplusplus

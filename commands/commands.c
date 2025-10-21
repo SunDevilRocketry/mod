@@ -124,7 +124,6 @@ USB_STATUS dashboard_dump
  Local variables                                                                     
 ------------------------------------------------------------------------------*/
 uint8_t buffer[DASHBOARD_DUMP_SIZE];
-uint8_t idx = 0;
 SENSOR_STATUS sensor_status = SENSOR_OK;
 
 sensor_status = sensor_dump( &sensor_data );
@@ -133,6 +132,30 @@ if ( !( sensor_status == SENSOR_OK ) )
     {
     return USB_FAIL;
     }
+
+dashboard_construct_dump(buffer);
+
+return usb_transmit( buffer, 
+                        DASHBOARD_DUMP_SIZE, 
+                        HAL_SENSOR_TIMEOUT /* more forgiving HW timeout */ );
+} /* dashboard_dump */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		dashboard_construct_dump                                               *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Fill the buffer with the dashboard dump.                               *
+*                                                                              *
+*******************************************************************************/
+void dashboard_construct_dump
+    (
+    uint8_t* buffer /* must be DASHBOARD_DUMP_SIZE */
+    )
+{
+uint8_t idx = 0;
 
 /* IMU (6 axes) */
 memcpy( &buffer[idx],
@@ -168,10 +191,7 @@ idx++;
 
 // assert_fail_fast( idx == DASHBOARD_DUMP_SIZE )
 
-return usb_transmit( buffer, 
-                        idx, 
-                        HAL_SENSOR_TIMEOUT /* more forgiving HW timeout */ );
-} /* dashboard_dump */
+}
 #endif
 
 
