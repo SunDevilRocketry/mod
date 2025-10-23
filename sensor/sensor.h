@@ -107,7 +107,8 @@ typedef enum
 	SENSOR_POLL_UNRECOGNIZED_CMD ,
 	SENSOR_VALVE_UART_ERROR      ,
 	SENSOR_ADC_POLL_ERROR        ,
-    SENSOR_FAIL   
+    SENSOR_FAIL   				 ,
+	SENSOR_IT_TIMEOUT
     } SENSOR_STATUS;
 
 /* Sensor poll command codes */
@@ -298,6 +299,18 @@ float sensor_conv_pressure
 	( 
 	uint32_t adc_readout, /* Pressure readout from ADC */
 	PT_INDEX pt_num       /* PT used for readout       */
+	);
+#endif
+
+#ifdef USE_I2C_IT
+SENSOR_STATUS sensor_start_IT
+	( 
+	SENSOR_DATA* sensor_data_ptr 
+	);
+	
+SENSOR_STATUS sensor_dump_IT
+	( 
+	SENSOR_DATA* sensor_data_ptr 
 	);
 #endif
 
