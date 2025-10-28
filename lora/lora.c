@@ -307,9 +307,11 @@ LORA_STATUS lora_receive_ready() {
         if( irq_check = LORA_OK ) {
             uint8_t rx_done = (irq_flag & (1<<6)) >> 6;
             
+            #if defined( TESTRECEIVER )
             char bufx[255];
             int len = sprintf( bufx, "Register: %d\n", irq_flag);
             serial_printlnx( bufx, len );
+            #endif
 
             if( rx_done ) {
                 return LORA_READY;
