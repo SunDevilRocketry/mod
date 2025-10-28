@@ -208,6 +208,9 @@ typedef struct _IMU_RAW {
     uint16_t    gyro_x ;
     uint16_t    gyro_y ;
     uint16_t    gyro_z ;
+    uint16_t    mag_x;
+    uint16_t    mag_y;
+    uint16_t    mag_z;
 } IMU_RAW;
 
 /* Processed IMU aata */
