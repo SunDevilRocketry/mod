@@ -31,16 +31,18 @@
 #include "lora.h"
 #include "main.h"
 
-#if defined( STM32F103xB ) // For the LoRa testbeds
+#if defined( TESTRECEIVER )
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
-
-extern SPI_HandleTypeDef hspi1;
-#define LORA_SPI hspi1
 
 void serial_printlnx(unsigned char* mesg, size_t mesg_len){
     while(CDC_Transmit_FS(mesg, mesg_len)==USBD_BUSY);
 }
+#endif
+
+#if defined( STM32F103xB ) // For the LoRa testbeds
+extern SPI_HandleTypeDef hspi1;
+#define LORA_SPI hspi1
 #endif
 
 
@@ -291,7 +293,7 @@ LORA_STATUS lora_receive_ready() {
     LORA_STATUS mode_check = lora_read_register( LORA_REG_OPERATION_MODE, &mode );
     mode = mode & 0x07;
 
-    #if defined( STM32F103xB ) // LoRa testbed test code
+    #if defined( TESTRECEIVER ) // LoRa testbed test code
         char buf[255];
         int len = sprintf( buf, "Mode: %d\n", mode);
         serial_printlnx( buf, len );
@@ -346,7 +348,7 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
             uint8_t num_bytes;
             LORA_STATUS fifo2_status = lora_read_register(LORA_REG_FIFO_RX_NUM_BYTES, &num_bytes);
 
-            #if defined( STM32F103xB )
+            #if defined( TESTRECEIVER )
             char buf[255];
             int len = sprintf( buf, "Numbytes: %d\r\n", num_bytes );
             serial_printlnx( buf, len );
