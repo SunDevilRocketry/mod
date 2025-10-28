@@ -141,9 +141,8 @@ typedef struct _LORA_CONFIG {
    LORA_ERROR_CODING lora_ecr; // Data Error coding
    LORA_HEADER_MODE lora_header_mode; // LORA Header mode
    LORA_PA_SELECT lora_pa_select; // Amplifier Selection
-   uint32_t lora_frequency; // The LORA carrier frequency. This is NOT directly in megahertz. (See datasheet page 103)
-   // To convert, use the formula (2^19 * x)/(32 * 10^6)
-   // This library provides a helper function 
+   uint32_t lora_frequency; // The LORA carrier frequency, in kilohertz.
+   // To convert to internal chip unit, use the formula (2^19 * x)/(32 * 10^3)
 } LORA_CONFIG;
 
 LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData);

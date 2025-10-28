@@ -186,7 +186,7 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     LORA_STATUS write_status3 = lora_write_register( LORA_REG_NUM_RX_BYTES, new_config1_register );
 
     // Determine register values for the frequency registers
-    uint32_t frf_reg = lora_config_ptr->lora_frequency * 524288 / 32;
+    uint32_t frf_reg = lora_config_ptr->lora_frequency * 524288 / ( 32 * 1000 );
 
     uint8_t lora_freq_reg1 = ( frf_reg <<  8 ) >> 24;
     uint8_t lora_freq_reg2 = ( frf_reg << 16 ) >> 24;
