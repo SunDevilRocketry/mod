@@ -17,6 +17,10 @@
 
 #define LORA_TIMEOUT                2000
 
+/* US ISM band frequencies, used in the code to prevent violating US law */
+#define ISM_MAX_FREQ                928000
+#define ISM_MIN_FREQ                902000
+
 typedef enum LORA_CHIPMODE {
    LORA_SLEEP_MODE = 0x00,
    LORA_STANDBY_MODE = 0x01,

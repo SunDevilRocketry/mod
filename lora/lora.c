@@ -158,8 +158,58 @@ LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode ) {
         return LORA_FAIL;
     }
 }
-
+/*------------------------------------------------------------------------------
+ Chip initialization function
+------------------------------------------------------------------------------*/
 LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
+    // Check legality of frequency settings
+    // We do this first so that nothing gets set if we're on an illegal frequency.
+
+    // Get a version of our bandwidth for legality calculations
+    uint32_t bandwidth; // Calculations down in hz due to decimal bandwidths
+    switch( lora_config_ptr->lora_bandwidth ) {
+        case LORA_BANDWIDTH_7_8_KHZ:
+            bandwidth = 7800;
+            break;
+        case LORA_BANDWIDTH_10_4_KHZ:
+            bandwidth = 10400;
+            break;
+        case LORA_BANDWIDTH_15_6_KHZ:
+            bandwidth = 15600;
+            break;
+        case LORA_BANDWIDTH_20_8_KHZ:
+            bandwidth = 20800;
+            break;
+        case LORA_BANDWIDTH_31_25_KHZ:
+            bandwidth = 31250;
+            break;
+        case LORA_BANDWIDTH_41_7_KHZ:
+            bandwidth = 41700;
+            break;
+        case LORA_BANDWIDTH_62_5_KHZ:
+            bandwidth = 62500;
+            break;
+        case LORA_BANDWIDTH_125_KHZ:
+            bandwidth = 125000;
+            break;
+        case LORA_BANDWIDTH_250_KHZ:
+            bandwidth = 250000;
+            break;
+        case LORA_BANDWIDTH_500_KHZ:
+            bandwidth = 500000;
+            break;
+        default:
+            // Just in case, even though this is reading an enum
+            return LORA_FAIL;
+    }
+
+    // Check legal compliance of frequency:
+    if( !( lora_config_ptr->lora_frequency * 1000 + ( bandwidth / 2 ) <= ISM_MAX_FREQ * 1000 &&
+        lora_config_ptr->lora_frequency * 1000 - ( bandwidth / 2 ) >= ISM_MAX_FREQ * 1000 )
+    ) {
+        return LORA_FAIL;
+    }
+
     LORA_STATUS set_sleep_status = lora_set_chip_mode( LORA_SLEEP_MODE ); // Switch to sleep mode to enable LoRa bit (datasheeet page 102)
     // Get initial value of the operation mode register
     uint8_t operation_mode_register;
