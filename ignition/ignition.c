@@ -35,6 +35,11 @@
 
 
 /*------------------------------------------------------------------------------
+ Static Variables                                                                   
+------------------------------------------------------------------------------*/
+bool ign_switch_enabled = true;
+
+/*------------------------------------------------------------------------------
  Procedures 
 ------------------------------------------------------------------------------*/
 
@@ -76,6 +81,12 @@ switch( ign_subcommand )
 	case IGN_DROGUE_DEPLOY_CODE:
 		{
 		ign_status = ign_deploy_drogue();
+		break;
+		}
+	case IGN_ENABLE_TEST_CODE:
+		{
+		ign_switch_enabled = !ign_switch_enabled;
+		ign_status = IGN_OK;
 		break;
 		}
 
@@ -520,6 +531,30 @@ else
     }
 
 } /* switch_cont */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		ign_switch_armed                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Wrapper for ign_switch_cont that allows disabling the switch.		   * 
+*                                                                              *
+*******************************************************************************/
+bool ign_switch_armed
+	(
+	void
+	)
+{
+if( !ign_switch_enabled )
+	{
+	return false;
+	}
+
+return ign_switch_cont();
+
+} /* switch_armed */
 #endif /* #if defined( FLIGHT_COMPUTER ) */
 
 
