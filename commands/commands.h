@@ -73,8 +73,25 @@ extern "C" {
 #define FIRMWARE_APPA			( 0x06 ) /* APPA Firmware     	 */
 
 /* Other macros */
-#define DASHBOARD_DUMP_SIZE	( 66 )
+#define DASHBOARD_DUMP_SIZE	( 72 )
 
+typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
+	{
+	IMU_CONVERTED imu_converted;
+	float roll_angle;
+	float pitch_angle;
+	float yaw_angle;
+	float roll_rate;
+	float pitch_rate;
+	float yaw_rate;
+	float    baro_pressure; 
+	float    baro_temp;	
+	float	 baro_alt;
+	float 	 baro_velo;
+	float	 gps_dec_longitude;
+	float	 gps_dec_latitude;
+	} DASHBOARD_DUMP_TYPE;
+	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == 72, "DASHBOARD_DUMP_TYPE size invalid.");
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
@@ -98,7 +115,7 @@ USB_STATUS dashboard_dump
 
 void dashboard_construct_dump
     (
-    uint8_t* buffer /* must be DASHBOARD_DUMP_SIZE */
+    DASHBOARD_DUMP_TYPE* buffer /* must be DASHBOARD_DUMP_SIZE */
     );
 #endif
 

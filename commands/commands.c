@@ -123,7 +123,7 @@ USB_STATUS dashboard_dump
 /*------------------------------------------------------------------------------
  Local variables                                                                     
 ------------------------------------------------------------------------------*/
-uint8_t buffer[DASHBOARD_DUMP_SIZE];
+DASHBOARD_DUMP_TYPE buffer;
 SENSOR_STATUS sensor_status = SENSOR_OK;
 
 sensor_status = sensor_dump( &sensor_data );
@@ -133,9 +133,9 @@ if ( !( sensor_status == SENSOR_OK ) )
     return USB_FAIL;
     }
 
-dashboard_construct_dump(buffer);
+dashboard_construct_dump( &buffer );
 
-return usb_transmit( buffer, 
+return usb_transmit( &buffer, 
                         DASHBOARD_DUMP_SIZE, 
                         HAL_SENSOR_TIMEOUT /* more forgiving HW timeout */ );
 } /* dashboard_dump */
@@ -152,44 +152,32 @@ return usb_transmit( buffer,
 *******************************************************************************/
 void dashboard_construct_dump
     (
-    uint8_t* buffer /* must be DASHBOARD_DUMP_SIZE */
+    DASHBOARD_DUMP_TYPE* dump_buffer_ptr /* must be DASHBOARD_DUMP_SIZE */
     )
 {
-uint8_t idx = 0;
 
 /* IMU (6 axes) */
-memcpy( &buffer[idx],
+memcpy( dump_buffer_ptr,
     &(sensor_data.imu_data.imu_converted),
     sizeof( IMU_CONVERTED ));
-idx += sizeof( IMU_CONVERTED );
 
 /* Roll/Pitch + Rates */
-memcpy( &buffer[idx],
-        &(sensor_data.imu_data.state_estimate),
-        4 * sizeof( float )); /* just the first 4 */
-idx += 4 * sizeof( float );
+dump_buffer_ptr->pitch_angle = sensor_data.imu_data.state_estimate.pitch_angle;
+dump_buffer_ptr->roll_angle = sensor_data.imu_data.state_estimate.roll_angle;
+dump_buffer_ptr->yaw_angle = 0;
+dump_buffer_ptr->pitch_rate = sensor_data.imu_data.state_estimate.pitch_rate;
+dump_buffer_ptr->roll_rate = sensor_data.imu_data.state_estimate.roll_rate;
+dump_buffer_ptr->yaw_rate = 0;
 
 /* Baro */
-memcpy( &buffer[idx], &(sensor_data.baro_pressure), sizeof(float));
-idx += 4;
-memcpy( &buffer[idx], &(sensor_data.baro_temp), sizeof(float));
-idx += 4;
-memcpy( &buffer[idx], &(sensor_data.baro_alt), sizeof(float));
-idx += 4;
-memcpy( &buffer[idx], &(sensor_data.baro_velo), sizeof(float));
-idx += 4;
+dump_buffer_ptr->baro_pressure = sensor_data.baro_pressure;
+dump_buffer_ptr->baro_temp = sensor_data.baro_temp;
+dump_buffer_ptr->baro_alt = sensor_data.baro_alt;
+dump_buffer_ptr->baro_velo = sensor_data.baro_velo;
 
 /* GPS */
-memcpy( &buffer[idx], &(sensor_data.gps_dec_longitude), sizeof(float));
-idx += 4;
-memcpy( &buffer[idx], &(sensor_data.gps_dec_latitude), sizeof(float));
-idx += 4;
-memcpy( &buffer[idx], &(sensor_data.gps_ns), sizeof(char));
-idx++;
-memcpy( &buffer[idx], &(sensor_data.gps_ew), sizeof(char));
-idx++;
-
-// assert_fail_fast( idx == DASHBOARD_DUMP_SIZE )
+dump_buffer_ptr->gps_dec_longitude = sensor_data.gps_dec_longitude;
+dump_buffer_ptr->gps_dec_latitude = sensor_data.gps_dec_latitude;
 
 }
 #endif
