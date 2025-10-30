@@ -205,7 +205,7 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
 
     // Check legal compliance of frequency:
     if( !( lora_config_ptr->lora_frequency * 1000 + ( bandwidth / 2 ) <= ISM_MAX_FREQ * 1000 &&
-        lora_config_ptr->lora_frequency * 1000 - ( bandwidth / 2 ) >= ISM_MAX_FREQ * 1000 )
+        lora_config_ptr->lora_frequency * 1000 - ( bandwidth / 2 ) >= ISM_MIN_FREQ * 1000 )
     ) {
         return LORA_FAIL;
     }
@@ -238,7 +238,11 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     LORA_STATUS write_status3 = lora_write_register( LORA_REG_NUM_RX_BYTES, new_config1_register );
 
     // Determine register values for the frequency registers
-    uint32_t frf_reg = lora_config_ptr->lora_frequency * 524288 / ( 32 * 1000 );
+    uint32_t freq_mhz = lora_config_ptr->lora_frequency / 1000; // The megahertz component of our frequency.
+    uint32_t freq_khz = lora_config_ptr->lora_frequency - freq_mhz * 1000; // The kilohertz component of our frequency.
+    // The formula for converting khz to chip unit is fruqency * 524288 / ( 32 * 1000 )
+    // Straight up doing that causes an integer overflow, though, so I have to do it this way.
+    uint32_t frf_reg = ( freq_mhz * 524288 / 32 ) + ( freq_khz * 524288 / ( 32 * 1000 ) );
 
     uint8_t lora_freq_reg1 = ( frf_reg <<  8 ) >> 24;
     uint8_t lora_freq_reg2 = ( frf_reg << 16 ) >> 24;
