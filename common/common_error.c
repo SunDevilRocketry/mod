@@ -12,7 +12,8 @@
 /*------------------------------------------------------------------------------
  Standard Includes                                                                     
 ------------------------------------------------------------------------------*/
-
+#include <string.h>
+#include <stdbool.h>
 
 /*------------------------------------------------------------------------------
  Project Includes                                                                     
@@ -24,9 +25,13 @@
 
 
 /*------------------------------------------------------------------------------
- Global Variables  
+ Static Variables  
 ------------------------------------------------------------------------------*/
+TEXT_MESSAGE last_warning;
+bool is_pending_warning = false;
 
+TEXT_MESSAGE last_info;
+bool is_pending_info = false;
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -56,6 +61,117 @@ void error_fail_fast
 Error_Handler(error_code);
 
 } /* error_fail_fast */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		error_log_warning                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Place a warning message in the buffer.                                 *
+*                                                                              *
+*******************************************************************************/
+void error_log_warning
+    (
+    char* message
+    )
+{
+last_warning.systick = HAL_GetTick();
+strncpy( last_warning.message, message, 72 );
+is_pending_warning = true;
+
+} /* error_log_warning */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		error_get_warning                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Get the latest warning message if one exists.                          *
+*                                                                              *
+*******************************************************************************/
+bool error_get_warning
+    (
+    TEXT_MESSAGE* buffer
+    )
+{
+if ( !is_pending_warning )
+    {
+    return false;
+    }
+
+memcpy( buffer, &last_warning, sizeof( TEXT_MESSAGE ) );
+is_pending_warning = false;
+return true;
+
+} /* error_get_warning */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		error_is_pending_warning                                               *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Get the latest warning message if one exists.                          *
+*                                                                              *
+*******************************************************************************/
+bool error_is_pending_warning
+    (
+    void
+    )
+{
+return is_pending_warning;
+
+} /* error_is_pending_warning */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		error_get_info                                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Get the latest info message if one exists.                             *
+*                                                                              *
+*******************************************************************************/
+bool error_get_info
+    (
+    TEXT_MESSAGE* buffer
+    )
+{
+if ( !is_pending_info )
+    {
+    return false;
+    }
+
+memcpy( buffer, &last_warning, sizeof( TEXT_MESSAGE ) );
+is_pending_info = false;
+return true;
+
+} /* error_get_info */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		error_is_pending_info                                                  *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Get the latest info message if one exists.                             *
+*                                                                              *
+*******************************************************************************/
+bool error_is_pending_info
+    (
+    void
+    )
+{
+return is_pending_info;
+
+} /* error_is_pending_info */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 

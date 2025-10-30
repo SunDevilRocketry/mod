@@ -21,6 +21,7 @@ extern "C" {
  Includes 
 ------------------------------------------------------------------------------*/
 #include <string.h>
+#include <stdbool.h>
 
 
 /*------------------------------------------------------------------------------
@@ -99,6 +100,12 @@ typedef struct __attribute__((packed)) _ST_UID_TYPE
     } ST_UID_TYPE;
 _Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
 
+typedef struct TEXT_MESSAGE
+    {
+    uint32_t systick;
+    char message[72];
+    } TEXT_MESSAGE;
+
 /*------------------------------------------------------------------------------
  Macros & Inlines
 ------------------------------------------------------------------------------*/
@@ -154,16 +161,43 @@ memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
+
+/* common */
+
 void delay_ms
     (
     uint32_t delay
     );
 
+
+/* common_error */
+
 void error_fail_fast
     (
     volatile ERROR_CODE error_code
     );
+
+/* common_error: warnings and info for telemetry */
+bool error_get_warning
+    (
+    TEXT_MESSAGE* buffer
+    );
+
+bool error_get_info
+    (
+    TEXT_MESSAGE* buffer
+    );
     
+bool error_is_pending_warning
+    (
+    void
+    );
+
+bool error_is_pending_info
+    (
+    void
+    );
+
 #ifdef __cplusplus
 }
 #endif
