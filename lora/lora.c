@@ -358,7 +358,7 @@ LORA_STATUS lora_receive_ready() {
 
         LORA_STATUS irq_check = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
 
-        if( irq_check = LORA_OK ) {
+        if( irq_check == LORA_OK ) {
             uint8_t rx_done = (irq_flag & (1<<6)) >> 6;
             
             #if defined( TESTRECEIVER )
