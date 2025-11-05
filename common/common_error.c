@@ -78,10 +78,31 @@ void error_log_warning
     )
 {
 last_warning.systick = HAL_GetTick();
-strncpy( last_warning.message, message, 72 );
+memcpy( last_warning.message, message, 72 );
 is_pending_warning = true;
 
 } /* error_log_warning */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		error_log_info                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Place a warning message in the buffer.                                 *
+*                                                                              *
+*******************************************************************************/
+void error_log_info
+    (
+    char* message
+    )
+{
+last_info.systick = HAL_GetTick();
+memcpy( last_info.message, message, 72 );
+is_pending_info = true;
+
+} /* error_log_info */
 
 
 /*******************************************************************************
@@ -148,7 +169,7 @@ if ( !is_pending_info )
     return false;
     }
 
-memcpy( buffer, &last_warning, sizeof( TEXT_MESSAGE ) );
+memcpy( buffer, &last_info, sizeof( TEXT_MESSAGE ) );
 is_pending_info = false;
 return true;
 
