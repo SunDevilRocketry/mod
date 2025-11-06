@@ -17,33 +17,11 @@
 extern "C" {
 #endif
 
-
 /*------------------------------------------------------------------------------
- Macros 
+ Includes 
 ------------------------------------------------------------------------------*/
-
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       util_set_bit                                                           *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Sets a certain bit and returns the new value                           *
-*                                                                              *
-*******************************************************************************/
-#define util_set_bit( orig, idx ) ( orig | ( 1 << idx ) )
-
-
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       assert_fail_fast                                                       *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		Checks condition, if false calls error_fail_fast with error            *
-*                                                                              *
-*******************************************************************************/
-#define assert_fail_fast( condition, error ) if ( !condition ) error_fail_fast( error )
+#include <string.h>
+#include <stdbool.h>
 
 
 /*------------------------------------------------------------------------------
@@ -112,21 +90,114 @@ typedef enum _ERROR_CODE
     ERROR_IGNITION_CONTINUITY_ERROR      /* Parachute terminals do not have continuity */
     } ERROR_CODE;
 
+/* UID serial number (packed struct inhibits padding) */
+typedef struct __attribute__((packed)) _ST_UID_TYPE 
+    {
+    uint32_t wafer_coords;
+    char lot_num_1[3];
+    uint8_t wafer_num;
+    char lot_num_2[4];
+    } ST_UID_TYPE;
+_Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
+
+typedef struct TEXT_MESSAGE
+    {
+    uint32_t systick;
+    char message[72];
+    } TEXT_MESSAGE;
+
+/*------------------------------------------------------------------------------
+ Macros & Inlines
+------------------------------------------------------------------------------*/
+
+/*******************************************************************************
+*                                                                              *
+* MACRO:                                                                       * 
+*       util_set_bit                                                           *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Sets a certain bit and returns the new value                           *
+*                                                                              *
+*******************************************************************************/
+#define util_set_bit( orig, idx ) ( orig | ( 1 << idx ) )
+
+
+/*******************************************************************************
+*                                                                              *
+* MACRO:                                                                       * 
+*       assert_fail_fast                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Checks condition, if false calls error_fail_fast with error            *
+*                                                                              *
+*******************************************************************************/
+#define assert_fail_fast( condition, error ) if ( !condition ) error_fail_fast( error )
+
+
+/*******************************************************************************
+*                                                                              *
+* INLINE:                                                                      * 
+*       get_uid                                                                *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Gets the 12 byte UID value for the H7 chip.                            *
+*                                                                              *
+*******************************************************************************/
+static inline void get_uid
+    (
+    ST_UID_TYPE* uid_buffer
+    )
+{
+uint32_t uid[3];
+uid[0] = HAL_GetUIDw0();
+uid[1] = HAL_GetUIDw1();
+uid[2] = HAL_GetUIDw2();
+
+memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
+
+} /* get_uid */
+
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
+
+/* common */
+
 void delay_ms
     (
     uint32_t delay
     );
+
+
+/* common_error */
 
 void error_fail_fast
     (
     volatile ERROR_CODE error_code
     );
 
+/* common_error: warnings and info for telemetry */
+bool error_get_warning
+    (
+    TEXT_MESSAGE* buffer
+    );
+
+bool error_get_info
+    (
+    TEXT_MESSAGE* buffer
+    );
     
+bool error_is_pending_warning
+    (
+    void
+    );
+
+bool error_is_pending_info
+    (
+    void
+    );
+
 #ifdef __cplusplus
 }
 #endif

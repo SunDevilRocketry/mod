@@ -2355,8 +2355,10 @@ static void imu_get_state_estimate(IMU_DATA* imu_data){
 
 	imu_data->state_estimate->roll_angle = roll_angle;
 	imu_data->state_estimate->pitch_angle = pitch_angle;
+	imu_data->state_estimate->yaw_angle = 0;
 	imu_data->state_estimate->roll_rate = roll_rate;
 	imu_data->state_estimate->pitch_rate = pitch_rate;
+	imu_data->state_estimate->yaw_rate = 0;
 }
 
 

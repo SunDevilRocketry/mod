@@ -214,8 +214,10 @@ typedef struct _IMU_RAW {
 typedef struct _STATE_ESTIMATION {
 	float roll_angle;
 	float pitch_angle;
+    float yaw_angle;
 	float roll_rate;
 	float pitch_rate;
+    float yaw_rate;
     float velocity;
     float velo_x;
     float velo_y;
