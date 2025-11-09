@@ -25,7 +25,7 @@
 Global Variables                                                                  
 ------------------------------------------------------------------------------*/
 extern SENSOR_DATA sensor_data;
-
+GYRO_STATE gyro_state;
 
 /*********************************************************************************
 *                                                                                *
@@ -118,15 +118,15 @@ void matmul_vect (float A[9], float B[3], float C[9]){
 //invert a matrix
 //Given matrix A, set B as the inverse
 int matinv (float A[9], float B[9]){
-    double det = A[0]*(A[4]*A[8] - A[5]*A[7]) - A[1]*(A[3]*A[8] - A[5]*A[6]) + A[2]*(A[3]*A[7] - A[4]*A[6]);
+    float det = A[0]*(A[4]*A[8] - A[5]*A[7]) - A[1]*(A[3]*A[8] - A[5]*A[6]) + A[2]*(A[3]*A[7] - A[4]*A[6]);
 
     if (det == 0.0) {
         return 0;
     }
 
-    double invdet = 1.0 / det;
+    float invdet = 1.0 / det;
 
-    double ibtw[9];
+    float ibtw[9];
     ibtw[0] =       A[4]*A[8] - A[5]*A[7];
     ibtw[1] = -1.0*(A[1]*A[8] - A[2]*A[7]);
     ibtw[2] =       A[1]*A[5] - A[2]*A[4];
@@ -154,25 +154,25 @@ int matinv (float A[9], float B[9]){
 *       Contains a lot of linear algebra :(                                      *
 *                                                                                *
 *********************************************************************************/
-void gyro_kalman_filter_Init (GYRO_STATE *state, float Pinit, float *Qinit, float *Rinit){
+void gyro_kalman_filter_Init (float Pinit, float *Qinit, float *Rinit){
 
     //angles of displacement (read euler angles)
-    state -> phi_rad = 0;
-    state -> theta_rad = 0;
-    state -> psi_rad = 0;
+    gyro_state.phi_rad = 0;
+    gyro_state.theta_rad = 0;
+    gyro_state.psi_rad = 0;
 
     //Covariance matrix, initialized as diagonal
-    state -> P[0] = Pinit; state -> P[1] = 0;     state -> P[2] = 0;
-    state -> P[3] = 0;     state -> P[4] = Pinit; state -> P[5] = 0;
-    state -> P[6] = 0;     state -> P[7] = 0;     state -> P[8] = Pinit;
+    gyro_state.P[0] = Pinit; gyro_state.P[1] = 0;     gyro_state.P[2] = 0;
+    gyro_state.P[3] = 0;     gyro_state.P[4] = Pinit; gyro_state.P[5] = 0;
+    gyro_state.P[6] = 0;     gyro_state.P[7] = 0;     gyro_state.P[8] = Pinit;
 
-    state -> Q[0] = Qinit[0]; state -> Q[1] = Qinit[1]; state -> Q[2] = Qinit[2];
+    gyro_state.Q[0] = Qinit[0]; gyro_state.Q[1] = Qinit[1]; gyro_state.Q[2] = Qinit[2];
 
-    state -> R[0] = Rinit[0]; state -> R[1] = Rinit[1]; state -> R[2] = Rinit[2];
+    gyro_state.R[0] = Rinit[0]; gyro_state.R[1] = Rinit[1]; gyro_state.R[2] = Rinit[2];
 }
 
 //0 is y, 1 is z, 2 is x
-void gyro_kalman_filter_predict (GYRO_STATE *state, float T){
+void gyro_kalman_filter_predict (float T){
 
     //phi
     float p = sensor_data.imu_data.imu_converted.gyro_y;
@@ -182,30 +182,30 @@ void gyro_kalman_filter_predict (GYRO_STATE *state, float T){
     float r = sensor_data.imu_data.imu_converted.gyro_x;
 
     //Update trig values 
-    float sinphi = sin(state->phi_rad);
-    float cosphi = cos(state->phi_rad);
+    float sinphi = sin(gyro_state.phi_rad);
+    float cosphi = cos(gyro_state.phi_rad);
 
-    float tantheta = tan(state->phi_rad);
-    float sectheta = 1/cos(state->phi_rad);
+    float tantheta = tan(gyro_state.phi_rad);
+    float sectheta = 1/cos(gyro_state.phi_rad);
 
-    float cospsi = cos(state->psi_rad);
+    float cospsi = cos(gyro_state.psi_rad);
 
     //This is taken from Euler Angles, basically convert change of angle into physical rotational displacement
     //Also called the update function
-    state->phi_rad = state->phi_rad + T * (p + sinphi*tantheta*q + cospsi*tantheta*r);
-    state->theta_rad = state->theta_rad + T * (cosphi*q - sinphi*r);
-    state->psi_rad = state->psi_rad + T * (sinphi*sectheta*q + cosphi*sectheta*r);
+    gyro_state.phi_rad = gyro_state.phi_rad + T * (p + sinphi*tantheta*q + cospsi*tantheta*r);
+    gyro_state.theta_rad = gyro_state.theta_rad + T * (cosphi*q - sinphi*r);
+    gyro_state.psi_rad = gyro_state.psi_rad + T * (sinphi*sectheta*q + cosphi*sectheta*r);
 
     //reupdate trig values with new Euler Angles
-    float sinphi = sin(state->phi_rad);
-    float cosphi = cos(state->phi_rad);
+    sinphi = sin(gyro_state.phi_rad);
+    cosphi = cos(gyro_state.phi_rad);
 
-    float costheta = cos(state->phi_rad);
-    float tantheta = tan(state->phi_rad);
-    float sectheta = 1/cos(state->phi_rad);
+    float costheta = cos(gyro_state.phi_rad);
+    tantheta = tan(gyro_state.phi_rad);
+    sectheta = 1/cos(gyro_state.phi_rad);
     
-    float sinpsi = sin(state->psi_rad);
-    float cospsi = cos(state->psi_rad);
+    float sinpsi = sin(gyro_state.psi_rad);
+    cospsi = cos(gyro_state.psi_rad);
 
     //Jacobian of the update function, I would rather die than make a function to calculate this in C
     float A[9] = 
@@ -217,35 +217,35 @@ void gyro_kalman_filter_predict (GYRO_STATE *state, float T){
 
     //A * P
     float AP[9];
-    matmul3_3(A, state->P, &AP);
+    matmul3_3(A, gyro_state.P, AP);
 
     //A' = A transpose
     float Atrans[9];
-    transpose3_3(A, &Atrans);
+    transpose3_3(A, Atrans);
 
     //P*A'
     float PAtrans[9];
-    matmul3_3(state->P, Atrans, &PAtrans);
+    matmul3_3(gyro_state.P, Atrans, PAtrans);
 
     //AP + PA'
     float APPAt[9];
-    matadd3_3(AP, PAtrans, &APPAt);
+    matadd3_3(AP, PAtrans, APPAt);
 
     //AP + PA' + Q
     float APPAtQ[9];
-    matadd_vect(APPAt, state->Q, &APPAtQ);
+    matadd_vect(APPAt, gyro_state.Q, APPAtQ);
 
     //T * (AP + PA' + Q)
     float Ptemp[9];
-    scalarmul3_3(state->T, APPAtQ, &Ptemp);
+    scalarmul3_3(gyro_state.T, APPAtQ, Ptemp);
 
 
     //P+ = P- + T * (A*P- + P-*A' + Q)
     //Update Covariance Matrix
-    matadd3_3(state->P, Ptemp, &state->P);
+    matadd3_3(gyro_state.P, Ptemp, gyro_state.P);
 }
 
-void gyro_kalman_filter_update (GYRO_STATE *state) {
+void gyro_kalman_filter_update () {
     
     //x acceleration
     float ax = sensor_data.imu_data.imu_converted.accel_y;
@@ -257,18 +257,18 @@ void gyro_kalman_filter_update (GYRO_STATE *state) {
     float g = 9.81;
 
     //common trig functions
-    float sinphi = sin(state->phi_rad);
-    float cosphi = cos(state->phi_rad);
+    float sinphi = sin(gyro_state.phi_rad);
+    float cosphi = cos(gyro_state.phi_rad);
 
-    float sintheta = sin(state->theta_rad);
-    float costheta = cos(state->phi_rad);    
+    float sintheta = sin(gyro_state.theta_rad);
+    float costheta = cos(gyro_state.phi_rad);    
 
     //output function H. basically what the kalman model of our sensors predict
-    float H[3] = (
+    float H[3] = {
         g*sintheta,
         -1*g*sinphi*costheta,
         -1*g*cosphi*costheta
-    );
+    };
 
     //the next step depends on h(x, u), the output function. We take the jacobian (partial derivative of elements of H with respect to elements of X)
     float C[9] = {
@@ -280,16 +280,16 @@ void gyro_kalman_filter_update (GYRO_STATE *state) {
     //Kalman Gain K = P * C' * (C * P * C' + R)^-1 (-1 denotes inverse, ' denotes transpose)
     //Transpose of C
     float Ct[9];
-    transpose3_3(C, &Ct);
+    transpose3_3(C, Ct);
     //P * C'
     float PCt[9];
-    matmul3_3(state->P,Ct, &PCt);
+    matmul3_3(gyro_state.P, Ct, PCt);
     //Parenthesis part
     float Pths[9];
     //Multiply for C * P * C'
     matmul3_3(C, PCt, Pths);
     //Add R
-    matadd_vect(Pths, state->R, Pths);
+    matadd_vect(Pths, gyro_state.R, Pths);
     //Invert
     matinv(Pths, Pths);
     //Find K
@@ -298,32 +298,32 @@ void gyro_kalman_filter_update (GYRO_STATE *state) {
 
     //Update the Covariance P++ = (I - K * C) * P+
     float Ptemp[9];
-    float I[9] = (-1,0,0,0,-1,0,0,0,-1);
-    //Back to parenthesis
-    float Pths[9];
-    matadd3_3(I, K, Pths);
-    matmul3_3(Pths, C, Pths);
+    float I[9] = {-1,0,0,0,-1,0,0,0,-1};
+    //solve for ICK (the parenthesis)
+    float ICK[9];
+    matadd3_3(I, K, ICK);
+    matmul3_3(ICK, C, ICK);
     //mul with P
-    matmul3_3(Pths, state->P, Ptemp);
+    matmul3_3(ICK, gyro_state.P, Ptemp);
     //Add with normal P
-    matadd3_3(state->P, Ptemp, state->P);
+    matadd3_3(gyro_state.P, Ptemp, gyro_state.P);
 
     //update state estimate x++ = x+ + K(y-h)
     //y is just the actual sensor output (so y-h is error between the two)
     //non functioned scalar subtraction because im lazy
-    float Pths[3] = (
+    float YH[3] = {
         ax - H[0],
         ay - H[1],
         az - H[2]
-    );
+    };
     float xtemp[3];
     //K * (y-h)
-    matmul_vect(K, Pths, xtemp);
+    matmul_vect(K, YH, xtemp);
     
     //update state estimate values
-    state->phi_rad = state->phi_rad + xtemp[0];
-    state->theta_rad = state->theta_rad + xtemp[1];
-    state->psi_rad = state->psi_rad + xtemp[2];
+    gyro_state.phi_rad = gyro_state.phi_rad + xtemp[0];
+    gyro_state.theta_rad = gyro_state.theta_rad + xtemp[1];
+    gyro_state.psi_rad = gyro_state.psi_rad + xtemp[2];
     
 
 }

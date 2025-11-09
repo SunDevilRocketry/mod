@@ -43,9 +43,9 @@ typedef struct _GYRO_STATE
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-void gyro_kalman_filter_Init (GYRO_STATE *state, float Pinit, float *Qinit, float *Rinit);
-void gyro_kalman_filter_predict (GYRO_STATE *state, float T);
-void gyro_kalman_filter_update (GYRO_STATE *state);
+void gyro_kalman_filter_Init (float Pinit, float *Qinit, float *Rinit);
+void gyro_kalman_filter_predict (float T);
+void gyro_kalman_filter_update ();
 
 #ifdef __cplusplus
 }
