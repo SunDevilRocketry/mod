@@ -77,7 +77,12 @@ extern "C" {
 
 typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
 	{
-	IMU_CONVERTED imu_converted;
+	float acc_x;
+	float acc_y;
+	float acc_z;
+	float gyro_x;
+	float gyro_y;
+	float gyro_z;
 	float roll_angle;
 	float pitch_angle;
 	float yaw_angle;

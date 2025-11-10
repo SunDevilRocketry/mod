@@ -43,9 +43,11 @@ uint8_t imu_raw_buffer[12];
 IMU_RAW imu_raw_processed;
 bool imu_data_ready;
 
-uint8_t mag_raw_buffer[6];
+uint8_t mag_raw_buffer[8];
 bool mag_data_ready;
 #endif
+
+MAG_TRIM mag_trim;
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -312,7 +314,7 @@ return IMU_OK;
 *******************************************************************************/
 IMU_STATUS imu_get_accel_xyz
     (
-    IMU_DATA *pIMU
+    IMU_RAW *pIMU /* size: 12 bytes */
     )
 {
 /*------------------------------------------------------------------------------
@@ -378,7 +380,7 @@ return IMU_OK;
 *******************************************************************************/
 IMU_STATUS imu_get_gyro_xyz
     (
-    IMU_DATA *pIMU
+    IMU_RAW *pIMU
     )
 {
 /*------------------------------------------------------------------------------
@@ -445,7 +447,7 @@ return IMU_OK;
 *******************************************************************************/
 IMU_STATUS imu_get_accel_and_gyro
     (
-    IMU_DATA *pIMU
+    IMU_RAW *pIMU
     )
 {
 /*------------------------------------------------------------------------------
@@ -510,7 +512,7 @@ return IMU_OK;
 *******************************************************************************/
 IMU_STATUS imu_get_mag_xyz
     (
-    IMU_DATA *pIMU
+    IMU_RAW *pIMU
     )
 {
 /*------------------------------------------------------------------------------
@@ -688,6 +690,22 @@ if ( imu_status != IMU_OK )
     {
     return imu_status;
     }
+
+/* Set magnetometer trim */
+
+uint8_t trim_data[14];
+read_mag_regs(0x5D, trim_data, 14);
+
+mag_trim.dig_x1 = (int8_t)trim_data[0];
+mag_trim.dig_y1 = (int8_t)trim_data[1];
+mag_trim.dig_x2 = (int8_t)trim_data[2];
+mag_trim.dig_y2 = (int8_t)trim_data[3];
+mag_trim.dig_z1 = (uint16_t)(trim_data[4] | (trim_data[5] << 8));
+mag_trim.dig_z2 = (int16_t)(trim_data[6] | (trim_data[7] << 8));
+mag_trim.dig_z3 = (int16_t)(trim_data[8] | (trim_data[9] << 8));
+mag_trim.dig_z4 = (int16_t)(trim_data[10] | (trim_data[11] << 8));
+mag_trim.dig_xy1 = trim_data[12];
+mag_trim.dig_xy2 = (int8_t)trim_data[13];
 
 /* Successful magnetometer Initialization */
 return IMU_OK;
@@ -1034,7 +1052,7 @@ if( !imu_data_ready && !mag_data_ready )
     ------------------------------------------------------------------------------*/
     imu_status = read_mag_regs_IT( MAG_REG_DATAX_L, 
                                 mag_raw_buffer, 
-                                6 );
+                                8 );
     return imu_status;
     }
 else if( imu_data_ready && !mag_data_ready )
@@ -1048,6 +1066,15 @@ else if( imu_data_ready && !mag_data_ready )
     imu_raw_processed.mag_z  
                = (   (uint16_t) mag_raw_buffer[5]                         << MAG_Z_MSB_BITSHIFT  ) | 
                  ( ( (uint16_t) mag_raw_buffer[4] && MAG_Z_LSB_BITMASK )  >> MAG_Z_LSB_BITSHIFT  );
+    imu_raw_processed.mag_hall  
+               = (   (uint16_t) mag_raw_buffer[7]                         << MAG_RHALL_MSB_BITSHIFT  ) | 
+                 ( ( (uint16_t) mag_raw_buffer[6] && MAG_RHALL_LSB_BITMASK )  >> MAG_RHALL_LSB_BITSHIFT  );
+
+    /* Sign-extend 13-bit and 15-bit values */
+    if (imu_raw_processed.mag_x & (1 << 12)) imu_raw_processed.mag_x |= ~((1 << 13) - 1);
+    if (imu_raw_processed.mag_y & (1 << 12)) imu_raw_processed.mag_y |= ~((1 << 13) - 1);
+    if (imu_raw_processed.mag_z & (1 << 14)) imu_raw_processed.mag_z |= ~((1 << 15) - 1);
+    
     mag_data_ready = true;
 
     return imu_status;
@@ -1130,6 +1157,25 @@ else
 } /* read_mag_regs_IT */
 
 #endif /* #if defined( USE_I2C_IT ) */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		imu_get_mag_trim                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Getter function for the magnetometer trim from mag_init.               *
+*                                                                              *
+*******************************************************************************/
+MAG_TRIM imu_get_mag_trim
+    (
+    void
+    )
+{
+return mag_trim;
+
+}
 
 /*******************************************************************************
 * END OF FILE                                                                  * 

@@ -55,6 +55,9 @@ extern "C" {
 #define MAG_Z_LSB_BITMASK           0b11111110
 #define MAG_Z_LSB_BITSHIFT          1 /* Bit 1 to position 0 */
 #define MAG_Z_MSB_BITSHIFT          7 /* Bit 0 to position 7 */
+#define MAG_RHALL_LSB_BITMASK       0b11111100
+#define MAG_RHALL_LSB_BITSHIFT      2 /* Bit 2 to position 0 */
+#define MAG_RHALL_MSB_BITSHIFT      6 /* Bit 0 to position 6 */
 
 
 /*------------------------------------------------------------------------------
@@ -208,9 +211,10 @@ typedef struct _IMU_RAW {
     uint16_t    gyro_x ;
     uint16_t    gyro_y ;
     uint16_t    gyro_z ;
-    uint16_t    mag_x;
-    uint16_t    mag_y;
-    uint16_t    mag_z;
+    int16_t    mag_x;
+    int16_t    mag_y;
+    int16_t    mag_z;
+    uint16_t    mag_hall;
 } IMU_RAW;
 
 /* Processed IMU aata */
@@ -235,21 +239,15 @@ typedef struct _IMU_CONVERTED {
     float gyro_x ;
     float gyro_y ;
     float gyro_z ;
+    float mag_x ;
+    float mag_y ;
+    float mag_z ;
+    float mag_hall ;
 } IMU_CONVERTED;
 
 /* Structure for imu containing all accel, gyro, and mag data */
 typedef struct _IMU_DATA 
 	{
-    uint16_t    accel_x;
-    uint16_t    accel_y;
-    uint16_t    accel_z;
-    uint16_t    gyro_x ;
-    uint16_t    gyro_y ;
-    uint16_t    gyro_z ;
-    uint16_t    mag_x  ;
-    uint16_t    mag_y  ;
-    uint16_t    mag_z  ;
-	uint16_t    temp   ;
     IMU_CONVERTED imu_converted;
     STATE_ESTIMATION state_estimate;
 	} IMU_DATA;
@@ -357,6 +355,21 @@ typedef enum _MAG_OP_MODE
     MAG_SLEEP_MODE  = ( 0b11 << 1 )
     } MAG_OP_MODE;
 
+typedef struct _MAG_TRIM 
+    {
+    int8_t  dig_x1;
+    int8_t  dig_y1;
+    int8_t  dig_x2;
+    int8_t  dig_y2;
+    uint16_t dig_z1;
+    int16_t dig_z2;
+    int16_t dig_z3;
+    int16_t dig_z4;
+    uint8_t  dig_xy1;
+    int8_t   dig_xy2;
+    uint16_t dig_xyz1;
+    } MAG_TRIM;
+
 /* User IMU configuration settings */
 typedef struct _IMU_CONFIG 
 	{
@@ -408,20 +421,20 @@ IMU_STATUS imu_init
    from the IMU */
 IMU_STATUS imu_get_accel_xyz
     (
-    IMU_DATA *pIMU
+    IMU_RAW *pIMU
     );
 
 /* Return the pointer to structure that updates the x,y,z gyro values from the IMU */
 IMU_STATUS imu_get_gyro_xyz
     (
-    IMU_DATA *pIMU
+    IMU_RAW *pIMU
     );
 
 #ifdef A0002_REV2
 /* Return a pointer to the struct that houses accel and gyro values from the IMU */
 IMU_STATUS imu_get_accel_and_gyro
     (
-    IMU_DATA *pIMU
+    IMU_RAW *pIMU
     );
 #endif
 
@@ -429,7 +442,7 @@ IMU_STATUS imu_get_accel_and_gyro
    the IMU */
 IMU_STATUS imu_get_mag_xyz
     (
-    IMU_DATA *pIMU
+    IMU_RAW *pIMU
     );
 
 /* return the device ID of the IMU to verify that the IMU registers are accessible */
@@ -453,6 +466,8 @@ IMU_STATUS imu_it_handler();
 IMU_STATUS get_imu_it(IMU_RAW* cpy_ptr);
 #endif
 
+/* getter function for encapsulation */
+MAG_TRIM imu_get_mag_trim();
 
 #ifdef __cplusplus
 }

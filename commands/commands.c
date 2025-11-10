@@ -159,7 +159,7 @@ void dashboard_construct_dump
 /* IMU (6 axes) */
 memcpy( dump_buffer_ptr,
     &(sensor_data.imu_data.imu_converted),
-    sizeof( IMU_CONVERTED ));
+    sizeof( float ) * 6 );
 
 /* Roll/Pitch + Rates */
 dump_buffer_ptr->pitch_angle = sensor_data.imu_data.state_estimate.pitch_angle;
