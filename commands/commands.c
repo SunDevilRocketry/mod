@@ -164,10 +164,10 @@ memcpy( dump_buffer_ptr,
 /* Roll/Pitch + Rates */
 dump_buffer_ptr->pitch_angle = sensor_data.imu_data.state_estimate.pitch_angle;
 dump_buffer_ptr->roll_angle = sensor_data.imu_data.state_estimate.roll_angle;
-dump_buffer_ptr->yaw_angle = 0;
+dump_buffer_ptr->yaw_angle = sensor_data.imu_data.state_estimate.yaw_angle;
 dump_buffer_ptr->pitch_rate = sensor_data.imu_data.state_estimate.pitch_rate;
 dump_buffer_ptr->roll_rate = sensor_data.imu_data.state_estimate.roll_rate;
-dump_buffer_ptr->yaw_rate = 0;
+dump_buffer_ptr->yaw_rate = sensor_data.imu_data.state_estimate.yaw_rate;
 
 /* Baro */
 dump_buffer_ptr->baro_pressure = sensor_data.baro_pressure;
