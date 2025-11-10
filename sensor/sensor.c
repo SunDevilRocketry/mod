@@ -1480,9 +1480,9 @@ imu_data->imu_converted.accel_z -= imu_offset.accel_z;
 */
 
 /* Convert raw gyroscope values to deg/s */
-imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
-imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
-imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_data->gyro_z);
+imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_raw->gyro_x);
+imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
+imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_raw->gyro_z);
 
 /* Remove gyro bias */
 imu_data->imu_converted.gyro_x -= imu_offset.gyro_x;
