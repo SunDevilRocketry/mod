@@ -196,6 +196,23 @@ extern "C" {
     #define MAG_REG_HIGH_THRESH         0x50
     #define MAG_REG_REP_CTRL_XY         0x51
     #define MAG_REG_REP_CTRL_Z          0x52
+    /* Trim Registers */
+    #define MAG_TRIM_REG_X1             0x5D
+    #define MAG_TRIM_REG_Y1             0x5E
+    #define MAG_TRIM_REG_Z4_LSB         0x62
+    #define MAG_TRIM_REG_Z4_MSB         0x63
+    #define MAG_TRIM_REG_X2             0x64
+    #define MAG_TRIM_REG_Y2             0x65
+    #define MAG_TRIM_REG_Z2_LSB         0x68
+    #define MAG_TRIM_REG_Z2_MSB         0x69
+    #define MAG_TRIM_REG_Z1_LSB         0x6A
+    #define MAG_TRIM_REG_Z1_MSB         0x6B
+    #define MAG_TRIM_REG_XYZ1_LSB       0x6C
+    #define MAG_TRIM_REG_XYZ1_MSB       0x6D
+    #define MAG_TRIM_REG_Z3_LSB         0x6E
+    #define MAG_TRIM_REG_Z3_MSB         0x6F
+    #define MAG_TRIM_REG_XY2            0x70
+    #define MAG_TRIM_REG_XY1            0x71
 #endif
 
   

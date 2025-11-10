@@ -623,6 +623,46 @@ return imu_status;
 * DESCRIPTION:                                                                 *
 *       Initialize the magnetometer                                            *
 *                                                                              *
+* COPYRIGHT:                                                                   *
+*       This function is heavily derived from the official Bosch BMM150        *
+*       driver, which is protected by the BSD-3-Clause license. This function  *
+*		is exempt from any licensing that may be applied to a current/future   * 
+*		Sun Devil Rocketry project. Per the terms of the BSD-3-Clause license, *
+*		the following notice is retained from the source project and applies   *
+*		to the procedure below.                                                *
+*	              							                                   *
+*		Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.		   *
+*																			   *
+*		BSD-3-Clause														   *
+*																			   *
+*		Redistribution and use in source and binary forms, with or without	   *
+*		modification, are permitted provided that the following conditions are *
+*		met:																   *
+*																			   *
+*		1. Redistributions of source code must retain the above copyright      *
+*	    notice, this list of conditions and the following disclaimer.		   *
+*																			   *
+*		2. Redistributions in binary form must reproduce the above copyright   *
+*	    notice, this list of conditions and the following disclaimer in the    *
+*	    documentation and/or other materials provided with the distribution.   *
+*																			   *
+*		3. Neither the name of the copyright holder nor the names of its       *
+*	    contributors may be used to endorse or promote products derived from   *
+*	    this software without specific prior written permission. 			   *
+*																			   *
+*		THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS	   *
+*		"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT	   *
+*		LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS	   *
+*		FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE		   *
+*		COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,   *
+*		INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES			   *
+*		(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR	   *
+*		SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)	   *
+*		HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,	   *
+*		STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  *
+*		IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE	   *
+*		POSSIBILITY OF SUCH DAMAGE.											   *
+*                                                                              *
 *******************************************************************************/
 static IMU_STATUS mag_init
     (
@@ -636,6 +676,8 @@ IMU_STATUS imu_status;      /* Status return codes from IMU API     */
 uint8_t    device_id;       /* Magnetometer Device ID               */
 uint8_t    num_reps_xy_reg; /* Content of XY repetititions register */
 uint8_t    num_reps_z_reg;  /* Content of Z repititions register    */
+uint8_t    buffer[10];      /* Mag trim read buffer */
+uint16_t   temp_msb;        /* Temp variable */
 
 
 /*------------------------------------------------------------------------------
@@ -693,19 +735,41 @@ if ( imu_status != IMU_OK )
 
 /* Set magnetometer trim */
 
-uint8_t trim_data[14];
-read_mag_regs(0x5D, trim_data, 14);
+/* ---- Read X1, Y1 ---- */
+imu_status = read_mag_regs(MAG_TRIM_REG_X1, buffer, 2);
+if ( imu_status != IMU_OK ) 
+    {
+    return imu_status;
+    }
+mag_trim.dig_x1 = (int8_t)buffer[0];
+mag_trim.dig_y1 = (int8_t)buffer[1];
 
-mag_trim.dig_x1 = (int8_t)trim_data[0];
-mag_trim.dig_y1 = (int8_t)trim_data[1];
-mag_trim.dig_x2 = (int8_t)trim_data[2];
-mag_trim.dig_y2 = (int8_t)trim_data[3];
-mag_trim.dig_z1 = (uint16_t)(trim_data[4] | (trim_data[5] << 8));
-mag_trim.dig_z2 = (int16_t)(trim_data[6] | (trim_data[7] << 8));
-mag_trim.dig_z3 = (int16_t)(trim_data[8] | (trim_data[9] << 8));
-mag_trim.dig_z4 = (int16_t)(trim_data[10] | (trim_data[11] << 8));
-mag_trim.dig_xy1 = trim_data[12];
-mag_trim.dig_xy2 = (int8_t)trim_data[13];
+/* ---- Read Z4_LSB -> Z4_MSB and X2,Y2 ---- */
+imu_status = read_mag_regs(MAG_TRIM_REG_Z4_LSB, buffer, 4);
+if ( imu_status != IMU_OK ) 
+    {
+    return imu_status;
+    }
+mag_trim.dig_z4 = (int16_t)(((uint16_t)buffer[1] << 8) | buffer[0]);
+mag_trim.dig_x2 = (int8_t)buffer[2];
+mag_trim.dig_y2 = (int8_t)buffer[3];
+
+/* ---- Read Z2_LSB -> Z1_MSB (10 bytes) ---- */
+imu_status = read_mag_regs(MAG_TRIM_REG_Z2_LSB, buffer, 10);
+if ( imu_status != IMU_OK ) 
+    {
+    return imu_status;
+    }
+temp_msb = ((uint16_t)buffer[3]) << 8;
+mag_trim.dig_z1 = (uint16_t)(temp_msb | buffer[2]);
+temp_msb = ((uint16_t)buffer[1]) << 8;
+mag_trim.dig_z2 = (int16_t)(temp_msb | buffer[0]);
+temp_msb = ((uint16_t)buffer[7]) << 8;
+mag_trim.dig_z3 = (int16_t)(temp_msb | buffer[6]);
+mag_trim.dig_xy1 = buffer[9];
+mag_trim.dig_xy2 = (int8_t)buffer[8];
+temp_msb = ((uint16_t)(buffer[5] & 0x7F)) << 8;
+mag_trim.dig_xyz1 = (uint16_t)(temp_msb | buffer[4]);
 
 /* Successful magnetometer Initialization */
 return IMU_OK;
@@ -1059,16 +1123,16 @@ else if( imu_data_ready && !mag_data_ready )
     {
     imu_raw_processed.mag_x
                = (   (uint16_t) mag_raw_buffer[1]                         << MAG_XY_MSB_BITSHIFT ) | 
-                 ( ( (uint16_t) mag_raw_buffer[0] && MAG_XY_LSB_BITMASK ) >> MAG_XY_LSB_BITSHIFT );
+                 ( ( (uint16_t) mag_raw_buffer[0] & MAG_XY_LSB_BITMASK ) >> MAG_XY_LSB_BITSHIFT );
     imu_raw_processed.mag_y  
                = (   (uint16_t) mag_raw_buffer[3]                         << MAG_XY_MSB_BITSHIFT ) | 
-                 ( ( (uint16_t) mag_raw_buffer[2] && MAG_XY_LSB_BITMASK ) >> MAG_XY_LSB_BITSHIFT );
+                 ( ( (uint16_t) mag_raw_buffer[2] & MAG_XY_LSB_BITMASK ) >> MAG_XY_LSB_BITSHIFT );
     imu_raw_processed.mag_z  
                = (   (uint16_t) mag_raw_buffer[5]                         << MAG_Z_MSB_BITSHIFT  ) | 
-                 ( ( (uint16_t) mag_raw_buffer[4] && MAG_Z_LSB_BITMASK )  >> MAG_Z_LSB_BITSHIFT  );
+                 ( ( (uint16_t) mag_raw_buffer[4] & MAG_Z_LSB_BITMASK )  >> MAG_Z_LSB_BITSHIFT  );
     imu_raw_processed.mag_hall  
                = (   (uint16_t) mag_raw_buffer[7]                         << MAG_RHALL_MSB_BITSHIFT  ) | 
-                 ( ( (uint16_t) mag_raw_buffer[6] && MAG_RHALL_LSB_BITMASK )  >> MAG_RHALL_LSB_BITSHIFT  );
+                 ( ( (uint16_t) mag_raw_buffer[6] & MAG_RHALL_LSB_BITMASK )  >> MAG_RHALL_LSB_BITSHIFT  );
 
     /* Sign-extend 13-bit and 15-bit values */
     if (imu_raw_processed.mag_x & (1 << 12)) imu_raw_processed.mag_x |= ~((1 << 13) - 1);

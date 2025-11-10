@@ -147,8 +147,9 @@ static void pt6_adc_channel_select
 #ifdef USE_I2C_IT
 static SENSOR_STATUS sensor_it_imu_baro
 	(
-	uint32_t timeout, 
-	SENSOR_DATA* sensor_data_ptr
+	uint32_t timeout,
+	SENSOR_DATA* sensor_data_ptr,
+	IMU_RAW* imu_raw
 	);
 #endif
 
@@ -779,7 +780,7 @@ SENSOR_STATUS sensor_dump
 	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
 	#else
 	/* wait for interrupt return */
-	accel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
+	accel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
 	#endif
 
 	/* Calculated and retrieve converted IMU data */
@@ -1705,7 +1706,7 @@ else
 *******************************************************************************/
 SENSOR_STATUS sensor_start_IT
 	( 
-	SENSOR_DATA* sensor_data_ptr 
+	SENSOR_DATA* sensor_data_ptr
 	)
 {
 if( start_imu_read_IT() != IMU_OK )
@@ -1766,7 +1767,7 @@ sensor_data_ptr->gps_ew				= gps_data.ew;
 sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
 sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
-parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
+parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
 
 /*------------------------------------------------------------------------------
  Compute State Estimations
@@ -2250,7 +2251,8 @@ static void imu_get_state_estimate(IMU_DATA* imu_data){
 static SENSOR_STATUS sensor_it_imu_baro
 	(
 	uint32_t timeout,
-	SENSOR_DATA* sensor_data_ptr
+	SENSOR_DATA* sensor_data_ptr,
+	IMU_RAW* imu_raw
 	)
 {
 /* set up timeout */
@@ -2263,7 +2265,7 @@ while( curr_time <= starting_time + timeout )
 	/* determine if ready */
 	if( imu_ready == IMU_BUSY )
 		{
-		imu_ready = get_imu_it( (IMU_RAW*)(&(sensor_data_ptr->imu_data) ) ); /* cast to IMU_RAW, fill the first 18 bytes */
+		imu_ready = get_imu_it( imu_raw );
 		}
 	if( baro_ready == BARO_BUSY )
 		{
@@ -2381,9 +2383,10 @@ mag_y = (process_comp_y5 / 16.0f) / 10.0f;  // µT
 /* ---- Z compensation ---- */
 float process_comp_z0 = ((float)imu_raw->mag_z) - ((float)mag_trim.dig_z4) * 128.0f;
 float process_comp_z1 = ((float)mag_trim.dig_z3) * (rhall - ((float)mag_trim.dig_xyz1)) / 4.0f;
-float process_comp_z2 = ((float)mag_trim.dig_z1) == 0 ? 0.0f :
-						(((process_comp_z0 - process_comp_z1) / ((float)mag_trim.dig_z2 / 32768.0f + 4.0f)) * 16.0f);
-mag_z = (process_comp_z2 / 16.0f) / 10.0f;  // µT
+float process_comp_z2 = (mag_trim.dig_z2 == 0) ? 0.0f :
+    (((process_comp_z0 - process_comp_z1) * ((float)mag_trim.dig_z1)) /
+     (((float)mag_trim.dig_z2) + ((float)mag_trim.dig_z1) * (rhall - (float)mag_trim.dig_xyz1) / 32768.0f));
+mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
 
 /*------------------------------------------------------------------------------
  Store converted field data
