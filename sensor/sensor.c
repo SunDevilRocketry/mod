@@ -2424,7 +2424,7 @@ while( curr_time <= starting_time + timeout )
 	/* determine if ready */
 	if( imu_ready == IMU_BUSY )
 		{
-		imu_ready = get_imu_it( (IMU_RAW*)(&(sensor_data_ptr->imu_data) ) ); /* cast to IMU_RAW, fill the first 12 bytes */
+		imu_ready = get_imu_it( (IMU_RAW*)(&(sensor_data_ptr->imu_data) ) ); /* cast to IMU_RAW, fill the first 18 bytes */
 		}
 	if( baro_ready == BARO_BUSY )
 		{

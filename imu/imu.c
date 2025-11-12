@@ -42,6 +42,9 @@
 uint8_t imu_raw_buffer[12];
 IMU_RAW imu_raw_processed;
 bool imu_data_ready;
+
+uint8_t mag_raw_buffer[6];
+bool mag_data_ready;
 #endif
 
 /*------------------------------------------------------------------------------
@@ -104,6 +107,13 @@ static IMU_STATUS read_imu_regs_IT
     uint8_t  reg_addr, /* Register address            */
     uint8_t* data_ptr, /* Register data               */ 
     uint8_t  num_regs  /* Number of registers to read */
+    );
+
+static IMU_STATUS read_mag_regs_IT 
+    (
+    uint8_t  reg_addr,
+    uint8_t* data_ptr, 
+    uint8_t  num_regs
     );
 #endif
 
@@ -946,6 +956,7 @@ IMU_STATUS start_imu_read_IT
     )
 {
 imu_data_ready = false;
+mag_data_ready = false;
 return read_imu_regs_IT( IMU_REG_DATA_8, 
                          imu_raw_buffer, 
                          sizeof( imu_raw_buffer ) );
@@ -1002,20 +1013,47 @@ IMU_STATUS imu_it_handler
     void
     )
 {
-/*------------------------------------------------------------------------------
- Handle IT signal
-------------------------------------------------------------------------------*/
-/* Combine high byte and low byte to 16 bit data  */
-imu_raw_processed.accel_x = ( (uint16_t) imu_raw_buffer[1] ) << 8 | imu_raw_buffer[0];
-imu_raw_processed.accel_y = ( (uint16_t) imu_raw_buffer[3] ) << 8 | imu_raw_buffer[2];
-imu_raw_processed.accel_z = ( (uint16_t) imu_raw_buffer[5] ) << 8 | imu_raw_buffer[4];
-imu_raw_processed.gyro_x = ( (uint16_t) imu_raw_buffer[7] ) << 8 | imu_raw_buffer[6];
-imu_raw_processed.gyro_y = ( (uint16_t) imu_raw_buffer[9] ) << 8 | imu_raw_buffer[8];
-imu_raw_processed.gyro_z = ( (uint16_t) imu_raw_buffer[11] ) << 8 | imu_raw_buffer[10];
+IMU_STATUS imu_status = IMU_OK;
+if( !imu_data_ready && !mag_data_ready )
+    {
+    /*------------------------------------------------------------------------------
+    Handle IT signal
+    ------------------------------------------------------------------------------*/
+    /* Combine high byte and low byte to 16 bit data  */
+    imu_raw_processed.accel_x = ( (uint16_t) imu_raw_buffer[1] ) << 8 | imu_raw_buffer[0];
+    imu_raw_processed.accel_y = ( (uint16_t) imu_raw_buffer[3] ) << 8 | imu_raw_buffer[2];
+    imu_raw_processed.accel_z = ( (uint16_t) imu_raw_buffer[5] ) << 8 | imu_raw_buffer[4];
+    imu_raw_processed.gyro_x = ( (uint16_t) imu_raw_buffer[7] ) << 8 | imu_raw_buffer[6];
+    imu_raw_processed.gyro_y = ( (uint16_t) imu_raw_buffer[9] ) << 8 | imu_raw_buffer[8];
+    imu_raw_processed.gyro_z = ( (uint16_t) imu_raw_buffer[11] ) << 8 | imu_raw_buffer[10];
 
-imu_data_ready = true;
+    imu_data_ready = true;
 
-return IMU_OK;
+    /*------------------------------------------------------------------------------
+    Trigger mag read
+    ------------------------------------------------------------------------------*/
+    imu_status = read_mag_regs_IT( MAG_REG_DATAX_L, 
+                                mag_raw_buffer, 
+                                6 );
+    return imu_status;
+    }
+else if( imu_data_ready && !mag_data_ready )
+    {
+    imu_raw_processed.mag_x
+               = (   (uint16_t) mag_raw_buffer[1]                         << MAG_XY_MSB_BITSHIFT ) | 
+                 ( ( (uint16_t) mag_raw_buffer[0] && MAG_XY_LSB_BITMASK ) >> MAG_XY_LSB_BITSHIFT );
+    imu_raw_processed.mag_y  
+               = (   (uint16_t) mag_raw_buffer[3]                         << MAG_XY_MSB_BITSHIFT ) | 
+                 ( ( (uint16_t) mag_raw_buffer[2] && MAG_XY_LSB_BITMASK ) >> MAG_XY_LSB_BITSHIFT );
+    imu_raw_processed.mag_z  
+               = (   (uint16_t) mag_raw_buffer[5]                         << MAG_Z_MSB_BITSHIFT  ) | 
+                 ( ( (uint16_t) mag_raw_buffer[4] && MAG_Z_LSB_BITMASK )  >> MAG_Z_LSB_BITSHIFT  );
+    mag_data_ready = true;
+
+    return imu_status;
+    }
+
+    return IMU_FAIL;
 } /* imu_it_handler */
 
 
@@ -1033,7 +1071,7 @@ IMU_STATUS get_imu_it
     IMU_RAW* cpy_ptr
     )
 {
-if( !imu_data_ready )
+if( !imu_data_ready || !mag_data_ready )
     {
     return IMU_BUSY;
     }
@@ -1042,6 +1080,54 @@ memcpy( cpy_ptr, &imu_raw_processed, sizeof( IMU_RAW ) );
 
 return IMU_OK;
 }/* get_imu_it */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		read_mag_regs_IT                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Read the specific numbers of registers at one time from magnetometer   *
+*       module in the IMU                                                      *
+*                                                                              *
+*******************************************************************************/
+static IMU_STATUS read_mag_regs_IT 
+    (
+    uint8_t  reg_addr,
+    uint8_t* data_ptr, 
+    uint8_t  num_regs
+    )
+{
+/*------------------------------------------------------------------------------
+ Local variables  
+------------------------------------------------------------------------------*/
+HAL_StatusTypeDef hal_status;     /* Status return code of I2C HAL */
+
+
+/*------------------------------------------------------------------------------
+ API function implementation 
+------------------------------------------------------------------------------*/
+
+/* Read I2C registers */
+hal_status = HAL_I2C_Mem_Read_IT( &( IMU_I2C )     , 
+                               IMU_MAG_ADDR        , 
+                               reg_addr            , 
+                               I2C_MEMADD_SIZE_8BIT, 
+                               data_ptr            , 
+                               num_regs            );
+
+/* Return status code of I2C HAL */
+if ( hal_status != HAL_OK ) 
+	{
+	return IMU_MAG_ERROR;
+	}
+else 
+	{
+	return IMU_OK;
+	}
+
+} /* read_mag_regs_IT */
 
 #endif /* #if defined( USE_I2C_IT ) */
 
