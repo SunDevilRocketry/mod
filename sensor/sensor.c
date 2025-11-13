@@ -1523,11 +1523,11 @@ float gx = imu_data->imu_converted.gyro_x;
 float gy = imu_data->imu_converted.gyro_y;
 float gz = imu_data->imu_converted.gyro_z;
 
-float mx = imu_data->imu_converted.mag_x;
-float my = imu_data->imu_converted.mag_y;
-float mz = imu_data->imu_converted.mag_z;
+/* Compute pitch/roll from accelerometer */
+float acc_roll  = -rad_to_deg(atan2f(ay, ax));
+float acc_pitch = rad_to_deg(atan2f(-az, sqrtf(ax * ax + ay * ay)));
 
-/* Integrate gyro data first */
+/* Integrate gyro data */
 static float roll = 0.0f;
 static float pitch = 0.0f;
 static float yaw = 0.0f;
@@ -1540,102 +1540,15 @@ yaw   += gz * dt;
 if (yaw > 180.0f)  yaw -= 360.0f;
 if (yaw < -180.0f) yaw += 360.0f;
 
-/* Compute pitch/roll from accelerometer */
-/* Roll rotates around X axis - compute from Y and Z components (perpendicular to X) */
-/* Note: When rocket is vertical (gravity purely on -X), roll cannot be measured from accel */
-/* At rest with gravity on -X: ax = -g, ay = 0, az = 0 */
-/* When rolling around X, Y and Z components change only if there's pitch */
-float acc_pitch = rad_to_deg(atan2f(-az, sqrtf(ax * ax + ay * ay)));
-
-/* Calculate roll from Y and Z components, but only trust it when magnitude is reasonable */
-/* When vertical (gravity on -X), ay and az are both near 0, so roll measurement is unreliable */
-float yz_magnitude = sqrtf(ay * ay + az * az);
-float acc_magnitude = sqrtf(ax * ax + ay * ay + az * az);
-float acc_roll;
-
-/* Dynamic alpha: trust accel more when we can measure it, use mag/gyro when vertical */
-float roll_alpha = COMP_ALPHA;
-if (yz_magnitude > 0.1f && acc_magnitude > 5.0f)
-	{
-	/* Roll can be measured from Y and Z components when there's sufficient horizontal accel */
-	acc_roll = rad_to_deg(atan2f(ay, az));
-	roll_alpha = COMP_ALPHA;  /* Use normal alpha */
-	}
-else
-	{
-	/* When vertical or near-vertical, accelerometer cannot measure roll accurately */
-	/* Try using magnetometer to estimate roll when vertical */
-	float mag_yz_magnitude = sqrtf(my * my + mz * mz);
-	if (mag_yz_magnitude > 5.0f)
-		{
-		/* Use magnetometer Y and Z components to estimate roll when vertical */
-		/* When vertical and rolling around X, mag Y and Z rotate */
-		acc_roll = rad_to_deg(atan2f(my, mz));
-		roll_alpha = COMP_ALPHA;  /* Use normal alpha with magnetometer correction */
-		}
-	else
-		{
-		/* No reliable roll measurement available, use gyro-only */
-		acc_roll = roll;  /* Use current gyro-estimated roll */
-		roll_alpha = 0.999f;  /* Very high alpha (slight correction possible from gyro) */
-		}
-	}
-
-/* Complementary filter fusion for pitch/roll */
-roll  = roll_alpha * roll  + (1.0f - roll_alpha) * acc_roll;
+/* Complementary filter fusion */
+roll  = COMP_ALPHA * roll  + (1.0f - COMP_ALPHA) * acc_roll;
 pitch = COMP_ALPHA * pitch + (1.0f - COMP_ALPHA) * acc_pitch;
+// yaw uses gyro data only
 
-/* Convert current angles to radians for magnetometer tilt compensation */
+/* Compute angular rates (deg/s) */
 float roll_r = deg_to_rad(roll);
 float pitch_r = deg_to_rad(pitch);
 
-/* Tilt-compensated magnetometer heading calculation */
-/* Rotate magnetometer from body frame to horizontal plane */
-/* Standard tilt compensation: remove pitch first, then roll */
-/* Rotation: first -pitch about Y axis, then -roll about X axis */
-float cos_roll = cosf(roll_r);
-float sin_roll = sinf(roll_r);
-float cos_pitch = cosf(pitch_r);
-float sin_pitch = sinf(pitch_r);
-
-/* Apply rotation matrix to transform from body frame to horizontal frame */
-/* Standard formula for tilt-compensated compass: */
-/* mag_x_h = mx * cos(pitch) + mz * sin(pitch) */
-/* mag_y_h = -mx * sin(roll) * sin(pitch) + my * cos(roll) + mz * sin(roll) * cos(pitch) */
-float mag_x_h = mx * cos_pitch + mz * sin_pitch;
-float mag_y_h = -mx * sin_roll * sin_pitch + my * cos_roll + mz * sin_roll * cos_pitch;
-
-/* Calculate heading from horizontal magnetometer components */
-/* Check if magnetometer magnitude is valid (not too weak or too strong) */
-float mag_magnitude = sqrtf(mx * mx + my * my + mz * mz);
-float mag_h_magnitude = sqrtf(mag_x_h * mag_x_h + mag_y_h * mag_y_h);
-
-/* Use magnetometer heading only if field strength is reasonable (10-100 µT typical) */
-float mag_yaw = 0.0f;
-if (mag_magnitude > 10.0f && mag_magnitude < 200.0f && mag_h_magnitude > 5.0f)
-	{
-	/* Calculate heading from horizontal magnetometer components */
-	mag_yaw = rad_to_deg(atan2f(mag_y_h, mag_x_h));
-	
-	/* Normalize to 0..360 degrees */
-	if (mag_yaw > 360.0f)  mag_yaw -= 360.0f;
-	if (mag_yaw <= 0.0f) mag_yaw += 360.0f;
-	
-	/* Handle wrap-around: if gyro yaw and mag yaw are far apart, adjust mag_yaw */
-	float yaw_diff = yaw - mag_yaw;
-	if (yaw_diff > 360.0f)  mag_yaw += 360.0f;
-	else if (yaw_diff <= 0.0f) mag_yaw -= 360.0f;
-	
-	/* Complementary filter fusion for yaw: fuse magnetometer with gyro */
-	yaw = MAG_COMP_ALPHA * yaw + (1.0f - MAG_COMP_ALPHA) * mag_yaw;
-	}
-/* If magnetometer is unreliable, use gyro only (fallback) */
-
-/* Wrap yaw to 0..360 degrees after fusion */
-if (yaw > 360.0f)  yaw -= 360.0f;
-if (yaw <= 0.0f) yaw += 360.0f;
-
-/* Compute angular rates (deg/s) */
 float roll_rate  = gx + sinf(roll_r) * tanf(pitch_r) * gy + cosf(roll_r) * tanf(pitch_r) * gz;
 float pitch_rate = cosf(roll_r) * gy - sinf(roll_r) * gz;
 float yaw_rate   = (sinf(roll_r) / cosf(pitch_r)) * gy + (cosf(roll_r) / cosf(pitch_r)) * gz;

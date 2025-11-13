@@ -23,8 +23,7 @@ extern "C" {
 ------------------------------------------------------------------------------*/
 
 /* Constants */
-#define COMP_ALPHA 0.98f /* acc-gyro sensor fusion trust (higher = trust gyro more) */
-#define MAG_COMP_ALPHA 0.95f  /* mag-gyro sensor fusion trust (higher = trust gyro more) */
+#define COMP_ALPHA 0.98f /* Used in sensor fusion */
 
 /*******************************************************************************
 *                                                                              *
