@@ -51,6 +51,11 @@ extern SPI_HandleTypeDef hspi1;
 #endif
 
 /*------------------------------------------------------------------------------
+ Global Variables
+------------------------------------------------------------------------------*/
+static LORA_STATUS lora_rx_done = LORA_WAITING;
+
+/*------------------------------------------------------------------------------
  Helper functions for various pin functions on the LoRa modem.
 ------------------------------------------------------------------------------*/
 static LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
@@ -346,30 +351,37 @@ LORA_STATUS lora_receive_ready() {
 
     LORA_STATUS mode_check = lora_read_register( LORA_REG_OPERATION_MODE, &mode );
     mode = mode & 0x07;
-
+    /*
     #if defined( TESTRECEIVER ) // LoRa testbed test code
         char buf[255];
         int len = sprintf( buf, "Mode: %d\n", mode);
         serial_printlnx( buf, len );
     #endif
-
+    */
     if( mode_check == LORA_OK && mode == LORA_RX_CONTINUOUS_MODE ) {
         uint8_t irq_flag;
 
         LORA_STATUS irq_check = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
 
         if( irq_check == LORA_OK ) {
-            uint8_t rx_done = (irq_flag & (1<<6)) >> 6;
-            
+            lora_write_register( LORA_REG_IRQ_FLAGS, irq_flag );
+            uint8_t rx_done = ( irq_flag & 0x40 ) == 0x40;
+            // uint8_t rx_done = ( irq_flag & 0x40 ) == 0x00;
+            /*
             #if defined( TESTRECEIVER )
             char bufx[255];
-            int len = sprintf( bufx, "Register: %d\n", irq_flag);
+            int len = sprintf( bufx, "Register: %x\n", irq_flag);
             serial_printlnx( bufx, len );
+            char bufy[255];
+            int len2 = sprintf( bufy, "lora_receive_ready: %x\n", rx_done );
+            serial_printlnx( bufy, len2 );
             #endif
-
+            */
             if( rx_done ) {
+                lora_rx_done = LORA_READY;
                 return LORA_READY;
             } else {
+                lora_rx_done = LORA_WAITING;
                 return LORA_WAITING;
             }
         } else {
@@ -386,18 +398,20 @@ LORA_STATUS lora_receive_ready() {
 LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
     uint8_t timeout_flag;
 
-    LORA_STATUS rx_done = lora_receive_ready(); // We check if we've received a packet.
+    // LORA_STATUS rx_done = lora_receive_ready(); // We check if we've received a packet.
     // If we haven't received a packet, the output will be similar to lora_receive_ready in that case.
 
-    if ( rx_done == LORA_READY ){
+    if ( lora_rx_done == LORA_READY ){
         // Reset IRQ register. TODO: Not sure if I actually need to this; will investigate.
         uint8_t reset_irq = 0;
-        lora_write_register( LORA_REG_IRQ_FLAGS, reset_irq );
+        // lora_write_register( LORA_REG_IRQ_FLAGS, reset_irq );
 
         uint8_t irq_flag;
 
         LORA_STATUS irq_status2 = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
-        uint8_t crc_err = (irq_flag & (1<<5)) >> 5;
+        lora_write_register( LORA_REG_IRQ_FLAGS, irq_flag );
+        uint8_t crc_err = irq_flag & 0x20 == 0x00;
+        // uint8_t crc_err = irq_flag & 0x20 == 0x00;
 
         if (!crc_err){
             // Read received number of bytes
@@ -439,7 +453,7 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
             }
         }
         return LORA_OK;
-    } else if( rx_done == LORA_WAITING ) {
+    } else if( lora_rx_done == LORA_WAITING ) {
         return LORA_WAITING;
     }
     return LORA_FAIL;
