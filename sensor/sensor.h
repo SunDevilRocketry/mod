@@ -207,7 +207,7 @@ typedef struct SENSOR_DATA
 		char	 gps_ew;
 		char	 gps_gll_status;
 		char 	 gps_rmc_status;
-	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
+	#elif ( defined( ENGINE_CONTROLLER ) )
 		uint32_t pt_pressures[ NUM_PTS ];
 		uint32_t load_cell_force;
 		uint32_t tc_temp;

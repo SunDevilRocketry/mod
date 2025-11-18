@@ -16,6 +16,10 @@
 extern "C" {
 #endif
 
+/* platform specific includes */
+#if defined( A0002_REV2 ) || defined( A0005_REV1 )
+#include "imu.h"
+#endif
 
 /*------------------------------------------------------------------------------
  Macros 
@@ -62,15 +66,21 @@ extern "C" {
 #elif defined ( A0005_REV2 ) /* Ground Station Rev 2.0 */
 	/* Rev 2 */
 	#define PING_RESPONSE_CODE    ( 0x09 ) 
+#elif defined ( A0005_REV1 ) /* Ground Station Rev 1.0 */
+	/* Rev 1 */
+	#define PING_RESPONSE_CODE	  ( 0x10 )
 #endif
 
-/* Firmware Identifier Code */
+/* Firmware Identifier Code - FC */
 #define FIRMWARE_TERMINAL       ( 0x01 ) /* Terminal Firmware    */
 #define FIRMWARE_DATA_LOGGER    ( 0x02 ) /* Data Logger Firmware */
 #define FIRMWARE_DUAL_DEPLOY    ( 0x03 ) /* Dual Deploy Firmware */
 #define FIRMWARE_HOTFIRE        ( 0x04 ) /* Hotfire Firmware     */
 #define FIRMWARE_CANARD			( 0x05 ) /* Canard Firmware      */
 #define FIRMWARE_APPA			( 0x06 ) /* APPA Firmware     	 */
+
+/* Firmware Identifier Code - GS */
+#define FIRMWARE_RECEIVER	    ( 0x11 ) /* Reciever Firmware 	 */
 
 /* Other macros */
 #define DASHBOARD_DUMP_SIZE	( 72 )
