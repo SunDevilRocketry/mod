@@ -134,7 +134,7 @@ usb_status = HAL_UART_Receive( &( USB_HUART ),
 switch ( usb_status )
 	{
 	case HAL_TIMEOUT:
-		{
+		{	
 		return USB_TIMEOUT;
 		break;
 		}
