@@ -44,6 +44,7 @@
 #endif
 #include "usb.h"
 #include "sensor.h"
+#include "math_sdr.h"
 #if defined( ENGINE_CONTROLLER )
 	#include "pressure.h"
 	#include "loadcell.h"
@@ -142,6 +143,14 @@ static void pt6_adc_channel_select
 	void
 	);
 #endif /* #ifdef L0002_REV5 */
+
+#ifdef USE_I2C_IT
+static SENSOR_STATUS sensor_it_imu_baro
+	(
+	uint32_t timeout, 
+	SENSOR_DATA* sensor_data_ptr
+	);
+#endif
 
 
 /*------------------------------------------------------------------------------
@@ -730,7 +739,10 @@ SENSOR_STATUS sensor_dump
 #if defined( FLIGHT_COMPUTER )
 	#if defined( A0002_REV2 )
 	memset( &(sensor_data_ptr->imu_data), 0, sizeof( IMU_DATA ) );
-	accel_status = imu_get_accel_and_gyro( &(sensor_data_ptr->imu_data) );
+		#if defined( USE_I2C_IT )
+		accel_status = start_imu_read_IT();
+		press_status = start_baro_read_IT();
+		#endif
 	#else
 	/* IMU sensors */
 	accel_status = imu_get_accel_xyz( &(sensor_data_ptr->imu_data) ); 
@@ -753,9 +765,16 @@ SENSOR_STATUS sensor_dump
 	sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
 	sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
+	#ifndef USE_I2C_IT /* Use legacy (blocking mode) transfer for compatibility */
+	/* IMU */
+	accel_status = imu_get_accel_and_gyro( &(sensor_data_ptr->imu_data) );
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
 	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
+	#else
+	/* wait for interrupt return */
+	accel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
+	#endif
 
 	/* Calculated and retrieve converted IMU data */
 	sensor_conv_imu( &(sensor_data_ptr->imu_data) );
@@ -1563,27 +1582,37 @@ return SENSOR_OK;
 * 		sensor_conv_imu                                                   *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Conversion of IMU raw chip readouts into 9-axis Acceralometer and Gyro                                                     *
+*       Conversion of IMU raw chip readouts into 9-axis Accelerometer and Gyro.*
 *                                                                              *
 *******************************************************************************/
-void sensor_conv_imu(IMU_DATA* imu_data){
-	imu_data->imu_converted.accel_x = sensor_acc_conv(imu_data->accel_x);
-	imu_data->imu_converted.accel_y = sensor_acc_conv(imu_data->accel_y);
-	imu_data->imu_converted.accel_z = sensor_acc_conv(imu_data->accel_z);
+void sensor_conv_imu
+	(
+	IMU_DATA* imu_data
+	)
+{
+/* Convert raw accel values */
+imu_data->imu_converted.accel_x = sensor_acc_conv(imu_data->accel_x);
+imu_data->imu_converted.accel_y = sensor_acc_conv(imu_data->accel_y);
+imu_data->imu_converted.accel_z = sensor_acc_conv(imu_data->accel_z);
 
-	imu_data->imu_converted.accel_x = imu_data->imu_converted.accel_x - imu_offset.accel_x;
-	imu_data->imu_converted.accel_y = imu_data->imu_converted.accel_y - imu_offset.accel_y;
-	imu_data->imu_converted.accel_z = imu_data->imu_converted.accel_z - imu_offset.accel_z;
+/* Do not use offset compensation for accel to preserve gravity */
+/*
+imu_data->imu_converted.accel_x -= imu_offset.accel_x;
+imu_data->imu_converted.accel_y -= imu_offset.accel_y;
+imu_data->imu_converted.accel_z -= imu_offset.accel_z;
+*/
 
-	imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
-	imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
-	imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_data->gyro_z);
+/* Convert raw gyroscope values to deg/s */
+imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
+imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
+imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_data->gyro_z);
 
-	imu_data->imu_converted.gyro_x = imu_data->imu_converted.gyro_x - imu_offset.gyro_x;
-	imu_data->imu_converted.gyro_y = imu_data->imu_converted.gyro_y - imu_offset.gyro_y;
-	imu_data->imu_converted.gyro_z = imu_data->imu_converted.gyro_z - imu_offset.gyro_z;
+/* Remove gyro bias */
+imu_data->imu_converted.gyro_x -= imu_offset.gyro_x;
+imu_data->imu_converted.gyro_y -= imu_offset.gyro_y;
+imu_data->imu_converted.gyro_z -= imu_offset.gyro_z;
 
-}
+} /* sensor_conv_imu */
 
 
 /*******************************************************************************
@@ -1595,26 +1624,65 @@ void sensor_conv_imu(IMU_DATA* imu_data){
 *       Perform sensor fusion on imu converted data to get body rate           *
 *                                                                              *
 *******************************************************************************/
-void sensor_body_state(IMU_DATA* imu_data){
-	// Calculate body state angles (pitch, roll)
-	float pitch, roll;
-	float g = 9.8;
-	roll = atanf( imu_data->imu_converted.accel_z / imu_data->imu_converted.accel_y );
-	pitch = atanf( imu_data->imu_converted.accel_x / g );
+static uint32_t last_tick = 0;
+void sensor_body_state
+	(
+	IMU_DATA* imu_data
+	)
+{
+/* Determine delta T */
+uint32_t now_tick = HAL_GetTick();
+float dt = (now_tick - last_tick) / 1000.0f;
+if (dt <= 0.0f || dt > 1.0f) dt = 0.01f;
+last_tick = now_tick;
 
-	// Calculate body state anglular rate
-	float pitch_rate, roll_rate;
-	roll_rate = imu_data->imu_converted.gyro_x + 									\
-			imu_data->imu_converted.gyro_y * ( sinf(roll)*tanf(pitch) ) +	 		\
-			imu_data->imu_converted.gyro_z * ( cosf(roll)*tanf(pitch) );
+/* Copy IMU data for readability */
+float ax = imu_data->imu_converted.accel_x;
+float ay = imu_data->imu_converted.accel_y;
+float az = imu_data->imu_converted.accel_z;
 
-	pitch_rate = imu_data->imu_converted.gyro_y * ( cosf(roll) ) - imu_data->imu_converted.gyro_z * ( sinf(roll) );
+float gx = imu_data->imu_converted.gyro_x;
+float gy = imu_data->imu_converted.gyro_y;
+float gz = imu_data->imu_converted.gyro_z;
 
-	// Store calculated data
-	imu_data->state_estimate.roll_angle 	= roll;
-	imu_data->state_estimate.pitch_angle 	= pitch;
-	imu_data->state_estimate.roll_rate 		= roll_rate;
-	imu_data->state_estimate.pitch_rate 	= pitch_rate;
+/* Compute pitch/roll from accelerometer */
+float acc_roll  = -rad_to_deg(atan2f(ay, ax));
+float acc_pitch = rad_to_deg(atan2f(-az, sqrtf(ax * ax + ay * ay)));
+
+/* Integrate gyro data */
+static float roll = 0.0f;
+static float pitch = 0.0f;
+static float yaw = 0.0f;
+
+roll  += gx * dt;
+pitch += gy * dt;
+yaw   += gz * dt;
+
+/* Wrap yaw to -180..180 degrees */
+if (yaw > 180.0f)  yaw -= 360.0f;
+if (yaw < -180.0f) yaw += 360.0f;
+
+/* Complementary filter fusion */
+roll  = COMP_ALPHA * roll  + (1.0f - COMP_ALPHA) * acc_roll;
+pitch = COMP_ALPHA * pitch + (1.0f - COMP_ALPHA) * acc_pitch;
+// yaw uses gyro data only
+
+/* Compute angular rates (deg/s) */
+float roll_r = deg_to_rad(roll);
+float pitch_r = deg_to_rad(pitch);
+
+float roll_rate  = gx + sinf(roll_r) * tanf(pitch_r) * gy + cosf(roll_r) * tanf(pitch_r) * gz;
+float pitch_rate = cosf(roll_r) * gy - sinf(roll_r) * gz;
+float yaw_rate   = (sinf(roll_r) / cosf(pitch_r)) * gy + (cosf(roll_r) / cosf(pitch_r)) * gz;
+
+/* Store results (angles & rates in degrees / deg/s) */
+imu_data->state_estimate.roll_angle  = roll;
+imu_data->state_estimate.pitch_angle = pitch;
+imu_data->state_estimate.yaw_angle   = yaw;
+imu_data->state_estimate.roll_rate   = roll_rate;
+imu_data->state_estimate.pitch_rate  = pitch_rate;
+imu_data->state_estimate.yaw_rate    = yaw_rate;
+
 }
 
 
@@ -1797,6 +1865,129 @@ else
 	return ( voltage*( 1000.0/(gain*0.1) ) );
 	}
 } /* sensor_conv_pressure */
+#endif
+
+#if defined( USE_I2C_IT )
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_start_IT                                                   	   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Signal IT enabled peripherals to collect data.                         *
+*                                                                              *
+*******************************************************************************/
+SENSOR_STATUS sensor_start_IT
+	( 
+	SENSOR_DATA* sensor_data_ptr 
+	)
+{
+if( start_imu_read_IT() != IMU_OK )
+	{
+	return SENSOR_IMU_FAIL;
+	}
+if( start_baro_read_IT() != BARO_OK )
+	{
+	return SENSOR_BARO_ERROR;
+	}
+return SENSOR_OK;
+
+} /* sensor_start_IT */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_dump_IT                                                   	   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Process data and update sensor_data struct.                            *
+*                                                                              *
+*******************************************************************************/
+SENSOR_STATUS sensor_dump_IT
+	( 
+	SENSOR_DATA* sensor_data_ptr 
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables 
+------------------------------------------------------------------------------*/
+SENSOR_STATUS parallel_status = SENSOR_OK;
+IMU_STATUS accel_status = IMU_OK;
+IMU_STATUS gyro_status = IMU_OK;
+BARO_STATUS press_status = BARO_OK;
+BARO_STATUS temp_status = BARO_OK;
+
+/*------------------------------------------------------------------------------
+ Clear Structs
+------------------------------------------------------------------------------*/
+
+memset( &(sensor_data_ptr->imu_data), 0, sizeof( IMU_DATA ) );
+sensor_data_ptr -> imu_data.temp = 0;   // Figure out what to do with this 
+										// readout, temporarily being used 
+										// as struct padding
+
+/*------------------------------------------------------------------------------
+ Collect Data 
+------------------------------------------------------------------------------*/
+
+/* GPS sensor */
+sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
+sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
+sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
+sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
+sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
+sensor_data_ptr->gps_ns				= gps_data.ns;
+sensor_data_ptr->gps_ew				= gps_data.ew;
+sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
+sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
+
+parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
+
+/*------------------------------------------------------------------------------
+ Compute State Estimations
+------------------------------------------------------------------------------*/
+
+/* Calculated and retrieve converted IMU data */
+sensor_conv_imu( &(sensor_data_ptr->imu_data) );
+
+/* Calculated to get body state */
+sensor_body_state( &(sensor_data_ptr->imu_data) );
+
+/* Calculated velocity and position */
+sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+
+/* Calculated velocity from barometer */
+sensor_baro_velo( sensor_data_ptr );
+
+/*------------------------------------------------------------------------------
+ Start next measurement and return status
+------------------------------------------------------------------------------*/
+
+parallel_status |= sensor_start_IT( sensor_data_ptr );
+
+if( accel_status != IMU_OK )
+	{
+	return SENSOR_ACCEL_ERROR;
+	}
+else if ( gyro_status  != IMU_OK )
+	{
+	return SENSOR_GYRO_ERROR;
+	}
+else if ( press_status != BARO_OK ||
+		temp_status  != BARO_OK  )
+	{
+	return SENSOR_BARO_ERROR;
+	}
+else if ( parallel_status != SENSOR_OK )
+	{
+	return SENSOR_IT_TIMEOUT;
+	}
+else
+	{
+	return SENSOR_OK;
+	}
+} /* sensor_dump_IT */
 #endif
 
 
@@ -2203,22 +2394,56 @@ sConfig.OffsetSignedSaturation = DISABLE;
 HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 } /* pt6_adc_channel_select */
 
+
 #endif /* #ifdef L0002_REV5 */
 
-#ifdef A0002_REV2
-static void imu_get_state_estimate(IMU_DATA* imu_data){
-    float roll_angle = atan(imu_data->accel_y/imu_data->accel_z);
-	float pitch_angle = atan(imu_data->accel_x/9.81);
+#ifdef USE_I2C_IT
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_it_imu_baro											           *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Collect data from the double buffers and put it in sensor_data.        *
+*                                                                              *
+*******************************************************************************/
+static SENSOR_STATUS sensor_it_imu_baro
+	(
+	uint32_t timeout,
+	SENSOR_DATA* sensor_data_ptr
+	)
+{
+/* set up timeout */
+uint32_t starting_time = HAL_GetTick();
+uint32_t curr_time = HAL_GetTick();
+IMU_STATUS imu_ready = IMU_BUSY;
+BARO_STATUS baro_ready = BARO_BUSY;
+while( curr_time <= starting_time + timeout )
+	{
+	/* determine if ready */
+	if( imu_ready == IMU_BUSY )
+		{
+		imu_ready = get_imu_it( (IMU_RAW*)(&(sensor_data_ptr->imu_data) ) ); /* cast to IMU_RAW, fill the first 18 bytes */
+		}
+	if( baro_ready == BARO_BUSY )
+		{
+		/* doing IMU first. return ready. */
+		baro_ready = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
+		}
 
-	float roll_rate = imu_data->gyro_x + imu_data->gyro_y*sin(roll_angle)*tan(pitch_angle) + imu_data->gyro_z*cos(roll_angle)*tan(pitch_angle);
-	float pitch_rate = imu_data->gyro_y*cos(roll_angle) - imu_data->gyro_z*sin(roll_angle);	
+	/* compute return if ready */
+	if( baro_ready != BARO_BUSY && imu_ready != IMU_BUSY )
+		{
+		return baro_ready | imu_ready;
+		}
 
-	imu_data->state_estimate->roll_angle = roll_angle;
-	imu_data->state_estimate->pitch_angle = pitch_angle;
-	imu_data->state_estimate->roll_rate = roll_rate;
-	imu_data->state_estimate->pitch_rate = pitch_rate;
+	/* update timeout poll */
+	curr_time = HAL_GetTick();
+	}
+
+return SENSOR_IT_TIMEOUT;
 }
-#endif /* #ifdef A0002_REV2*/
+#endif /* #ifdef USE_I2C_IT */
 
 
 /*******************************************************************************

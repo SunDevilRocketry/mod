@@ -53,7 +53,7 @@ Includes
 	/* General */
 	#define NUM_SENSORS         ( 38   )
 	// #define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 120   )
+	#define SENSOR_DATA_SIZE	( 128   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -107,7 +107,8 @@ typedef enum
 	SENSOR_POLL_UNRECOGNIZED_CMD ,
 	SENSOR_VALVE_UART_ERROR      ,
 	SENSOR_ADC_POLL_ERROR        ,
-    SENSOR_FAIL   
+    SENSOR_FAIL   				 ,
+	SENSOR_IT_TIMEOUT
     } SENSOR_STATUS;
 
 /* Sensor poll command codes */
@@ -145,26 +146,28 @@ typedef enum
 		SENSOR_GYROZ_CONV 	= 0x0F,
 		SENSOR_ROLL_DEG 	= 0x10,
 		SENSOR_PITCH_DEG 	= 0x11,
-		SENSOR_ROLL_RATE 	= 0x12,
-		SENSOR_PITCH_RATE 	= 0x13,
-		SENSOR_VELOCITY 	= 0x14,
-		SENSOR_VELO_X		= 0x15,
-		SENSOR_VELO_Y		= 0x16,
-		SENSOR_VELO_Z		= 0x17,
-		SENSOR_POSITION 	= 0x18,
-		SENSOR_PRES  		= 0x19,
-		SENSOR_TEMP  		= 0x1A,
-		SENSOR_BARO_ALT		= 0x1B,
-		SENSOR_BARO_VELO	= 0x1C,
-		SENSOR_GPS_ALT		= 0x1D,
-		SENSOR_GPS_SPEED	= 0x1E,
-		SENSOR_GPS_TIME		= 0x1F,
-		SENSOR_GPS_DEC_LONG	= 0x20,
-		SENSOR_GPS_DEC_LAT 	= 0x21,
-		SENSOR_GPS_NS		= 0x22,
-		SENSOR_GPS_EW		= 0x23,
-		SENSOR_GPS_GLL		= 0x24,
-		SENSOR_GPS_RMC		= 0x25,
+		SENSOR_YAW_DEG		= 0x12,
+		SENSOR_ROLL_RATE 	= 0x13,
+		SENSOR_PITCH_RATE 	= 0x14,
+		SENSOR_YAW_RATE		= 0x15,
+		SENSOR_VELOCITY 	= 0x16,
+		SENSOR_VELO_X		= 0x17,
+		SENSOR_VELO_Y		= 0x18,
+		SENSOR_VELO_Z		= 0x19,
+		SENSOR_POSITION 	= 0x1A,
+		SENSOR_PRES  		= 0x1B,
+		SENSOR_TEMP  		= 0x1C,
+		SENSOR_BARO_ALT		= 0x1D,
+		SENSOR_BARO_VELO	= 0x1E,
+		SENSOR_GPS_ALT		= 0x1F,
+		SENSOR_GPS_SPEED	= 0x20,
+		SENSOR_GPS_TIME		= 0x21,
+		SENSOR_GPS_DEC_LONG	= 0x22,
+		SENSOR_GPS_DEC_LAT 	= 0x23,
+		SENSOR_GPS_NS		= 0x24,
+		SENSOR_GPS_EW		= 0x25,
+		SENSOR_GPS_GLL		= 0x26,
+		SENSOR_GPS_RMC		= 0x27,
 
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		SENSOR_PT0   = 0x00,
@@ -298,6 +301,18 @@ float sensor_conv_pressure
 	( 
 	uint32_t adc_readout, /* Pressure readout from ADC */
 	PT_INDEX pt_num       /* PT used for readout       */
+	);
+#endif
+
+#ifdef USE_I2C_IT
+SENSOR_STATUS sensor_start_IT
+	( 
+	SENSOR_DATA* sensor_data_ptr 
+	);
+	
+SENSOR_STATUS sensor_dump_IT
+	( 
+	SENSOR_DATA* sensor_data_ptr 
 	);
 #endif
 

@@ -200,12 +200,27 @@ extern "C" {
  Typdefs 
 ------------------------------------------------------------------------------*/
 
+/* Raw IMU data*/
+typedef struct _IMU_RAW {
+    uint16_t    accel_x;
+    uint16_t    accel_y;
+    uint16_t    accel_z;
+    uint16_t    gyro_x ;
+    uint16_t    gyro_y ;
+    uint16_t    gyro_z ;
+    uint16_t    mag_x;
+    uint16_t    mag_y;
+    uint16_t    mag_z;
+} IMU_RAW;
+
 /* Processed IMU aata */
 typedef struct _STATE_ESTIMATION {
 	float roll_angle;
 	float pitch_angle;
+    float yaw_angle;
 	float roll_rate;
 	float pitch_rate;
+    float yaw_rate;
     float velocity;
     float velo_x;
     float velo_y;
@@ -374,7 +389,8 @@ typedef enum IMU_STATUS
     IMU_INIT_FAIL          ,
     IMU_CONFIG_FAIL        ,
     IMU_MAG_UNRECOGNIZED_ID,
-    IMU_MAG_INIT_FAIL
+    IMU_MAG_INIT_FAIL      ,
+    IMU_BUSY
 	} IMU_STATUS;
 
 
@@ -430,6 +446,12 @@ void IMU_config
     uint16_t gyro_setting,
     uint16_t mag_setting
     );
+
+#ifdef USE_I2C_IT
+IMU_STATUS start_imu_read_IT(void);
+IMU_STATUS imu_it_handler();
+IMU_STATUS get_imu_it(IMU_RAW* cpy_ptr);
+#endif
 
 
 #ifdef __cplusplus
