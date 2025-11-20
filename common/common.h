@@ -97,7 +97,8 @@ typedef enum _ERROR_CODE
     ERROR_SENSOR_FORMAT_ERROR,            /* unused */
     ERROR_INVALID_STATE_ERROR,           /* FSM has reached a state that it shouldn't */
     ERROR_CONFIG_VALIDITY_ERROR,         /* Loaded configuration is invalid */
-    ERROR_IGNITION_CONTINUITY_ERROR      /* Parachute terminals do not have continuity */
+    ERROR_IGNITION_CONTINUITY_ERROR,     /* Parachute terminals do not have continuity */
+    ERROR_LORA_SPI_INIT_ERROR,           /* Error initializing the LoRa SPI  */
     } ERROR_CODE;
 
 
