@@ -34,8 +34,12 @@ extern "C" {
 #define SERVO_OP	   0x08	   /* servo command opcode		 */
 #define PRESET_OP	   0x24	   /* preset command opcode 	 */
 #define DASHBOARD_OP   0x30	   /* dashboard command opcode 	 */
+#define TELEM_OP	   0x31	   /* telemetry command opcode   */	   
 
 #define FIN_OP		   0x21    /* fin calibrate opcode (NOTE: DUPLICATE OF POWER_OP) */
+
+/* TELEM SUBCOMMANDS (cross-platform) */
+#define TELEM_UPLOAD_OP 0x01
 
 /* Board identifier code */
 #if   defined( A0002_REV1 ) /* Flight Computer Rev 1.0 */
