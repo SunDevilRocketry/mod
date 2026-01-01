@@ -2429,7 +2429,6 @@ mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
 imu_data->imu_converted.mag_x = mag_x;
 imu_data->imu_converted.mag_y = mag_y;
 imu_data->imu_converted.mag_z = mag_z;
-imu_data->imu_converted.mag_hall = rhall;
 } /* sensor_conv_mag */
 #endif
 
