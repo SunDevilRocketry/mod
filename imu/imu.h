@@ -259,7 +259,6 @@ typedef struct _IMU_CONVERTED {
     float mag_x ;
     float mag_y ;
     float mag_z ;
-    float mag_hall ;
 } IMU_CONVERTED;
 
 /* Structure for imu containing all accel, gyro, and mag data */
