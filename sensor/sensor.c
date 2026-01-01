@@ -61,11 +61,10 @@
 
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
-
-extern GPS_DATA gps_data;
+extern volatile uint32_t tdelta, previous_time;
 
 #ifdef FLIGHT_COMPUTER
-extern uint32_t tdelta, previous_time;
+extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
 #endif
 
