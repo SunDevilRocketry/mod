@@ -1,7 +1,7 @@
 /*******************************************************************************
 *
 * FILE: 
-* 		common_error.c
+* 		error_sdr.c
 *
 * DESCRIPTION: 
 * 		Contains error-related functions for SDR code.
@@ -31,6 +31,7 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "common.h"
+#include "error_sdr.h"
 #include "stm32h7xx_hal.h"
 #include "led.h"
 
