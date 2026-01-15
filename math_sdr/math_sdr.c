@@ -29,7 +29,6 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "common.h"
-#include "sdr_error.h"
 #include "stm32h7xx_hal.h"
 
 

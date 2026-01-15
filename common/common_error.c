@@ -31,13 +31,25 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "common.h"
-#include "sdr_error.h"
 #include "stm32h7xx_hal.h"
+#include "led.h"
 
+
+/*------------------------------------------------------------------------------
+ Global Variables  
+------------------------------------------------------------------------------*/
+
+/* Contract: Callback table must be defined by the project. 
+   Implementation not provided by the module. */
+#ifdef USE_CALLBACK_TABLE
+extern ERROR_CALLBACK* error_callback_table;
+extern uint16_t error_callback_table_size;
+#endif
 
 /*------------------------------------------------------------------------------
  Static Variables  
 ------------------------------------------------------------------------------*/
+
 TEXT_MESSAGE last_warning;
 bool is_pending_warning = false;
 
@@ -47,7 +59,12 @@ bool is_pending_info = false;
 /*------------------------------------------------------------------------------
  Internal function prototypes 
 ------------------------------------------------------------------------------*/
-
+#ifdef USE_CALLBACK_TABLE
+static ERROR_CALLBACK* callback_table_lookup
+    (
+    volatile ERROR_CODE error_code
+    );
+#endif
 
 /*------------------------------------------------------------------------------
  API Functions 
@@ -60,8 +77,8 @@ bool is_pending_info = false;
 * 		error_fail_fast                                                        *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		In case of error occurrence, this function passes the error            *
-*       code to the error handler                                              *
+* 		This handles errors by matching an error code to its callback in the   *
+*       table.                                                                 *
 *                                                                              *
 *******************************************************************************/
 void error_fail_fast
@@ -69,7 +86,30 @@ void error_fail_fast
     volatile ERROR_CODE error_code
     )
 {
-Error_Handler(error_code);
+#if defined(USE_CALLBACK_TABLE)
+/*------------------------------------------------------------------------------
+ Local Variables 
+------------------------------------------------------------------------------*/
+ERROR_CALLBACK* error_callback_ptr;
+
+/*------------------------------------------------------------------------------
+ Implementation
+------------------------------------------------------------------------------*/
+error_callback_ptr = callback_table_lookup( error_code );
+
+/* If error is in table, use its callback and return. */
+if( error_callback_ptr != NULL)
+    {
+    error_callback_ptr->error_callback( error_code );
+    return;
+    }
+#endif
+
+/*------------------------------------------------------------------------------
+ Legacy Handling (table not defined or callback not found)
+------------------------------------------------------------------------------*/
+led_set_color( LED_RED );
+while(1); /* Control flow trap */
 
 } /* error_fail_fast */
 
@@ -204,6 +244,36 @@ bool error_is_pending_info
 return is_pending_info;
 
 } /* error_is_pending_info */
+
+
+#if defined(USE_CALLBACK_TABLE)
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		callback_table_lookup                                                  *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Match an error code to its callback table entry. Returns null if       *
+*       a callback is not found.                                               *
+*                                                                              *
+*******************************************************************************/
+static ERROR_CALLBACK* callback_table_lookup
+    (
+    volatile ERROR_CODE error_code
+    )
+{
+for( uint8_t i = 0; i < error_callback_table_size; i++ )
+    {
+    if( error_callback_table[i].error_code == error_code )
+        {
+        return &( error_callback_table[i] );
+        }
+    }
+
+return NULL;
+
+} /* callback_table_lookup */
+#endif
 
 /*******************************************************************************
 * END OF FILE                                                                  * 

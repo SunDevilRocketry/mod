@@ -42,6 +42,7 @@ extern "C" {
 /* Error codes */
 typedef enum _ERROR_CODE 
     {
+    ERROR_UNKNOWN_FATAL_ERROR          , /* An unknown error occurred         */
     ERROR_FLASH_INIT_ERROR             , /* Flash initialization error        */
     ERROR_BARO_INIT_ERROR              , /* Baro initialization error         */
     ERROR_IMU_INIT_ERROR               , /* IMU initialization error          */
@@ -77,8 +78,8 @@ typedef enum _ERROR_CODE
     ERROR_IGN_CMD_ERROR                , /* Error executing ignition command  */
     ERROR_FLASH_CMD_ERROR              , /* Error executing flash command     */
     ERROR_SENSOR_CMD_ERROR             , /* Error executing sensor command    */
-    ERROR_SERVO_CMD_ERROR              ,
-    ERROR_VALVE_CMD_ERROR              , /* Error executingvalve command      */
+    ERROR_SERVO_CMD_ERROR              , /* Error executing servo command     */
+    ERROR_VALVE_CMD_ERROR              , /* Error executing valve command     */
     ERROR_BARO_CAL_ERROR               , /* Error calibrating ground pressure */
     ERROR_DATA_HAZARD_ERROR            , /* Potential data corruption error   */
     ERROR_FSM_INVALID_STATE_ERROR      , /* Invalid state variable value      */
@@ -89,17 +90,23 @@ typedef enum _ERROR_CODE
     ERROR_RS485_UART_ERROR             , /* Error during RS485 transmission   */
     ERROR_SOL_CMD_ERROR                , /* Error passing on solenoid command */
     ERROR_PT_ADC_CHANNEL_ERROR         , /* Error switching adc channel       */
-    ERROR_FSM_INVALID_STATE_TRANSITION_ERROR,  /* Error changing state         */
-    ERROR_GPS_UART4_INITIALIZATION     , /* Error initializing UART for GPS */
-    ERROR_GPS_UART4_DEMSP              ,  /* Error initializing DEMSP UART for GPS */
-    ERROR_PWM4_ERROR,                    /* Error with PWM timer 4 */
-    ERROR_PWM123_ERROR,                    /* Error with PWM timer 1,2,3 */
-    ERROR_SERVO_INIT_ERROR,                 /* Error initializing servos */
-    ERROR_SENSOR_FORMAT_ERROR,            /* unused */
-    ERROR_INVALID_STATE_ERROR,           /* FSM has reached a state that it shouldn't */
-    ERROR_CONFIG_VALIDITY_ERROR,         /* Loaded configuration is invalid */
-    ERROR_IGNITION_CONTINUITY_ERROR      /* Parachute terminals do not have continuity */
+    ERROR_FSM_INVALID_STATE_TRANSITION_ERROR,  /* Error changing state        */
+    ERROR_GPS_UART4_INITIALIZATION     , /* Error initializing UART for GPS   */
+    ERROR_GPS_UART4_DEMSP              , /* Error initializing DEMSP UART for GPS */
+    ERROR_PWM4_ERROR                   , /* Error with PWM timer 4            */
+    ERROR_PWM123_ERROR                 , /* Error with PWM timer 1,2,3        */
+    ERROR_SERVO_INIT_ERROR             , /* Error initializing servos         */
+    ERROR_SENSOR_FORMAT_ERROR          , /* unused                            */
+    ERROR_INVALID_STATE_ERROR          , /* FSM has reached an invalid state  */
+    ERROR_CONFIG_VALIDITY_ERROR        , /* Loaded configuration is invalid   */
+    ERROR_IGNITION_CONTINUITY_ERROR      /* No continuity on IGN terminals    */
     } ERROR_CODE;
+
+/* Error callback table entry */
+typedef struct _ERROR_CALLBACK {
+    volatile ERROR_CODE error_code;
+    void (*error_callback)(ERROR_CODE);
+} ERROR_CALLBACK;
 
 /* UID serial number (packed struct inhibits padding) */
 typedef struct __attribute__((packed)) _ST_UID_TYPE 
