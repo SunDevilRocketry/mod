@@ -56,6 +56,20 @@ _Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
 /*******************************************************************************
 *                                                                              *
 * MACRO:                                                                       * 
+*       array_size                                                             *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Returns the number of elements in an array where each element is a     *
+*       fixed size. An error or warning from this macro indicates that it      *
+*       can't be used in that context.                                         *
+*                                                                              *
+*******************************************************************************/
+#define array_size( array ) ( sizeof( array ) / sizeof( array[0] ) )
+
+
+/*******************************************************************************
+*                                                                              *
+* MACRO:                                                                       * 
 *       util_set_bit                                                           *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
