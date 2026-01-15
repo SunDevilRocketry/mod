@@ -43,7 +43,7 @@
 /* Contract: Callback table must be defined by the project. 
    Implementation not provided by the module. */
 #ifdef USE_CALLBACK_TABLE
-extern ERROR_CALLBACK* error_callback_table;
+extern volatile ERROR_CALLBACK error_callback_table[];
 extern uint16_t error_callback_table_size;
 #endif
 
@@ -61,7 +61,7 @@ bool is_pending_info = false;
  Internal function prototypes 
 ------------------------------------------------------------------------------*/
 #ifdef USE_CALLBACK_TABLE
-static ERROR_CALLBACK* callback_table_lookup
+static volatile ERROR_CALLBACK* callback_table_lookup
     (
     volatile ERROR_CODE error_code
     );
@@ -91,7 +91,7 @@ void error_fail_fast
 /*------------------------------------------------------------------------------
  Local Variables 
 ------------------------------------------------------------------------------*/
-ERROR_CALLBACK* error_callback_ptr;
+volatile ERROR_CALLBACK* error_callback_ptr;
 
 /*------------------------------------------------------------------------------
  Implementation
@@ -258,7 +258,7 @@ return is_pending_info;
 *       a callback is not found.                                               *
 *                                                                              *
 *******************************************************************************/
-static ERROR_CALLBACK* callback_table_lookup
+static volatile ERROR_CALLBACK* callback_table_lookup
     (
     volatile ERROR_CODE error_code
     )
