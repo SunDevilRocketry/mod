@@ -145,6 +145,16 @@ void error_fail_fast
     );
 
 /* warnings and info for telemetry */
+void error_log_info
+    (
+    char* message
+    );
+
+void error_log_warning
+    (
+    char* message
+    );
+
 bool error_get_warning
     (
     TEXT_MESSAGE* buffer
