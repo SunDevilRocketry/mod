@@ -34,6 +34,10 @@ extern "C" {
 #include <string.h>
 #include <stdbool.h>
 
+/*------------------------------------------------------------------------------
+ Constants 
+------------------------------------------------------------------------------*/
+#define TEXT_MESSAGE_LENGTH 72
 
 /*------------------------------------------------------------------------------
  Typdefs 
@@ -111,7 +115,7 @@ typedef struct _ERROR_CALLBACK {
 typedef struct TEXT_MESSAGE
     {
     uint32_t systick;
-    char message[72];
+    char message[TEXT_MESSAGE_LENGTH];
     } TEXT_MESSAGE;
 
 /*------------------------------------------------------------------------------
