@@ -35,6 +35,20 @@
 #include "stm32h7xx_hal.h"
 #include "led.h"
 
+/*------------------------------------------------------------------------------
+ Internal function prototypes 
+------------------------------------------------------------------------------*/
+#ifdef USE_CALLBACK_TABLE
+static volatile ERROR_CALLBACK* callback_table_lookup
+    (
+    volatile ERROR_CODE error_code
+    );
+#endif
+
+static void dflt_error_handler
+    (
+    volatile ERROR_CODE error_code
+    );
 
 /*------------------------------------------------------------------------------
  Global Variables  
@@ -57,15 +71,8 @@ bool is_pending_warning = false;
 TEXT_MESSAGE last_info;
 bool is_pending_info = false;
 
-/*------------------------------------------------------------------------------
- Internal function prototypes 
-------------------------------------------------------------------------------*/
-#ifdef USE_CALLBACK_TABLE
-static volatile ERROR_CALLBACK* callback_table_lookup
-    (
-    volatile ERROR_CODE error_code
-    );
-#endif
+/* Default error handler for table misses or undefined tables. Can be overridden. */
+volatile ERROR_CALLBACK default_error_handler = { 0, dflt_error_handler };
 
 /*------------------------------------------------------------------------------
  API Functions 
@@ -107,10 +114,9 @@ if( error_callback_ptr != NULL)
 #endif
 
 /*------------------------------------------------------------------------------
- Legacy Handling (table not defined or callback not found)
+ Default to Legacy Handling (table not defined or callback not found)
 ------------------------------------------------------------------------------*/
-led_set_color( LED_RED );
-while(1); /* Control flow trap */
+default_error_handler.error_callback( error_code );
 
 } /* error_fail_fast */
 
@@ -275,6 +281,37 @@ return NULL;
 
 } /* callback_table_lookup */
 #endif
+
+
+/**
+ * GCOVR_EXCL_START
+ * 
+ * This whole function is excluded due to the control flow trap. It is impossible
+ * to return from this function. This case can be reached, but the whole point of
+ * getting here is that an error is unrecoverable, so via analysis we can prove
+ * that this will not return.
+ */
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		dflt_error_handler                                                     *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Legacy style error trap function. Default error handler.               *
+*                                                                              *
+*******************************************************************************/
+static void dflt_error_handler
+    (
+    volatile ERROR_CODE error_code
+    )
+{
+led_set_color( LED_RED );
+while(1); /* Control flow trap */
+
+} /* dflt_error_handler */
+/**
+ * GCOVR_EXCL_STOP
+ */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 
