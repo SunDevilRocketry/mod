@@ -139,7 +139,9 @@ void led_set_color
 {
 
 /* Reset LED */
-led_reset();
+#ifndef EMULATOR
+led_reset(); /* The call to reset every time makes the emulator GUI flash */
+#endif
 
 /* Check Colors */
 switch ( color )
