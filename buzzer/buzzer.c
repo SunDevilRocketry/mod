@@ -39,6 +39,11 @@
 #else
 	#error No buzzer compatible device specified
 #endif
+
+#ifdef EMULATOR
+#include "emulator.h"
+#endif
+
 #include "buzzer.h"
 
 
@@ -85,7 +90,7 @@ hal_status = HAL_OK;
 /*------------------------------------------------------------------------------
  API Function Implementation 
 ------------------------------------------------------------------------------*/
-
+#ifndef EMULATOR
 /* Start generating PWM pulses */
 hal_status = HAL_TIM_PWM_Start( &(BUZZ_TIM), BUZZ_TIM_CHANNEL );
 if ( hal_status != HAL_OK )
@@ -106,6 +111,10 @@ else
 	{
 	return BUZZ_OK;
 	}
+#else
+emulator_buzzer_beep_request(duration);
+return hal_status;
+#endif
 
 } /* buzzer_beep */
 
