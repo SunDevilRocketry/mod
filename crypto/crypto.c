@@ -58,13 +58,33 @@ void crypto_init
 * 		Set the AES encryption key                                             *
 *                                                                              *
 *******************************************************************************/
-void crypto_set_key
+enum CRYP_STATUS crypto_set_key
     (
     AES_KEY *new_aes_key
     ) 
 {
-    memcpy(hcryp.Init.pKey, new_aes_key, sizeof(AES_KEY));
-    CRYP_SetKey(&hcryp, sizeof(AES_KEY));
+    /* locals */
+    CRYP_ConfigTypeDef newConf; /* can be allocated on the stack since params are copied to the global hcryp handle */
+    HAL_StatusTypeDef hal_status;
+
+    /* set up config struct */
+    memcpy(&newConf, &hcryp.Init, sizeof( newConf) ); /* make a new config struct and copy the previous contents */
+    newConf.pKey = (uint32_t*)&new_aes_key;
+
+    /* call HAL function */
+    hal_status = HAL_CRYP_SetConfig( &hcryp, &newConf );
+
+    /* check status return */
+    if (hal_status == HAL_OK) 
+        {
+            return CRYP_OK;
+        }
+    else
+        {
+            return CRYP_CONFIG_FAIL;
+        }
+    //memcpy(hcryp.Init.pKey, new_aes_key, sizeof(AES_KEY));
+    //CRYP_SetKey(&hcryp, sizeof(AES_KEY));
 } /* crypto_set_key */
 
 
