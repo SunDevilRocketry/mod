@@ -47,6 +47,9 @@
 #include "usb.h"
 #include "led.h"
 
+#ifdef EMULATOR
+#include "emulator.h"
+#endif
 
 /*------------------------------------------------------------------------------
  Global Variables 
@@ -791,6 +794,11 @@ if ( flash_status != FLASH_OK )
 	return FLASH_CANNOT_WRITE_ENABLE;
 	}
 
+/* Escape for emulator */
+#ifdef EMULATOR
+return emulator_flash_write( pflash_handle->pbuffer, pflash_handle->address, pflash_handle->num_bytes );
+#endif
+
 /* Initial SPI transmission */
 HAL_GPIO_WritePin( FLASH_SS_GPIO_PORT, FLASH_SS_PIN, GPIO_PIN_RESET );
 hal_status[0] = HAL_SPI_Transmit( &( FLASH_SPI )        ,
@@ -919,6 +927,11 @@ address_to_bytes( pflash_handle -> address, &address[0] );
  API function implementation
 ------------------------------------------------------------------------------*/
 
+/* Escape for emulator */
+#ifdef EMULATOR
+return emulator_flash_read( pflash_handle->pbuffer, pflash_handle->address, num_bytes );
+#endif
+
 /* Initiate SPI transmission */
 HAL_GPIO_WritePin( FLASH_SS_GPIO_PORT, FLASH_SS_PIN, GPIO_PIN_RESET );
 
@@ -1015,6 +1028,9 @@ if( !( write_enabled ) )
  API function implementation
 ------------------------------------------------------------------------------*/
 
+#ifdef EMULATOR
+return emulator_flash_erase();
+#endif
 /* Enable writing to flash */
 flash_status = write_enable();
 
@@ -1077,6 +1093,11 @@ flash_status = FLASH_OK;
 /*------------------------------------------------------------------------------
  Pre-processing 
 ------------------------------------------------------------------------------*/
+
+/* Escape to Emulator */
+#ifdef EMULATOR
+return emulator_flash_block_erase( flash_block_num, size );
+#endif
 
 /* Determine block setting */
 switch( size )
