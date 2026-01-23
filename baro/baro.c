@@ -46,7 +46,7 @@ static BARO_CONFIG   baro_configuration;
 /* Baro calibration coefficients for measurement compensation */
 static BARO_CAL_DATA baro_cal_data;
 
-#if defined( USE_I2C_IT )
+#if defined( A0002_REV2 )
 uint8_t baro_raw_buffer[6];
 float baro_pres_proc = NAN;
 float baro_temp_proc = NAN;
@@ -161,7 +161,7 @@ init_temp      = 0;
 ------------------------------------------------------------------------------*/
 
 /* Disable IRQ */
-#if defined( USE_I2C_IT )
+#if defined( A0002_REV2 )
 HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
 #endif
 
@@ -223,7 +223,7 @@ if ( baro_status != BARO_OK )
 baro_status = baro_config( config_ptr );
 
 /* Set up double buffer */
-#if defined( USE_I2C_IT )
+#if defined( A0002_REV2 )
 baro_data_ready = false;
 memset( baro_raw_buffer, 0, sizeof( baro_raw_buffer ) );
 HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
@@ -869,7 +869,7 @@ return write_reg( BARO_REG_CMD, BARO_CMD_FIFO_FLUSH );
 } /* baro_flush_fifo */
 
 
-#ifdef USE_I2C_IT
+#ifdef A0002_REV2
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 

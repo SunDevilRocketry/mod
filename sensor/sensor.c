@@ -155,7 +155,7 @@ static void pt6_adc_channel_select
 	);
 #endif /* #ifdef L0002_REV5 */
 
-#ifdef USE_I2C_IT
+#ifdef A0002_REV2
 static SENSOR_STATUS sensor_it_imu_baro
 	(
 	uint32_t timeout,
@@ -839,10 +839,8 @@ else
 #if defined( FLIGHT_COMPUTER )
 	#if defined( A0002_REV2 )
 	memset( &imu_raw, 0, sizeof( IMU_RAW ) );
-		#if defined( USE_I2C_IT )
 		accel_status = start_imu_read_IT();
 		press_status = start_baro_read_IT();
-		#endif
 	#else
 	/* IMU sensors */
 	accel_status = imu_get_accel_xyz( &imu_raw ); 
@@ -862,7 +860,7 @@ else
 	sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
 	sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
-	#ifndef USE_I2C_IT /* Use legacy (blocking mode) transfer for compatibility */
+	#ifndef A0002_REV2  /* Use legacy (blocking mode) transfer for compatibility */
 	/* IMU */
 	accel_status = imu_get_accel_and_gyro( &imu_raw );
 	/* Baro sensors */
@@ -1835,7 +1833,7 @@ else
 } /* sensor_conv_pressure */
 #endif
 
-#if defined( USE_I2C_IT )
+#if defined( A0002_REV2 )
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -2363,7 +2361,7 @@ HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 
 #endif /* #ifdef L0002_REV5 */
 
-#ifdef USE_I2C_IT
+#ifdef A0002_REV2
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -2410,7 +2408,7 @@ while( curr_time <= starting_time + timeout )
 
 return SENSOR_IT_TIMEOUT;
 }
-#endif /* #ifdef USE_I2C_IT */
+#endif /* #ifdef A0002_REV2 */
 
 
 #ifdef A0002_REV2

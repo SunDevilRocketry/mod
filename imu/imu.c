@@ -49,7 +49,7 @@
  Local Variables 
 ------------------------------------------------------------------------------*/
 
-#if defined( USE_I2C_IT )
+#if defined( A0002_REV2 )
 uint8_t imu_raw_buffer[12];
 IMU_RAW imu_raw_processed;
 bool imu_data_ready;
@@ -95,7 +95,6 @@ static IMU_STATUS write_imu_regs
     uint8_t* data_ptr, /* Register data       */
     uint32_t num_regs  /* Number of registers */
     ); 
-#endif /* #if defined( A0002_REV2 )*/
 
 /* Read Magnetometer registers */
 static IMU_STATUS read_mag_regs
@@ -106,15 +105,12 @@ static IMU_STATUS read_mag_regs
     ); 
 
 /* Write to a specified magnetometer register */
-#if defined( A0002_REV2 )
 static IMU_STATUS write_mag_reg 
     (
     uint8_t reg_addr, /* Register address    */
     uint8_t data      /* Register data       */
     ); 
-#endif 
 
-#if defined( USE_I2C_IT )
 static IMU_STATUS read_imu_regs_IT
     (
     uint8_t  reg_addr, /* Register address            */
@@ -128,7 +124,7 @@ static IMU_STATUS read_mag_regs_IT
     uint8_t* data_ptr, 
     uint8_t  num_regs
     );
-#endif
+#endif /* #if defined( A0002_REV2 ) */
 
 
 /*------------------------------------------------------------------------------
@@ -176,20 +172,16 @@ imu_gyr_conf   = ( imu_config_ptr -> gyro_odr        ) |
 memset( &imu_sensor_data[0], 0, sizeof( imu_sensor_data ) );
 
 /* clear double buffer if using IMU with IT */
-#if defined( USE_I2C_IT )
 memset( &imu_raw_buffer, 0, sizeof( imu_raw_buffer ) );
 imu_data_ready = false;
-#endif
 
 
 /*------------------------------------------------------------------------------
  Implementation 
 ------------------------------------------------------------------------------*/
 
-#ifdef USE_I2C_IT
 /* disable interrupts while initializing */
 HAL_NVIC_DisableIRQ(I2C2_EV_IRQn);
-#endif
 
 /* Read IMU ID and verify correct ID */
 imu_status = imu_get_device_id( &imu_dev_id );
@@ -199,7 +191,6 @@ if ( imu_status != IMU_OK )
     }
 
 /* BMI270 Initialization Sequence */
-#if defined( A0002_REV2 )
     /* Disable advanced power save */
     imu_status = write_imu_reg( IMU_REG_PWR_CONF, 0x00 );
     if ( imu_status != IMU_OK )
@@ -240,10 +231,8 @@ if ( imu_status != IMU_OK )
         {
         return IMU_INIT_FAIL;
         }
-#endif /* #if defined( A0002_REV2 ) */
 
 /* Initial IMU Configuration */
-#if defined( A0002_REV2 )
     /* Enable Sensors */
     imu_status = write_imu_reg( IMU_REG_PWR_CTRL, 
                                 imu_config_ptr -> sensor_enable );
@@ -300,12 +289,9 @@ if ( imu_status != IMU_OK )
         {
         return IMU_MAG_INIT_FAIL;
         }
-#endif /* #if defined( A0002_REV2 ) */
 
-#ifdef USE_I2C_IT
 /* re-enable interrupts while initializing */
 HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
-#endif
 
 /* IMU Inititialization Successful */
 return IMU_OK;
@@ -1033,7 +1019,7 @@ else
 
 #endif /* #if defined( A0002_REV2 ) */
 
-#if defined( USE_I2C_IT )
+#if defined( A0002_REV2 )
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -1231,7 +1217,7 @@ else
 
 } /* read_mag_regs_IT */
 
-#endif /* #if defined( USE_I2C_IT ) */
+#endif /* #if defined( A0002_REV2 ) */
 
 
 /*******************************************************************************

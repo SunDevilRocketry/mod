@@ -308,7 +308,7 @@ float sensor_conv_pressure
 	);
 #endif
 
-#ifdef USE_I2C_IT
+#ifdef A0002_REV2 
 SENSOR_STATUS sensor_start_IT
 	( 
 	SENSOR_DATA* sensor_data_ptr 
