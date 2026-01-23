@@ -6,6 +6,17 @@
 * DESCRIPTION: 
 * 		Contains general command functions common to all embedded controllers
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 
@@ -88,13 +99,12 @@ response = PING_RESPONSE_CODE; /* Code specific to board and revision */
                         HAL_DEFAULT_TIMEOUT );
         }
 
-#elifdef ENGINE_CONTROLLER
+#elif defined(ENGINE_CONTROLLER)
     #if defined( USE_RS485 )
         rs485_transmit( &response, sizeof( response ), RS485_DEFAULT_TIMEOUT );
     #else
         usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
     #endif
-
 #else
 
     usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
@@ -159,7 +169,7 @@ void dashboard_construct_dump
 /* IMU (6 axes) */
 memcpy( dump_buffer_ptr,
     &(sensor_data.imu_data.imu_converted),
-    sizeof( IMU_CONVERTED ));
+    sizeof( float ) * 6 );
 
 /* Roll/Pitch + Rates */
 dump_buffer_ptr->pitch_angle = sensor_data.imu_data.state_estimate.pitch_angle;

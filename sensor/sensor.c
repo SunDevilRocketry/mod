@@ -7,6 +7,17 @@
 * 		Contains functions to interface between sdec terminal commands and SDR
 *       sensor APIs
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 
@@ -61,11 +72,10 @@
 
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
-
-extern GPS_DATA gps_data;
+extern volatile uint32_t tdelta, previous_time;
 
 #ifdef FLIGHT_COMPUTER
-extern uint32_t tdelta, previous_time;
+extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
 #endif
 
@@ -148,8 +158,17 @@ static void pt6_adc_channel_select
 #ifdef USE_I2C_IT
 static SENSOR_STATUS sensor_it_imu_baro
 	(
-	uint32_t timeout, 
-	SENSOR_DATA* sensor_data_ptr
+	uint32_t timeout,
+	SENSOR_DATA* sensor_data_ptr,
+	IMU_RAW* imu_raw
+	);
+#endif
+
+#ifdef A0002_REV2
+static void sensor_conv_mag
+	(
+	IMU_DATA* imu_data, 
+	IMU_RAW* imu_raw
 	);
 #endif
 
@@ -696,6 +715,7 @@ SENSOR_STATUS sensor_dump
 	IMU_STATUS      mag_status; 
 	BARO_STATUS     press_status;           /* Baro Sensor status codes    */
 	BARO_STATUS     temp_status;
+	IMU_RAW			imu_raw;				/* Structure with unconverted IMU data */
 #elif defined( ENGINE_CONTROLLER    )
 	#ifdef L0002_REV4
 		PRESSURE_STATUS pt_status;          /* Pressure status codes       */
@@ -739,21 +759,18 @@ SENSOR_STATUS sensor_dump
 /* Poll Sensors  */
 #if defined( FLIGHT_COMPUTER )
 	#if defined( A0002_REV2 )
-	memset( &(sensor_data_ptr->imu_data), 0, sizeof( IMU_DATA ) );
+	memset( &imu_raw, 0, sizeof( IMU_RAW ) );
 		#if defined( USE_I2C_IT )
 		accel_status = start_imu_read_IT();
 		press_status = start_baro_read_IT();
 		#endif
 	#else
 	/* IMU sensors */
-	accel_status = imu_get_accel_xyz( &(sensor_data_ptr->imu_data) ); 
-	gyro_status  = imu_get_gyro_xyz ( &(sensor_data_ptr->imu_data) );
+	accel_status = imu_get_accel_xyz( &imu_raw ); 
+	gyro_status  = imu_get_gyro_xyz ( &imu_raw );
 
-	mag_status   = imu_get_mag_xyz  ( &(sensor_data_ptr->imu_data) );
+	mag_status   = imu_get_mag_xyz  ( &imu_raw );
 	#endif
-	sensor_data_ptr -> imu_data.temp = 0;     // Figure out what to do with this 
-											  // readout, temporarily being used 
-											  // as struct padding
 
 	/* GPS sensor */
 	sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
@@ -768,17 +785,17 @@ SENSOR_STATUS sensor_dump
 
 	#ifndef USE_I2C_IT /* Use legacy (blocking mode) transfer for compatibility */
 	/* IMU */
-	accel_status = imu_get_accel_and_gyro( &(sensor_data_ptr->imu_data) );
+	accel_status = imu_get_accel_and_gyro( &imu_raw );
 	/* Baro sensors */
 	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
 	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
 	#else
 	/* wait for interrupt return */
-	accel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
+	accel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
 	#endif
 
 	/* Calculated and retrieve converted IMU data */
-	sensor_conv_imu( &(sensor_data_ptr->imu_data) );
+	sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
 
 	/* Calculated to get body state */
 	sensor_body_state( &(sensor_data_ptr->imu_data) );
@@ -917,6 +934,7 @@ SENSOR_ID* sensor_id_ptr;    /* Pointer to sensor id                */
 #if   defined( FLIGHT_COMPUTER   )
 	IMU_STATUS      imu_status;      /* IMU Module return codes   */ 
 	BARO_STATUS     baro_status;     /* Baro module return codes  */
+	IMU_RAW			imu_raw;
 #elif defined( ENGINE_CONTROLLER )
 	THERMO_STATUS   thermo_status;   /* Thermocouple return codes */
 	LOADCELL_STATUS lc_status;       /* Loadcell return codes     */
@@ -932,7 +950,6 @@ SENSOR_ID* sensor_id_ptr;    /* Pointer to sensor id                */
 #if defined( FLIGHT_COMPUTER )
 	bool imu_accel_read;
 	bool imu_gyro_read;
-	bool imu_mag_read;
 	bool body_state_converted;
 	bool velo_pos_calculated;
 #endif
@@ -962,7 +979,6 @@ sensor_id         = *(sensor_id_ptr   );
 #if defined( FLIGHT_COMPUTER )
 	imu_accel_read = false;
 	imu_gyro_read  = false;
-	imu_mag_read   = false;
 	body_state_converted = false;
 	velo_pos_calculated = false;
 #endif
@@ -996,219 +1012,88 @@ for ( int i = 0; i < num_sensors; ++i )
 	switch ( sensor_id )
 		{
 		#if defined( FLIGHT_COMPUTER )
-			case SENSOR_ACCX:
-				{
-				if ( !imu_accel_read )
-					{
-					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
-					if ( imu_status != IMU_OK )
-						{
-						return SENSOR_ACCEL_ERROR;
-						}
-					imu_accel_read = true;
-					}
-				break;
-				}
-
-			case SENSOR_ACCY:
-				{
-				if ( !imu_accel_read )
-					{
-					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
-					if ( imu_status != IMU_OK )
-						{
-						return SENSOR_ACCEL_ERROR;
-						}
-					imu_accel_read = true;
-					}
-				break;
-				}
-
-			case SENSOR_ACCZ:
-				{
-				if ( !imu_accel_read )
-					{
-					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
-					if ( imu_status != IMU_OK )
-						{
-						return SENSOR_ACCEL_ERROR;
-						}
-					imu_accel_read = true;
-					}
-				break;
-				}
-
-			case SENSOR_GYROX:
-				{
-				if ( !imu_gyro_read )
-					{
-					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
-					if ( imu_status != IMU_OK )
-						{
-						return SENSOR_GYRO_ERROR;
-						}
-					imu_gyro_read = true;
-					}
-				break;
-				}
-
-			case SENSOR_GYROY:
-				{
-				if ( !imu_gyro_read )
-					{
-					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
-					if ( imu_status != IMU_OK )
-						{
-						return SENSOR_GYRO_ERROR;
-						}
-					imu_gyro_read = true;
-					}
-				break;
-				}
-
-			case SENSOR_GYROZ:
-				{
-				if ( !imu_gyro_read )
-					{
-					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
-					if ( imu_status != IMU_OK )
-						{
-						return SENSOR_GYRO_ERROR;
-						}
-					imu_gyro_read = true;
-					}
-				break;
-				}
-
-			case SENSOR_MAGX:
-				{
-				if ( !imu_mag_read )
-					{
-					imu_status = imu_get_mag_xyz( &( sensor_data_ptr -> imu_data ) );
-					if ( imu_status != IMU_OK )
-						{
-						return SENSOR_GYRO_ERROR;
-						}
-					imu_mag_read = true;
-					}
-				break;
-				}
-
-			case SENSOR_MAGY:
-				{
-				if ( !imu_mag_read )
-					{
-					imu_status = imu_get_mag_xyz( &( sensor_data_ptr -> imu_data ) );
-					if ( imu_status != IMU_OK )
-						{
-						return SENSOR_GYRO_ERROR;
-						}
-					imu_mag_read = true;
-					}
-				break;
-				}
-
-			case SENSOR_MAGZ:
-				{
-				if ( !imu_mag_read )
-					{
-					imu_status = imu_get_mag_xyz( &( sensor_data_ptr -> imu_data ) );
-					if ( imu_status != IMU_OK )
-						{
-						return SENSOR_GYRO_ERROR;
-						}
-					imu_mag_read = true;
-					}
-				break;
-				}
-
-			case SENSOR_IMUT:
-				{
-				sensor_data_ptr -> imu_data.temp = 0;
-				break;
-				}
 			case SENSOR_ACCX_CONV:
 				{
 				if ( !imu_accel_read )
 					{
-					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+					imu_status = imu_get_accel_xyz( &imu_raw );
 					if ( imu_status != IMU_OK )
 						{
 						return SENSOR_ACCEL_ERROR;
 						}
 					imu_accel_read = true;
 					}
-				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 				break;
 				}
 			case SENSOR_ACCY_CONV:
 				{
 				if ( !imu_accel_read )
 					{
-					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+					imu_status = imu_get_accel_xyz( &imu_raw );
 					if ( imu_status != IMU_OK )
 						{
 						return SENSOR_ACCEL_ERROR;
 						}
 					imu_accel_read = true;
 					}
-				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 				break;
 				}
 			case SENSOR_ACCZ_CONV:
 				{
 				if ( !imu_accel_read )
 					{
-					imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+					imu_status = imu_get_accel_xyz( &imu_raw );
 					if ( imu_status != IMU_OK )
 						{
 						return SENSOR_ACCEL_ERROR;
 						}
 					imu_accel_read = true;
 					}
-				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 				break;
 				}
 			case SENSOR_GYROX_CONV:
 				{
 				if ( !imu_gyro_read )
 					{
-					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+					imu_status = imu_get_gyro_xyz( &imu_raw );
 					if ( imu_status != IMU_OK )
 						{
 						return SENSOR_GYRO_ERROR;
 						}
 					imu_gyro_read = true;
 					}	
-				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );			
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );			
 				break;
 				}
 			case SENSOR_GYROY_CONV:
 				{
 				if ( !imu_gyro_read )
 					{
-					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+					imu_status = imu_get_gyro_xyz( &imu_raw );
 					if ( imu_status != IMU_OK )
 						{
 						return SENSOR_GYRO_ERROR;
 						}
 					imu_gyro_read = true;
 					}	
-				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 				break;
 				}
 			case SENSOR_GYROZ_CONV:
 				{
 				if ( !imu_gyro_read )
 					{
-					imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+					imu_status = imu_get_gyro_xyz( &imu_raw );
 					if ( imu_status != IMU_OK )
 						{
 						return SENSOR_GYRO_ERROR;
 						}
 					imu_gyro_read = true;
 					}		
-				sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+				sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 				break;
 				}
 			case SENSOR_ROLL_DEG:
@@ -1217,23 +1102,23 @@ for ( int i = 0; i < num_sensors; ++i )
 					{
 					if (!imu_accel_read)
 						{
-							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_accel_xyz(&imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_ACCEL_ERROR;
 								}
 							imu_accel_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						} 	
 					if (!imu_gyro_read)
 						{
-							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_gyro_xyz( &imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_GYRO_ERROR;
 								}
 							imu_gyro_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
 					}
@@ -1245,23 +1130,23 @@ for ( int i = 0; i < num_sensors; ++i )
 					{
 					if (!imu_accel_read)
 						{
-							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_accel_xyz( &imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_ACCEL_ERROR;
 								}
 							imu_accel_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						} 	
 					if (!imu_gyro_read)
 						{
-							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_gyro_xyz( &imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_GYRO_ERROR;
 								}
 							imu_gyro_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
 					}
@@ -1273,23 +1158,23 @@ for ( int i = 0; i < num_sensors; ++i )
 					{
 					if (!imu_accel_read)
 						{
-							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_accel_xyz( &imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_ACCEL_ERROR;
 								}
 							imu_accel_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						} 	
 					if (!imu_gyro_read)
 						{
-							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_gyro_xyz( &imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_GYRO_ERROR;
 								}
 							imu_gyro_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
 					}
@@ -1301,23 +1186,23 @@ for ( int i = 0; i < num_sensors; ++i )
 					{
 					if (!imu_accel_read)
 						{
-							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_accel_xyz( &imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_ACCEL_ERROR;
 								}
 							imu_accel_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						} 	
 					if (!imu_gyro_read)
 						{
-							imu_status = imu_get_gyro_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_gyro_xyz( &imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_GYRO_ERROR;
 								}
 							imu_gyro_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						}
 					sensor_body_state( &( sensor_data_ptr -> imu_data ) );
 					}
@@ -1329,13 +1214,13 @@ for ( int i = 0; i < num_sensors; ++i )
 					{
 					if (!imu_accel_read)
 						{
-							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_accel_xyz( &imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_ACCEL_ERROR;
 								}
 							imu_accel_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						} 	
 					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
 					}
@@ -1347,13 +1232,13 @@ for ( int i = 0; i < num_sensors; ++i )
 					{
 					if (!imu_accel_read)
 						{
-							imu_status = imu_get_accel_xyz( &( sensor_data_ptr -> imu_data ) );
+							imu_status = imu_get_accel_xyz( &imu_raw );
 							if ( imu_status != IMU_OK )
 								{
 								return SENSOR_ACCEL_ERROR;
 								}
 							imu_accel_read = true;
-							sensor_conv_imu( &( sensor_data_ptr -> imu_data ) );
+							sensor_conv_imu( &( sensor_data_ptr -> imu_data ), &imu_raw );
 						} 	
 					sensor_imu_velo( &( sensor_data_ptr -> imu_data ) );
 					}
@@ -1588,13 +1473,14 @@ return SENSOR_OK;
 *******************************************************************************/
 void sensor_conv_imu
 	(
-	IMU_DATA* imu_data
+	IMU_DATA* imu_data, 
+	IMU_RAW* imu_raw
 	)
 {
 /* Convert raw accel values */
-imu_data->imu_converted.accel_x = sensor_acc_conv(imu_data->accel_x);
-imu_data->imu_converted.accel_y = sensor_acc_conv(imu_data->accel_y);
-imu_data->imu_converted.accel_z = sensor_acc_conv(imu_data->accel_z);
+imu_data->imu_converted.accel_x = sensor_acc_conv(imu_raw->accel_x);
+imu_data->imu_converted.accel_y = sensor_acc_conv(imu_raw->accel_y);
+imu_data->imu_converted.accel_z = sensor_acc_conv(imu_raw->accel_z);
 
 /* Do not use offset compensation for accel to preserve gravity */
 /*
@@ -1604,16 +1490,17 @@ imu_data->imu_converted.accel_z -= imu_offset.accel_z;
 */
 
 /* Convert raw gyroscope values to deg/s */
-imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_data->gyro_x);
-imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_data->gyro_y);
-imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_data->gyro_z);
+imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_raw->gyro_x);
+imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
+imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_raw->gyro_z);
 
 /* Remove gyro bias */
 imu_data->imu_converted.gyro_x -= imu_offset.gyro_x;
 imu_data->imu_converted.gyro_y -= imu_offset.gyro_y;
 imu_data->imu_converted.gyro_z -= imu_offset.gyro_z;
 
-} /* sensor_conv_imu */
+sensor_conv_mag(imu_data, imu_raw);
+}
 
 
 /*******************************************************************************
@@ -1880,7 +1767,7 @@ else
 *******************************************************************************/
 SENSOR_STATUS sensor_start_IT
 	( 
-	SENSOR_DATA* sensor_data_ptr 
+	SENSOR_DATA* sensor_data_ptr
 	)
 {
 if( start_imu_read_IT() != IMU_OK )
@@ -1918,15 +1805,13 @@ IMU_STATUS accel_status = IMU_OK;
 IMU_STATUS gyro_status = IMU_OK;
 BARO_STATUS press_status = BARO_OK;
 BARO_STATUS temp_status = BARO_OK;
+IMU_RAW imu_raw;
 
 /*------------------------------------------------------------------------------
  Clear Structs
 ------------------------------------------------------------------------------*/
 
-memset( &(sensor_data_ptr->imu_data), 0, sizeof( IMU_DATA ) );
-sensor_data_ptr -> imu_data.temp = 0;   // Figure out what to do with this 
-										// readout, temporarily being used 
-										// as struct padding
+memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
 
 /*------------------------------------------------------------------------------
  Collect Data 
@@ -1943,14 +1828,14 @@ sensor_data_ptr->gps_ew				= gps_data.ew;
 sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
 sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
-parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr );
+parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
 
 /*------------------------------------------------------------------------------
  Compute State Estimations
 ------------------------------------------------------------------------------*/
 
 /* Calculated and retrieve converted IMU data */
-sensor_conv_imu( &(sensor_data_ptr->imu_data) );
+sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
 
 /* Calculated to get body state */
 sensor_body_state( &(sensor_data_ptr->imu_data) );
@@ -2411,7 +2296,8 @@ HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 static SENSOR_STATUS sensor_it_imu_baro
 	(
 	uint32_t timeout,
-	SENSOR_DATA* sensor_data_ptr
+	SENSOR_DATA* sensor_data_ptr,
+	IMU_RAW* imu_raw
 	)
 {
 /* set up timeout */
@@ -2424,7 +2310,7 @@ while( curr_time <= starting_time + timeout )
 	/* determine if ready */
 	if( imu_ready == IMU_BUSY )
 		{
-		imu_ready = get_imu_it( (IMU_RAW*)(&(sensor_data_ptr->imu_data) ) ); /* cast to IMU_RAW, fill the first 18 bytes */
+		imu_ready = get_imu_it( imu_raw );
 		}
 	if( baro_ready == BARO_BUSY )
 		{
@@ -2445,6 +2331,116 @@ while( curr_time <= starting_time + timeout )
 return SENSOR_IT_TIMEOUT;
 }
 #endif /* #ifdef USE_I2C_IT */
+
+
+#ifdef A0002_REV2
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_conv_mag											           	   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Convert raw magnetometer values to useful magnetic field data.         *
+*                                                                              *
+* COPYRIGHT:                                                                   *
+*       This function is heavily derived from the official Bosch BMM150        *
+*       driver, which is protected by the BSD-3-Clause license. This function  *
+*		is exempt from any licensing that may be applied to a current/future   * 
+*		Sun Devil Rocketry project. Per the terms of the BSD-3-Clause license, *
+*		the following notice is retained from the source project and applies   *
+*		to the procedure below.                                                *
+*	              							                                   *
+*		Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.		   *
+*																			   *
+*		BSD-3-Clause														   *
+*																			   *
+*		Redistribution and use in source and binary forms, with or without	   *
+*		modification, are permitted provided that the following conditions are *
+*		met:																   *
+*																			   *
+*		1. Redistributions of source code must retain the above copyright      *
+*	    notice, this list of conditions and the following disclaimer.		   *
+*																			   *
+*		2. Redistributions in binary form must reproduce the above copyright   *
+*	    notice, this list of conditions and the following disclaimer in the    *
+*	    documentation and/or other materials provided with the distribution.   *
+*																			   *
+*		3. Neither the name of the copyright holder nor the names of its       *
+*	    contributors may be used to endorse or promote products derived from   *
+*	    this software without specific prior written permission. 			   *
+*																			   *
+*		THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS	   *
+*		"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT	   *
+*		LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS	   *
+*		FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE		   *
+*		COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,   *
+*		INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES			   *
+*		(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR	   *
+*		SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)	   *
+*		HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,	   *
+*		STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  *
+*		IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE	   *
+*		POSSIBILITY OF SUCH DAMAGE.											   *
+*                                                                              *
+*******************************************************************************/
+static void sensor_conv_mag
+	(
+	IMU_DATA* imu_data, 
+	IMU_RAW* imu_raw
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables  
+------------------------------------------------------------------------------*/
+MAG_TRIM mag_trim;
+float mag_x;
+float mag_y;
+float mag_z;
+
+/*------------------------------------------------------------------------------
+ Initializations 
+------------------------------------------------------------------------------*/
+mag_trim = imu_get_mag_trim();
+
+/*------------------------------------------------------------------------------
+ Apply Bosch compensation using factory trim values
+------------------------------------------------------------------------------*/
+float rhall = (imu_raw->mag_hall == 0) ? mag_trim.dig_xyz1 : imu_raw->mag_hall;
+
+/* ---- X compensation ---- */
+float process_comp_x0 = ((float)mag_trim.dig_xyz1) * 16384.0f / rhall;
+float process_comp_x1 = process_comp_x0 - 16384.0f;
+float process_comp_x2 = ((float)mag_trim.dig_xy2) * (process_comp_x1 * process_comp_x1 / 268435456.0f);
+float process_comp_x3 = process_comp_x2 + process_comp_x1 * ((float)mag_trim.dig_xy1) / 16384.0f;
+float process_comp_x4 = ((float)mag_trim.dig_x2) + 160.0f;
+float process_comp_x5 = ((float)imu_raw->mag_x) * (((process_comp_x3 + 256.0f) * process_comp_x4) / 8192.0f);
+mag_x = (process_comp_x5 / 16.0f) / 10.0f;  // µT
+
+/* ---- Y compensation ---- */
+float process_comp_y0 = ((float)mag_trim.dig_xyz1) * 16384.0f / rhall;
+float process_comp_y1 = process_comp_y0 - 16384.0f;
+float process_comp_y2 = ((float)mag_trim.dig_xy2) * (process_comp_y1 * process_comp_y1 / 268435456.0f);
+float process_comp_y3 = process_comp_y2 + process_comp_y1 * ((float)mag_trim.dig_xy1) / 16384.0f;
+float process_comp_y4 = ((float)mag_trim.dig_y2) + 160.0f;
+float process_comp_y5 = ((float)imu_raw->mag_y) * (((process_comp_y3 + 256.0f) * process_comp_y4) / 8192.0f);
+mag_y = (process_comp_y5 / 16.0f) / 10.0f;  // µT
+
+/* ---- Z compensation ---- */
+float process_comp_z0 = ((float)imu_raw->mag_z) - ((float)mag_trim.dig_z4) * 128.0f;
+float process_comp_z1 = ((float)mag_trim.dig_z3) * (rhall - ((float)mag_trim.dig_xyz1)) / 4.0f;
+float process_comp_z2 = (mag_trim.dig_z2 == 0) ? 0.0f :
+    (((process_comp_z0 - process_comp_z1) * ((float)mag_trim.dig_z1)) /
+     (((float)mag_trim.dig_z2) + ((float)mag_trim.dig_z1) * (rhall - (float)mag_trim.dig_xyz1) / 32768.0f));
+mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
+
+/*------------------------------------------------------------------------------
+ Store converted field data
+------------------------------------------------------------------------------*/
+imu_data->imu_converted.mag_x = mag_x;
+imu_data->imu_converted.mag_y = mag_y;
+imu_data->imu_converted.mag_z = mag_z;
+} /* sensor_conv_mag */
+#endif
 
 
 /*******************************************************************************

@@ -7,6 +7,17 @@
 * 		Contains API functions to the flight computer parachute deployment 
 *       system and contintuity readings
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 
@@ -74,7 +85,8 @@ typedef enum IGN_SUBCOMMAND
 	IGN_FIRE_CODE = 0x01,
 	IGN_CONT_CODE       ,
 	IGN_MAIN_DEPLOY_CODE,
-	IGN_DROGUE_DEPLOY_CODE     
+	IGN_DROGUE_DEPLOY_CODE,
+	IGN_ENABLE_TEST_CODE   
 	} IGN_SUBCOMMAND;
 
 
@@ -174,6 +186,11 @@ bool ign_drogue_cont
 
 /* Returns TRUE if there is continuity across the switch screw terminals */
 bool ign_switch_cont
+	(
+	void
+	);
+
+bool ign_switch_armed
 	(
 	void
 	);

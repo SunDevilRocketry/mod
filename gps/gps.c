@@ -6,6 +6,17 @@
 * DESCRIPTION: 
 * 		Contains API functions for GPS 
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 
@@ -274,7 +285,6 @@ char token[8]; // Needs to be 8 chars for memory alignment
 strncpy(token, GPSstrParse, 6);
 token[7] = '\0';
 int idx = 7; /* Skips "$GPXXX,"*/
-memset(gps_ptr, 0, sizeof(GPS_DATA));
 
 /* Parse by message type */
 if (!strcmp(token, "$GPGGA")) 

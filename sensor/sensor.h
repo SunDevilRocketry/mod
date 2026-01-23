@@ -7,6 +7,17 @@
 * 		Contains functions to interface between sdec terminal commands and SDR
 *       sensor APIs
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -128,46 +139,39 @@ typedef uint8_t SENSOR_ID;
 typedef enum
 	{
 	#if defined( FLIGHT_COMPUTER )
-		SENSOR_ACCX  		= 0x00,
-		SENSOR_ACCY  		= 0x01,
-		SENSOR_ACCZ  		= 0x02,
-		SENSOR_GYROX 		= 0x03,
-		SENSOR_GYROY 		= 0x04,
-		SENSOR_GYROZ 		= 0x05,
-		SENSOR_MAGX  		= 0x06,
-		SENSOR_MAGY  		= 0x07,
-		SENSOR_MAGZ  		= 0x08,
-		SENSOR_IMUT  		= 0x09,
-		SENSOR_ACCX_CONV 	= 0x0A,
-		SENSOR_ACCY_CONV 	= 0x0B,
-		SENSOR_ACCZ_CONV 	= 0x0C,
-		SENSOR_GYROX_CONV 	= 0x0D,
-		SENSOR_GYROY_CONV 	= 0x0E,
-		SENSOR_GYROZ_CONV 	= 0x0F,
-		SENSOR_ROLL_DEG 	= 0x10,
-		SENSOR_PITCH_DEG 	= 0x11,
-		SENSOR_YAW_DEG		= 0x12,
-		SENSOR_ROLL_RATE 	= 0x13,
-		SENSOR_PITCH_RATE 	= 0x14,
-		SENSOR_YAW_RATE		= 0x15,
-		SENSOR_VELOCITY 	= 0x16,
-		SENSOR_VELO_X		= 0x17,
-		SENSOR_VELO_Y		= 0x18,
-		SENSOR_VELO_Z		= 0x19,
-		SENSOR_POSITION 	= 0x1A,
-		SENSOR_PRES  		= 0x1B,
-		SENSOR_TEMP  		= 0x1C,
-		SENSOR_BARO_ALT		= 0x1D,
-		SENSOR_BARO_VELO	= 0x1E,
-		SENSOR_GPS_ALT		= 0x1F,
-		SENSOR_GPS_SPEED	= 0x20,
-		SENSOR_GPS_TIME		= 0x21,
-		SENSOR_GPS_DEC_LONG	= 0x22,
-		SENSOR_GPS_DEC_LAT 	= 0x23,
-		SENSOR_GPS_NS		= 0x24,
-		SENSOR_GPS_EW		= 0x25,
-		SENSOR_GPS_GLL		= 0x26,
-		SENSOR_GPS_RMC		= 0x27,
+		SENSOR_ACCX_CONV 	= 0x00,
+		SENSOR_ACCY_CONV 	= 0x01,
+		SENSOR_ACCZ_CONV 	= 0x02,
+		SENSOR_GYROX_CONV 	= 0x03,
+		SENSOR_GYROY_CONV 	= 0x04,
+		SENSOR_GYROZ_CONV 	= 0x05,
+		SENSOR_MAGX_CONV 	= 0x06,
+		SENSOR_MAGY_CONV 	= 0x07,
+		SENSOR_MAGZ_CONV 	= 0x08,
+		SENSOR_ROLL_DEG 	= 0x09,
+		SENSOR_PITCH_DEG 	= 0x0A,
+		SENSOR_YAW_DEG		= 0x0B,
+		SENSOR_ROLL_RATE 	= 0x0C,
+		SENSOR_PITCH_RATE 	= 0x0D,
+		SENSOR_YAW_RATE		= 0x0E,
+		SENSOR_VELOCITY 	= 0x0F,
+		SENSOR_VELO_X		= 0x10,
+		SENSOR_VELO_Y		= 0x11,
+		SENSOR_VELO_Z		= 0x12,
+		SENSOR_POSITION 	= 0x13,
+		SENSOR_PRES  		= 0x14,
+		SENSOR_TEMP  		= 0x15,
+		SENSOR_BARO_ALT		= 0x16,
+		SENSOR_BARO_VELO	= 0x17,
+		SENSOR_GPS_ALT		= 0x18,
+		SENSOR_GPS_SPEED	= 0x19,
+		SENSOR_GPS_TIME		= 0x1A,
+		SENSOR_GPS_DEC_LONG	= 0x1B,
+		SENSOR_GPS_DEC_LAT 	= 0x1C,
+		SENSOR_GPS_NS		= 0x1D,
+		SENSOR_GPS_EW		= 0x1E,
+		SENSOR_GPS_GLL		= 0x1F,
+		SENSOR_GPS_RMC		= 0x20,
 
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		SENSOR_PT0   = 0x00,
@@ -288,7 +292,7 @@ SENSOR_STATUS sensor_dump
 #ifdef FLIGHT_COMPUTER
 void sensor_body_state(IMU_DATA* imu_data);
 void sensor_imu_velo(IMU_DATA* imu_data);
-void sensor_conv_imu(IMU_DATA* imu_data);
+void sensor_conv_imu(IMU_DATA* imu_data, IMU_RAW* imu_raw);
 float sensor_acc_conv(uint16_t readout);
 float sensor_gyro_conv(uint16_t readout);
 void sensor_baro_velo(SENSOR_DATA* sensor_data_ptr);

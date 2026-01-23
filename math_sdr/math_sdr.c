@@ -6,6 +6,17 @@
 * DESCRIPTION: 
 * 		Contains math functions for SDR code.
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 /*------------------------------------------------------------------------------
@@ -18,7 +29,6 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "common.h"
-#include "sdr_error.h"
 #include "stm32h7xx_hal.h"
 
 

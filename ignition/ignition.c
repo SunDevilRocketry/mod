@@ -7,6 +7,17 @@
 * 		Contains API function to the engine controller ignition system and 
 *       contintuity readings
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 
@@ -33,6 +44,11 @@
 #include "main.h"
 #include "ignition.h"
 
+
+/*------------------------------------------------------------------------------
+ Static Variables                                                                   
+------------------------------------------------------------------------------*/
+bool ign_switch_enabled = true;
 
 /*------------------------------------------------------------------------------
  Procedures 
@@ -76,6 +92,12 @@ switch( ign_subcommand )
 	case IGN_DROGUE_DEPLOY_CODE:
 		{
 		ign_status = ign_deploy_drogue();
+		break;
+		}
+	case IGN_ENABLE_TEST_CODE:
+		{
+		ign_switch_enabled = !ign_switch_enabled;
+		ign_status = IGN_OK;
 		break;
 		}
 
@@ -520,6 +542,30 @@ else
     }
 
 } /* switch_cont */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		ign_switch_armed                                                       *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Wrapper for ign_switch_cont that allows disabling the switch.		   * 
+*                                                                              *
+*******************************************************************************/
+bool ign_switch_armed
+	(
+	void
+	)
+{
+if( !ign_switch_enabled )
+	{
+	return false;
+	}
+
+return ign_switch_cont();
+
+} /* switch_armed */
 #endif /* #if defined( FLIGHT_COMPUTER ) */
 
 
