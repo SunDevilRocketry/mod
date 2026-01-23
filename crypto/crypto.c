@@ -21,7 +21,7 @@
 #include "main.h"
 #include "crypto.h"
 #include "stm32h7xx_hal_cryp.h"
-
+#include "error_sdr.h"
 
 
 
@@ -126,6 +126,7 @@ enum CRYP_STATUS crypto_encrypt
         return CRYP_FAIL;
         }
 }
+
 
 /*******************************************************************************
 *                                                                              *

@@ -103,7 +103,8 @@ typedef enum _ERROR_CODE
     ERROR_SENSOR_FORMAT_ERROR          , /* unused                            */
     ERROR_INVALID_STATE_ERROR          , /* FSM has reached an invalid state  */
     ERROR_CONFIG_VALIDITY_ERROR        , /* Loaded configuration is invalid   */
-    ERROR_IGNITION_CONTINUITY_ERROR      /* No continuity on IGN terminals    */
+    ERROR_IGNITION_CONTINUITY_ERROR    , /* No continuity on IGN terminals    */
+    ERROR_CRYP_INIT_ERROR                /* Cryptography module failed to initialize */
     } ERROR_CODE;
 
 /* Error callback table entry */
