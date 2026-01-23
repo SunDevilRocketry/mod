@@ -706,6 +706,85 @@ SENSOR_STATUS sensor_dump
                                         be written */ 
     )
 {
+#if defined( A0002_REV2 ) 
+/*------------------------------------------------------------------------------
+ Local Variables 
+------------------------------------------------------------------------------*/
+SENSOR_STATUS parallel_status = SENSOR_OK;
+IMU_STATUS accel_status = IMU_OK;
+IMU_STATUS gyro_status = IMU_OK;
+BARO_STATUS press_status = BARO_OK;
+BARO_STATUS temp_status = BARO_OK;
+IMU_RAW imu_raw;
+
+/*------------------------------------------------------------------------------
+ Clear Structs
+------------------------------------------------------------------------------*/
+
+memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
+
+/*------------------------------------------------------------------------------
+ Collect Data 
+------------------------------------------------------------------------------*/
+
+/* GPS sensor */
+sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
+sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
+sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
+sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
+sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
+sensor_data_ptr->gps_ns				= gps_data.ns;
+sensor_data_ptr->gps_ew				= gps_data.ew;
+sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
+sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
+
+parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
+
+/*------------------------------------------------------------------------------
+ Compute State Estimations
+------------------------------------------------------------------------------*/
+
+/* Calculated and retrieve converted IMU data */
+sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
+
+/* Calculated to get body state */
+sensor_body_state( &(sensor_data_ptr->imu_data) );
+
+/* Calculated velocity and position */
+sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+
+/* Calculated velocity from barometer */
+sensor_baro_velo( sensor_data_ptr );
+
+/*------------------------------------------------------------------------------
+ Start next measurement and return status
+------------------------------------------------------------------------------*/
+
+parallel_status |= sensor_start_IT( sensor_data_ptr );
+
+if( accel_status != IMU_OK )
+	{
+	return SENSOR_ACCEL_ERROR;
+	}
+else if ( gyro_status  != IMU_OK )
+	{
+	return SENSOR_GYRO_ERROR;
+	}
+else if ( press_status != BARO_OK ||
+		temp_status  != BARO_OK  )
+	{
+	return SENSOR_BARO_ERROR;
+	}
+else if ( parallel_status != SENSOR_OK )
+	{
+	return SENSOR_IT_TIMEOUT;
+	}
+else
+	{
+	return SENSOR_OK;
+	}
+#else // A0002_REV2 not defined
+
 /*------------------------------------------------------------------------------
  Local variables 
 ------------------------------------------------------------------------------*/
@@ -724,7 +803,7 @@ SENSOR_STATUS sensor_dump
 	#elif defined( L0002_REV5 )
 		SENSOR_STATUS   sensor_status;      /* Sensor module return codes  */
 		THERMO_STATUS   tc_status;          /* Thermocouple status codes   */
-	#endif
+#endif
 #elif defined( FLIGHT_COMPUTER_LITE )
 	BARO_STATUS     press_status;           /* Baro Sensor status codes    */
 	BARO_STATUS     temp_status;
@@ -905,6 +984,7 @@ SENSOR_STATUS sensor_dump
 	return SENSOR_OK;
 #endif /* #elif defined( ENGINE_CONTROLLER )*/
 
+#endif /* #if defined(A0002_REV2)  */
 } /* sensor_dump */
 
 
