@@ -709,13 +709,13 @@ SENSOR_STATUS sensor_dump
 /*------------------------------------------------------------------------------
  Local Variables 
 ------------------------------------------------------------------------------*/
-#if defined( FLIGHT_COMPUTER      )
+#if defined( FLIGHT_COMPUTER       )
         SENSOR_STATUS parallel_status; 
-        IMU_STATUS accel_status; 
-        IMU_STATUS gyro_status; 
-        BARO_STATUS press_status; 
-        BARO_STATUS temp_status; 
-        IMU_RAW imu_raw;
+        IMU_STATUS    accel_status; 
+        IMU_STATUS    gyro_status; 
+        BARO_STATUS   press_status; 
+        BARO_STATUS   temp_status; 
+        IMU_RAW       imu_raw;
 #elif defined( ENGINE_CONTROLLER    )
 	#if defined(L0002_REV4      )
 		PRESSURE_STATUS pt_status;          /* Pressure status codes       */
@@ -725,15 +725,12 @@ SENSOR_STATUS sensor_dump
 		SENSOR_STATUS   sensor_status;      /* Sensor module return codes  */
 		THERMO_STATUS   tc_status;          /* Thermocouple status codes   */
         #endif
-#elif defined( FLIGHT_COMPUTER_LITE )
-	BARO_STATUS     press_status;           /* Baro Sensor status codes    */
-	BARO_STATUS     temp_status;
-#endif //  #if defined( A0002_REV2 ) 
+#endif 
 
 /*------------------------------------------------------------------------------
  Initializations 
 ------------------------------------------------------------------------------*/
-#if defined( FLIGHT_COMPUTER      )
+#if defined( FLIGHT_COMPUTER        )
         parallel_status = SENSOR_OK;
         accel_status    = IMU_OK;
         gyro_status     = IMU_OK;
@@ -747,13 +744,10 @@ SENSOR_STATUS sensor_dump
 		sensor_status = SENSOR_OK;
 		tc_status     = THERMO_OK;
 	#endif
-#elif defined( FLIGHT_COMPUTER_LITE )
-	press_status = BARO_OK;           
-	temp_status  = BARO_OK;
 #endif
 
 /* Poll Sensors  */
-#if defined( FLIGHT_COMPUTER )
+#if defined( FLIGHT_COMPUTER        )
         /*Call sensor API functions*/
 
         memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
@@ -764,8 +758,8 @@ SENSOR_STATUS sensor_dump
         sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
         sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
         sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
-        sensor_data_ptr->gps_ns				= gps_data.ns;
-        sensor_data_ptr->gps_ew				= gps_data.ew;
+        sensor_data_ptr->gps_ns		        = gps_data.ns;
+        sensor_data_ptr->gps_ew			= gps_data.ew;
         sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
         sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
@@ -786,13 +780,13 @@ SENSOR_STATUS sensor_dump
         sensor_baro_velo( sensor_data_ptr );
 
 
-#elif defined( ENGINE_CONTROLLER )
+#elif defined( ENGINE_CONTROLLER    )
 	#ifndef L0002_REV5
 	/* Pressure Transducers */
-	pt_status    = pressure_poll_pts( &( sensor_data_ptr -> pt_pressures[0] ) );
+	pt_status     = pressure_poll_pts( &( sensor_data_ptr -> pt_pressures[0] ) );
 
 	/* Load cell */
-	lc_status    = loadcell_get_reading( &( sensor_data_ptr -> load_cell_force ) );
+	lc_status     = loadcell_get_reading( &( sensor_data_ptr -> load_cell_force ) );
 	#else
 	/* PTs and Load Cell */
 	sensor_status = sensor_adc_burst_read( sensor_data_ptr );
@@ -801,11 +795,6 @@ SENSOR_STATUS sensor_dump
 	/* Thermocouple */
 //	tc_status    = temp_get_temp( &( sensor_data_ptr -> tc_temp ), 
 	//                              THERMO_HOT_JUNCTION );
-#elif defined( FLIGHT_COMPUTER_LITE )
-	/* Baro sensors */
-	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
-	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
-
 #elif defined( VALVE_CONTROLLER     )
 	/* Main Valve encoders */
 	sensor_data_ptr -> lox_valve_pos  = valve_get_ox_valve_pos();
@@ -873,16 +862,6 @@ SENSOR_STATUS sensor_dump
 			return SENSOR_OK;
 			}
 	#endif
-#elif defined( FLIGHT_COMPUTER_LITE )
-	if ( press_status != BARO_OK ||
-		 temp_status  != BARO_OK  )
-		{
-		return SENSOR_BARO_ERROR;
-		}
-	else
-		{
-		return SENSOR_OK;
-		}
 #elif defined( VALVE_CONTROLLER     )
 	return SENSOR_OK;
 #endif /* #elif defined( ENGINE_CONTROLLER )*/
