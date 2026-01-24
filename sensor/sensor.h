@@ -313,11 +313,6 @@ SENSOR_STATUS sensor_start_IT
 	( 
 	SENSOR_DATA* sensor_data_ptr 
 	);
-	
-SENSOR_STATUS sensor_dump_IT
-	( 
-	SENSOR_DATA* sensor_data_ptr 
-	);
 #endif
 
 #ifdef __cplusplus
