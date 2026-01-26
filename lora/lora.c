@@ -150,6 +150,11 @@ LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode ) {
         return LORA_FAIL;
     }
 
+    // // Fail if not in LORA Mode 
+    // if ( !( operation_mode_register & (1<<7) ) ){
+    //     return LORA_FAIL;
+    // }
+
     // Change the value of the chip register to set it to the suggested chip mode
     uint8_t new_opmode_register = (operation_mode_register & ~(0x7));
     new_opmode_register = (new_opmode_register | chip_mode);
