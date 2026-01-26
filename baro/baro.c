@@ -35,6 +35,13 @@ static BARO_CONFIG   baro_configuration;
 /* Baro calibration coefficients for measurement compensation */
 static BARO_CAL_DATA baro_cal_data;
 
+#if defined( USE_I2C_IT )
+uint8_t baro_raw_buffer[6];
+float baro_pres_proc = NAN;
+float baro_temp_proc = NAN;
+bool baro_data_ready = false;
+#endif
+
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -142,6 +149,11 @@ init_temp      = 0;
  API Function Implementation 
 ------------------------------------------------------------------------------*/
 
+/* Disable IRQ */
+#if defined( USE_I2C_IT )
+HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
+#endif
+
 /* Verify functional I2C connection to sensor */
 baro_status = baro_get_device_id( &baro_device_id );
 if      ( baro_status   != BARO_OK         )
@@ -198,6 +210,14 @@ if ( baro_status != BARO_OK )
 
 /* Configure the sensor */
 baro_status = baro_config( config_ptr );
+
+/* Set up double buffer */
+#if defined( USE_I2C_IT )
+baro_data_ready = false;
+memset( baro_raw_buffer, 0, sizeof( baro_raw_buffer ) );
+HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
+#endif
+
 return baro_status;
 
 } /* baro_init */
@@ -836,6 +856,148 @@ static BARO_STATUS baro_flush_fifo
 {
 return write_reg( BARO_REG_CMD, BARO_CMD_FIFO_FLUSH );
 } /* baro_flush_fifo */
+
+
+#ifdef USE_I2C_IT
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		start_baro_read_IT                                                	   *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Receive baro data in interrupt mode.	                               *
+*                                                                              *
+*******************************************************************************/
+BARO_STATUS start_baro_read_IT
+	(
+	void
+	)
+{   
+/*------------------------------------------------------------------------------
+ Local variables  
+------------------------------------------------------------------------------*/
+HAL_StatusTypeDef hal_status;  /* HAL API Return codes */
+BARO_STATUS baro_status;       /* Return codes for baro API calls         */
+
+/*------------------------------------------------------------------------------
+ Initializations
+------------------------------------------------------------------------------*/
+hal_status  = HAL_OK;
+baro_status  = BARO_OK;
+memset( baro_raw_buffer, 0, sizeof( baro_raw_buffer ) );
+baro_pres_proc = NAN;
+baro_temp_proc = NAN;
+
+/*------------------------------------------------------------------------------
+ Implementation 
+------------------------------------------------------------------------------*/
+
+/* Set ready flag to false */
+baro_data_ready = false;
+
+/* Read I2C register*/
+hal_status = HAL_I2C_Mem_Read_IT( &( BARO_I2C )    ,
+				               BARO_I2C_ADDR       ,
+				               BARO_REG_PRESS_DATA ,
+				               I2C_MEMADD_SIZE_8BIT,
+				               baro_raw_buffer     ,
+				               6 /* pres + temp */ );
+
+if ( hal_status != HAL_OK )
+	{
+	return BARO_I2C_ERROR;
+	}
+else
+	{
+	return baro_status;
+	}
+
+} /* start_baro_read_IT */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		baro_IT_handler                                                  	   *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		ISR for baro data reception. Heavy ISR.	Consider moving processing to  *
+*		get_baro_IT.								                           *
+*                                                                              *
+*******************************************************************************/
+BARO_STATUS baro_IT_handler
+	(
+    void
+	)
+{
+/*------------------------------------------------------------------------------
+Local variables 
+------------------------------------------------------------------------------*/
+uint32_t    raw_pressure;      /* Pressure raw readout in uint32_t format */
+uint32_t 	raw_temp;		   /* Temp raw readout in uint32_t format*/
+BARO_STATUS baro_status;       /* Return codes for baro API calls         */
+
+
+/*------------------------------------------------------------------------------
+Initializations
+------------------------------------------------------------------------------*/
+raw_pressure = 0;
+raw_temp = 0;
+baro_status  = BARO_OK;
+
+
+/*------------------------------------------------------------------------------
+API function implementation 
+------------------------------------------------------------------------------*/
+
+/* Combine all bytes value to 24 bit value */
+raw_pressure = ( ( (uint32_t) baro_raw_buffer[2] << 16 ) |
+                 ( (uint32_t) baro_raw_buffer[1] <<  8 ) |
+				 ( (uint32_t) baro_raw_buffer[0]       ) );
+
+				 /* Combine all bytes value to 24 bit value */
+raw_temp = ( ( (uint32_t) baro_raw_buffer[5] << 16 ) |
+             ( (uint32_t) baro_raw_buffer[4] <<  8 ) |
+			 ( (uint32_t) baro_raw_buffer[3]       ) ); 
+
+/* Adjust using calibration data */
+baro_temp_proc = temp_compensate( raw_temp );
+
+/* Compensate using calibration data */
+baro_pres_proc = press_compensate( raw_pressure );
+
+baro_data_ready = true;
+
+return baro_status;
+} /* baro_start_pressure_IT */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		get_baro_it                   		                               	   *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Getter function for IT baro data.				                       *
+*                                                                              *
+*******************************************************************************/
+BARO_STATUS get_baro_it
+	(
+	float* pres_ptr, /* o: pressure */
+	float* temp_ptr  /* o: temperature */
+	)
+{
+if( !baro_data_ready )
+    {
+    return BARO_BUSY;
+    }
+
+*pres_ptr = baro_pres_proc;
+*temp_ptr = baro_temp_proc;
+
+return BARO_OK;
+} /* get_baro_it */
+#endif
 
 
 /*******************************************************************************

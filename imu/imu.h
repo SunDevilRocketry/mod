@@ -200,6 +200,43 @@ extern "C" {
  Typdefs 
 ------------------------------------------------------------------------------*/
 
+/* Raw IMU data*/
+typedef struct _IMU_RAW {
+    uint16_t    accel_x;
+    uint16_t    accel_y;
+    uint16_t    accel_z;
+    uint16_t    gyro_x ;
+    uint16_t    gyro_y ;
+    uint16_t    gyro_z ;
+    uint16_t    mag_x;
+    uint16_t    mag_y;
+    uint16_t    mag_z;
+} IMU_RAW;
+
+/* Processed IMU aata */
+typedef struct _STATE_ESTIMATION {
+	float roll_angle;
+	float pitch_angle;
+    float yaw_angle;
+	float roll_rate;
+	float pitch_rate;
+    float yaw_rate;
+    float velocity;
+    float velo_x;
+    float velo_y;
+    float velo_z;     
+	float position;
+} STATE_ESTIMATION;
+
+typedef struct _IMU_CONVERTED {
+    float accel_x;
+    float accel_y;
+    float accel_z;
+    float gyro_x ;
+    float gyro_y ;
+    float gyro_z ;
+} IMU_CONVERTED;
+
 /* Structure for imu containing all accel, gyro, and mag data */
 typedef struct _IMU_DATA 
 	{
@@ -213,7 +250,19 @@ typedef struct _IMU_DATA
     uint16_t    mag_y  ;
     uint16_t    mag_z  ;
 	uint16_t    temp   ;
+    IMU_CONVERTED imu_converted;
+    STATE_ESTIMATION state_estimate;
 	} IMU_DATA;
+
+/* Struct containing imu offset */
+typedef struct _IMU_OFFSET {
+    float accel_x;
+    float accel_y;
+    float accel_z;
+    float gyro_x ;
+    float gyro_y ;
+    float gyro_z ;
+} IMU_OFFSET;
 
 /* Sensor Enable Configuration */
 typedef enum _IMU_SENSOR_ENABLE
@@ -340,7 +389,8 @@ typedef enum IMU_STATUS
     IMU_INIT_FAIL          ,
     IMU_CONFIG_FAIL        ,
     IMU_MAG_UNRECOGNIZED_ID,
-    IMU_MAG_INIT_FAIL
+    IMU_MAG_INIT_FAIL      ,
+    IMU_BUSY
 	} IMU_STATUS;
 
 
@@ -367,6 +417,14 @@ IMU_STATUS imu_get_gyro_xyz
     IMU_DATA *pIMU
     );
 
+#ifdef A0002_REV2
+/* Return a pointer to the struct that houses accel and gyro values from the IMU */
+IMU_STATUS imu_get_accel_and_gyro
+    (
+    IMU_DATA *pIMU
+    );
+#endif
+
 /* Return the pointer to structure that updates the x,y,z magnetometer values from 
    the IMU */
 IMU_STATUS imu_get_mag_xyz
@@ -388,6 +446,12 @@ void IMU_config
     uint16_t gyro_setting,
     uint16_t mag_setting
     );
+
+#ifdef USE_I2C_IT
+IMU_STATUS start_imu_read_IT(void);
+IMU_STATUS imu_it_handler();
+IMU_STATUS get_imu_it(IMU_RAW* cpy_ptr);
+#endif
 
 
 #ifdef __cplusplus
