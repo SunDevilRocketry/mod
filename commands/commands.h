@@ -31,6 +31,7 @@ extern "C" {
 #define SOL_OP         0x51    /* solenoid command opcode    */
 #define VALVE_OP       0x52    /* Valve command opcode       */
 #define DUAL_DEPLOY_OP 0xA0    /* dual-deploy command opcode */
+#define SEND_OP		   0xB0	   /* ground-station send opcode */
 #define SERVO_OP	   0x08	   /* servo command opcode		 */
 #define PRESET_OP	   0x24	   /* preset command opcode 	 */
 #define DASHBOARD_OP   0x30	   /* dashboard command opcode 	 */
@@ -62,7 +63,10 @@ extern "C" {
 #elif defined ( A0005_REV2 ) /* Ground Station Rev 2.0 */
 	/* Rev 2 */
 	#define PING_RESPONSE_CODE    ( 0x09 ) 
+#elif defined ( A0005_REV3 ) /* Flight Ground Station Rev */
+	#define PING_RESPONSE_CODE	  ( 0xA0 ) 
 #endif
+
 
 /* Firmware Identifier Code */
 #define FIRMWARE_TERMINAL       ( 0x01 ) /* Terminal Firmware    */
