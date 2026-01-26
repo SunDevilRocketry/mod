@@ -13,6 +13,9 @@
  Standard Includes  
 ------------------------------------------------------------------------------*/
 
+#include <stdlib.h>
+#include <string.h>
+
 /*------------------------------------------------------------------------------
  MCU Pins 
 ------------------------------------------------------------------------------*/
@@ -28,20 +31,34 @@
 #include "lora.h"
 #include "main.h"
 
-// Debugging purposes
-// #include "led.h"
+#if defined( TESTRECEIVER )
+#include "usb_device.h"
+#include "usbd_cdc_if.h"
+
+void serial_printlnx(unsigned char* mesg, size_t mesg_len){
+    while(CDC_Transmit_FS(mesg, mesg_len)==USBD_BUSY);
+}
+#endif
+
+#if defined( STM32F103xB ) // For the LoRa testbeds
+extern SPI_HandleTypeDef hspi1;
+#define LORA_SPI hspi1
+#endif
+
+
+#ifndef STM32F103xB // The LoRa testbeds don't support our LED library
+    #include "led.h"
+#endif
 
 /*------------------------------------------------------------------------------
- Frequency calculation helper function
+ Global Variables
 ------------------------------------------------------------------------------*/
-uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq ) {
-    return ( (2^19) * mhz_freq * 10^6 )/( 32 * 10^6 );
-}
+static LORA_STATUS lora_rx_done = LORA_WAITING;
 
 /*------------------------------------------------------------------------------
  Helper functions for various pin functions on the LoRa modem.
 ------------------------------------------------------------------------------*/
-LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
+static LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
     HAL_StatusTypeDef status;
 
     /* Takes pointer to the read buffer. and puts output there */
@@ -53,7 +70,7 @@ LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr ) {
         return LORA_FAIL;
 }
 
-LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg ) {
+static LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg ) {
     HAL_StatusTypeDef status;
 
     /* Takes register and data to write (1 byte) and writes that register. */
@@ -65,7 +82,7 @@ LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg ) {
     } else return LORA_FAIL;
 }
 
-LORA_STATUS LORA_SPI_Transmit_Data( LORA_REGISTER_ADDR reg, uint8_t data ) {
+static LORA_STATUS LORA_SPI_Transmit_Data( LORA_REGISTER_ADDR reg, uint8_t data ) {
     HAL_StatusTypeDef status;
 
     /* Takes register and data to write and writes that register. */
@@ -151,8 +168,58 @@ LORA_STATUS lora_set_chip_mode( LORA_CHIPMODE chip_mode ) {
         return LORA_FAIL;
     }
 }
-
+/*------------------------------------------------------------------------------
+ Chip initialization function
+------------------------------------------------------------------------------*/
 LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
+    // Check legality of frequency settings
+    // We do this first so that nothing gets set if we're on an illegal frequency.
+
+    // Get a version of our bandwidth for legality calculations
+    uint32_t bandwidth; // Calculations down in hz due to decimal bandwidths
+    switch( lora_config_ptr->lora_bandwidth ) {
+        case LORA_BANDWIDTH_7_8_KHZ:
+            bandwidth = 7800;
+            break;
+        case LORA_BANDWIDTH_10_4_KHZ:
+            bandwidth = 10400;
+            break;
+        case LORA_BANDWIDTH_15_6_KHZ:
+            bandwidth = 15600;
+            break;
+        case LORA_BANDWIDTH_20_8_KHZ:
+            bandwidth = 20800;
+            break;
+        case LORA_BANDWIDTH_31_25_KHZ:
+            bandwidth = 31250;
+            break;
+        case LORA_BANDWIDTH_41_7_KHZ:
+            bandwidth = 41700;
+            break;
+        case LORA_BANDWIDTH_62_5_KHZ:
+            bandwidth = 62500;
+            break;
+        case LORA_BANDWIDTH_125_KHZ:
+            bandwidth = 125000;
+            break;
+        case LORA_BANDWIDTH_250_KHZ:
+            bandwidth = 250000;
+            break;
+        case LORA_BANDWIDTH_500_KHZ:
+            bandwidth = 500000;
+            break;
+        default:
+            // Just in case, even though this is reading an enum
+            return LORA_FAIL;
+    }
+
+    // Check legal compliance of frequency:
+    if( !( lora_config_ptr->lora_frequency * 1000 + ( bandwidth / 2 ) <= ISM_MAX_FREQ * 1000 &&
+        lora_config_ptr->lora_frequency * 1000 - ( bandwidth / 2 ) >= ISM_MIN_FREQ * 1000 )
+    ) {
+        return LORA_FAIL;
+    }
+
     LORA_STATUS set_sleep_status = lora_set_chip_mode( LORA_SLEEP_MODE ); // Switch to sleep mode to enable LoRa bit (datasheeet page 102)
     // Get initial value of the operation mode register
     uint8_t operation_mode_register;
@@ -181,20 +248,32 @@ LORA_STATUS lora_init( LORA_CONFIG *lora_config_ptr ) {
     LORA_STATUS write_status3 = lora_write_register( LORA_REG_NUM_RX_BYTES, new_config1_register );
 
     // Determine register values for the frequency registers
-    uint32_t frf_reg = lora_config_ptr->lora_frequency * 524288 / 32;
+    uint32_t freq_mhz = lora_config_ptr->lora_frequency / 1000; // The megahertz component of our frequency.
+    uint32_t freq_khz = lora_config_ptr->lora_frequency - freq_mhz * 1000; // The kilohertz component of our frequency.
+    // The formula for converting khz to chip unit is fruqency * 524288 / ( 32 * 1000 )
+    // Straight up doing that causes an integer overflow, though, so I have to do it this way.
+    uint32_t frf_reg = ( freq_mhz * 524288 / 32 ) + ( freq_khz * 524288 / ( 32 * 1000 ) );
 
     uint8_t lora_freq_reg1 = ( frf_reg <<  8 ) >> 24;
     uint8_t lora_freq_reg2 = ( frf_reg << 16 ) >> 24;
     uint8_t lora_freq_reg3 = ( frf_reg << 24 ) >> 24;
 
-    // Write the frequncy registers
+    // Write the frequency registers
     LORA_STATUS write_status4 = lora_write_register( LORA_REG_FREQ_MSB, lora_freq_reg1 );
     LORA_STATUS write_status5 = lora_write_register( LORA_REG_FREQ_MSD, lora_freq_reg2 );
     LORA_STATUS write_status6 = lora_write_register( LORA_REG_FREQ_LSB, lora_freq_reg3 );
 
-    LORA_STATUS standby_status = lora_set_chip_mode( LORA_STANDBY_MODE ); // Switch it into standby mode, which is what's convenient.
+    // Determine register values for the PA Config Register
+    uint8_t pa_select_reg;
+    LORA_STATUS read_status4 = lora_read_register( LORA_REG_PA_CONFIG, &pa_select_reg );
+    uint8_t new_pa_select_reg =  pa_select_reg | lora_config_ptr->lora_pa_select;
 
-    if( set_sleep_status + read_status1 + read_status2 + read_status3 + write_status1 + write_status2 + write_status3 + write_status4 + write_status5 + write_status6 + standby_status == 0 ) {
+    // Write the PA Config Register
+    LORA_STATUS write_status7 = lora_write_register( LORA_REG_PA_CONFIG, new_pa_select_reg );
+
+    LORA_STATUS standby_status = lora_set_chip_mode( lora_config_ptr->lora_mode ); // Switch it into standby mode, which is what's convenient.
+
+    if( set_sleep_status + read_status1 + read_status2 + read_status3 + read_status4 + write_status1 + write_status2 + write_status3 + write_status4 + write_status5 + write_status6 + write_status7 + standby_status == 0 ) {
         return LORA_OK;
     } else {
         return LORA_FAIL;
@@ -219,14 +298,14 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
 
     // Write data to LoRA FIFO
     uint8_t fifo_ptr_addr;
-    LORA_STATUS ptr_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
-    if (ptr_status + standby_status != LORA_OK){
+    LORA_STATUS tx_base_status = lora_read_register(LORA_REG_FIFO_TX_BASE_ADDR, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
+    if (tx_base_status + standby_status != LORA_OK){
         // Error handler
         // led_set_color(// led_RED);
         return LORA_FAIL;
     }
-    LORA_STATUS tx_base_status = lora_write_register(LORA_REG_FIFO_TX_BASE_ADDR, fifo_ptr_addr); // Set fifo data pointer to TX base address
-    if (tx_base_status != LORA_OK){
+    LORA_STATUS ptr_status = lora_write_register(LORA_REG_FIFO_SPI_POINTER, fifo_ptr_addr); // Set fifo data pointer to TX base address
+    if (ptr_status != LORA_OK){
         // Error handler
         // led_set_color(// led_RED);
         return LORA_FAIL;
@@ -236,7 +315,7 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
     LORA_STATUS fifo_status = lora_write_register(LORA_REG_SIGNAL_TO_NOISE, buffer_len); 
 
     // Send byte to byte to the fifo buffer
-    LORA_STATUS sendbyte_status;
+    LORA_STATUS sendbyte_status = LORA_OK;
     for (int i = 0; i<buffer_len; i++){
         sendbyte_status = lora_write_register(LORA_REG_FIFO_RW, buffer_ptr[i]);
         
@@ -269,92 +348,118 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len){
         return LORA_FAIL;
     }
 }
+// =============================================================================
+// lora_receive_ready: Check if transmission has been received
+// =============================================================================
+LORA_STATUS lora_receive_ready() {
+    uint8_t mode;
+
+    LORA_STATUS mode_check = lora_read_register( LORA_REG_OPERATION_MODE, &mode );
+    mode = mode & 0x07;
+    /*
+    #if defined( TESTRECEIVER ) // LoRa testbed test code
+        char buf[255];
+        int len = sprintf( buf, "Mode: %d\n", mode);
+        serial_printlnx( buf, len );
+    #endif
+    */
+    if( mode_check == LORA_OK && mode == LORA_RX_CONTINUOUS_MODE ) {
+        uint8_t irq_flag;
+
+        LORA_STATUS irq_check = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
+
+        if( irq_check == LORA_OK ) {
+            lora_write_register( LORA_REG_IRQ_FLAGS, irq_flag );
+            uint8_t rx_done = ( irq_flag & 0x40 ) == 0x40;
+            // uint8_t rx_done = ( irq_flag & 0x40 ) == 0x00;
+            /*
+            #if defined( TESTRECEIVER )
+            char bufx[255];
+            int len = sprintf( bufx, "Register: %x\n", irq_flag);
+            serial_printlnx( bufx, len );
+            char bufy[255];
+            int len2 = sprintf( bufy, "lora_receive_ready: %x\n", rx_done );
+            serial_printlnx( bufy, len2 );
+            #endif
+            */
+            if( rx_done ) {
+                lora_rx_done = LORA_READY;
+                return LORA_READY;
+            } else {
+                lora_rx_done = LORA_WAITING;
+                return LORA_WAITING;
+            }
+        } else {
+            return LORA_FAIL;
+        }
+    } else {
+        return LORA_FAIL;
+    }
+}
 
 // =============================================================================
-// lora_receive: receive a buffer from lora fifo with single mode
+// lora_receive: receive a buffer from lora fifo with continuous mode
 // =============================================================================
 LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
     uint8_t timeout_flag;
-    uint8_t rx_done;
-    
-    // Mode request STAND-BY
-    LORA_STATUS standby_status = lora_set_chip_mode(LORA_STANDBY_MODE);
 
-    // RX Init TODO
-    
-     // Set lora fifo pointer to the RX base address
-    uint8_t fifo_ptr_addr;
-    LORA_STATUS ptr_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
-    if (standby_status + ptr_status != LORA_OK){
-        // Error handler
-        // led_set_color(// led_RED);
-        return LORA_FAIL;
-    }
-    LORA_STATUS fifo_status = lora_write_register(LORA_REG_FIFO_RX_BASE_ADDR, fifo_ptr_addr); // Set fifo data pointer to TX base address
-    if (fifo_status != LORA_OK){
-        // Error handler
-        // led_set_color(// led_RED);
-        return LORA_FAIL;
-    }
+    // LORA_STATUS rx_done = lora_receive_ready(); // We check if we've received a packet.
+    // If we haven't received a packet, the output will be similar to lora_receive_ready in that case.
 
-    // Send request for RX Single mode
-    LORA_STATUS rmode_status = lora_set_chip_mode(LORA_RX_SINGLE_MODE);
+    if ( lora_rx_done == LORA_READY ){
+        // Reset IRQ register. TODO: Not sure if I actually need to this; will investigate.
+        uint8_t reset_irq = 0;
+        // lora_write_register( LORA_REG_IRQ_FLAGS, reset_irq );
 
-    // Wait for LoRA IRQ
-    uint16_t timeout = 0;
-    uint8_t irq_flag;
-    LORA_STATUS irq_status;
-    while(timeout<10000){
-        irq_status = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
-        timeout_flag = (irq_flag & (1<<7)) >> 7;
-        rx_done = (irq_flag & (1<<6)) >> 6;
-        
-        if (timeout_flag){
-            return LORA_TIMEOUT_FAIL;
-        } else if (rx_done) {
-            break;
-        }
-        timeout++;
-    }
+        uint8_t irq_flag;
 
-    if (rx_done){
         LORA_STATUS irq_status2 = lora_read_register(LORA_REG_IRQ_FLAGS, &irq_flag);
-        uint8_t crc_err = (irq_flag & (1<<5)) >> 5;
+        lora_write_register( LORA_REG_IRQ_FLAGS, irq_flag );
+        uint8_t crc_err = irq_flag & 0x20 == 0x00;
+        // uint8_t crc_err = irq_flag & 0x20 == 0x00;
 
         if (!crc_err){
             // Read received number of bytes
             uint8_t num_bytes;
             LORA_STATUS fifo2_status = lora_read_register(LORA_REG_FIFO_RX_NUM_BYTES, &num_bytes);
 
+            #if defined( TESTRECEIVER )
+            char buf[255];
+            int len = sprintf( buf, "Numbytes: %d\r\n", num_bytes );
+            serial_printlnx( buf, len );
+            #endif
+
             // Set lora fifo pointer to the RX base current address
             uint8_t fifo_ptr_addr;
-            LORA_STATUS ptr2_status = lora_read_register(LORA_REG_FIFO_SPI_POINTER, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
-            if (ptr2_status != LORA_OK){
-                // Error handler
-                // led_set_color(// led_RED);
-                return LORA_FAIL;
-            }
-            LORA_STATUS base_adr_status = lora_write_register(LORA_REG_FIFO_RX_BASE_CUR_ADDR, fifo_ptr_addr); // Set fifo data pointer to TX base address
+            LORA_STATUS base_adr_status = lora_read_register(LORA_REG_FIFO_RX_BASE_CUR_ADDR, &fifo_ptr_addr);  // Access LoRA FIFO data buffer pointer
             if (base_adr_status != LORA_OK){
                 // Error handler
                 // led_set_color(// led_RED);
                 return LORA_FAIL;
             }
+            LORA_STATUS ptr2_status = lora_write_register(LORA_REG_FIFO_SPI_POINTER, fifo_ptr_addr); // Set fifo data pointer to TX base address
+            if (ptr2_status != LORA_OK){
+                // Error handler
+                // led_set_color(// led_RED);
+                return LORA_FAIL;
+            }
             // Begin extracting payload
-            LORA_STATUS pld_xtr_status;
+            LORA_STATUS pld_xtr_status = LORA_OK;
             for (int i = 0; i < num_bytes; i++){
                 uint8_t packet;
                 pld_xtr_status = lora_read_register(LORA_REG_FIFO_RW, &packet);  // Access LoRA FIFO data buffer pointer
                 buffer_ptr[i] = packet;
             }
             *buffer_len_ptr = num_bytes;
-            if( pld_xtr_status == LORA_OK ) {
+            if (pld_xtr_status == LORA_OK ) {
                 return LORA_OK;
             } else {
                 return LORA_FAIL;
             }
         }
         return LORA_OK;
+    } else if( lora_rx_done == LORA_WAITING ) {
+        return LORA_WAITING;
     }
     return LORA_FAIL;
 }

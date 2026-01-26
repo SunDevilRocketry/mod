@@ -12,22 +12,14 @@
 #ifndef LORA_H
 #define LORA_H
 
-/* Project includes */
-
-/* Operation Mode Register Values */
-/* These are just random parts of the operation register that may or not get used
-To avoid any chance they're in the final binary without being used,
-they are commented out for now and will be uncommented as they're needed.
-
-#define LORA_LORA_MODE             0b1
-#define LORA_LORA_REGISTER_PAGE    0b0
-#define LORA_FSK_REGISTER_PAGE     0b1
-#define LORA_HIGH_FREQ_MODE        0b1
-#define LORA_LOW_FREQ_MODE         0b0
-#define LORA_OPERATION_RESERVED    0b00
-*/
+/* Standard includes */
+#include <stdint.h>
 
 #define LORA_TIMEOUT                2000
+
+/* US ISM band frequencies, used in the code to prevent violating US law */
+#define ISM_MAX_FREQ                928000
+#define ISM_MIN_FREQ                902000
 
 typedef enum LORA_CHIPMODE {
    LORA_SLEEP_MODE = 0x00,
@@ -47,6 +39,8 @@ typedef enum LORA_STATUS {
    LORA_TRANSMIT_FAIL,
    LORA_RECEIVE_FAIL,
    LORA_TIMEOUT_FAIL,
+   LORA_READY,
+   LORA_WAITING
 } LORA_STATUS;
 
 /* Radio register addresses from datasheet (https://www.mouser.com/datasheet/2/975/1463993415RFM95_96_97_98W-1858106.pdf)
@@ -136,6 +130,13 @@ typedef enum LORA_HEADER_MODE {// You can see this on 106 - what this actually m
    LORA_EXPLICIT_HEADER = 0b0
 } LORA_HEADER_MODE;
 
+
+// PaConfig options - See datasheet pages 79 and 103
+typedef enum LORA_PA_SELECT {
+   LORA_RFO      = 0x00,
+   LORA_PA_BOOST = 0x01
+} LORA_PA_SELECT;
+
 /* LORA CONFIG SETTINGS */
 typedef struct _LORA_CONFIG {
    LORA_CHIPMODE lora_mode; // Current LORA Chipmode
@@ -143,16 +144,10 @@ typedef struct _LORA_CONFIG {
    LORA_BANDWIDTH lora_bandwidth; // Signal bandwith
    LORA_ERROR_CODING lora_ecr; // Data Error coding
    LORA_HEADER_MODE lora_header_mode; // LORA Header mode
-   uint32_t lora_frequency; // The LORA carrier frequency. This is NOT directly in megahertz. (See datasheet page 103)
-   // To convert, use the formula (2^19 * x)/(32 * 10^6)
-   // This library provides a helper function 
+   LORA_PA_SELECT lora_pa_select; // Amplifier Selection
+   uint32_t lora_frequency; // The LORA carrier frequency, in kilohertz.
+   // To convert to internal chip unit, use the formula (2^19 * x)/(32 * 10^3)
 } LORA_CONFIG;
-
-LORA_STATUS LORA_SPI_Receive( uint8_t* read_buffer_ptr );
-
-LORA_STATUS LORA_SPI_Transmit_Buffer( LORA_REGISTER_ADDR reg, uint8_t data );
-
-LORA_STATUS LORA_SPI_Transmit_Byte( LORA_REGISTER_ADDR reg );
 
 LORA_STATUS lora_read_register( LORA_REGISTER_ADDR lora_register, uint8_t* regData);
 
@@ -167,11 +162,9 @@ LORA_STATUS lora_init();
 void lora_reset();
 
 LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len);
+
+LORA_STATUS lora_receive_ready();
+
 LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr);
-
-// Convert a human-readable frequency to the unit used internally by the modem
-uint32_t lora_helper_mhz_to_reg_val( uint32_t mhz_freq );
-
-// LORA_STATUS lora_transmit( uint8_t data );
 
 #endif
