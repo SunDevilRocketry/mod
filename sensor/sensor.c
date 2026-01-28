@@ -155,7 +155,7 @@ static void pt6_adc_channel_select
 	);
 #endif /* #ifdef L0002_REV5 */
 
-#ifdef USE_I2C_IT
+#ifdef A0002_REV2
 static SENSOR_STATUS sensor_it_imu_baro
 	(
 	uint32_t timeout,
@@ -707,113 +707,86 @@ SENSOR_STATUS sensor_dump
     )
 {
 /*------------------------------------------------------------------------------
- Local variables 
+ Local Variables 
 ------------------------------------------------------------------------------*/
-#if   defined( FLIGHT_COMPUTER      )
-	IMU_STATUS      accel_status;           /* IMU sensor status codes     */       
-	IMU_STATUS      gyro_status;
-	IMU_STATUS      mag_status; 
-	BARO_STATUS     press_status;           /* Baro Sensor status codes    */
-	BARO_STATUS     temp_status;
-	IMU_RAW			imu_raw;				/* Structure with unconverted IMU data */
+#if defined( FLIGHT_COMPUTER       )
+        SENSOR_STATUS parallel_status; 
+        IMU_STATUS    accel_status; 
+        IMU_STATUS    gyro_status; 
+        BARO_STATUS   press_status; 
+        BARO_STATUS   temp_status; 
+        IMU_RAW       imu_raw;
 #elif defined( ENGINE_CONTROLLER    )
-	#ifdef L0002_REV4
+	#if defined(L0002_REV4      )
 		PRESSURE_STATUS pt_status;          /* Pressure status codes       */
 		THERMO_STATUS   tc_status;          /* Thermocouple status codes   */
 		LOADCELL_STATUS lc_status;          /* Loadcell status codes       */
-	#elif defined( L0002_REV5 )
+	#elif defined( L0002_REV5   )
 		SENSOR_STATUS   sensor_status;      /* Sensor module return codes  */
 		THERMO_STATUS   tc_status;          /* Thermocouple status codes   */
-	#endif
-#elif defined( FLIGHT_COMPUTER_LITE )
-	BARO_STATUS     press_status;           /* Baro Sensor status codes    */
-	BARO_STATUS     temp_status;
-#endif
+        #endif
+#endif 
 
 /*------------------------------------------------------------------------------
  Initializations 
 ------------------------------------------------------------------------------*/
-#if   defined( FLIGHT_COMPUTER      )
-	accel_status = IMU_OK;         
-	gyro_status  = IMU_OK;
-	mag_status   = IMU_OK; 
-	press_status = BARO_OK;           
-	temp_status  = BARO_OK;
+#if defined( FLIGHT_COMPUTER        )
+        parallel_status = SENSOR_OK;
+        accel_status    = IMU_OK;
+        gyro_status     = IMU_OK;
+        press_status    = BARO_OK;
+        temp_status     = BARO_OK;
 #elif defined( ENGINE_CONTROLLER    )
 	#ifdef L0002_REV4
 		pt_status    = PRESSURE_OK;          
 		tc_status    = THERMO_OK;        
-	#elif defined( L0002_REV5 )
+	#elif defined( L0002_REV5   )
 		sensor_status = SENSOR_OK;
 		tc_status     = THERMO_OK;
 	#endif
-#elif defined( FLIGHT_COMPUTER_LITE )
-	press_status = BARO_OK;           
-	temp_status  = BARO_OK;
 #endif
 
-/*------------------------------------------------------------------------------
- Call sensor API functions 
-------------------------------------------------------------------------------*/
-
 /* Poll Sensors  */
-#if defined( FLIGHT_COMPUTER )
-	#if defined( A0002_REV2 )
-	memset( &imu_raw, 0, sizeof( IMU_RAW ) );
-		#if defined( USE_I2C_IT )
-		accel_status = start_imu_read_IT();
-		press_status = start_baro_read_IT();
-		#endif
-	#else
-	/* IMU sensors */
-	accel_status = imu_get_accel_xyz( &imu_raw ); 
-	gyro_status  = imu_get_gyro_xyz ( &imu_raw );
+#if defined( FLIGHT_COMPUTER        )
+        /*Call sensor API functions*/
 
-	mag_status   = imu_get_mag_xyz  ( &imu_raw );
-	#endif
+        memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
 
-	/* GPS sensor */
-	sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
-	sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
-	sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
-	sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
-	sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
-	sensor_data_ptr->gps_ns				= gps_data.ns;
-	sensor_data_ptr->gps_ew				= gps_data.ew;
-	sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
-	sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
+        /* GPS sensor */
+        sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
+        sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
+        sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
+        sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
+        sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
+        sensor_data_ptr->gps_ns		        = gps_data.ns;
+        sensor_data_ptr->gps_ew			= gps_data.ew;
+        sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
+        sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
-	#ifndef USE_I2C_IT /* Use legacy (blocking mode) transfer for compatibility */
-	/* IMU */
-	accel_status = imu_get_accel_and_gyro( &imu_raw );
-	/* Baro sensors */
-	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
-	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
-	#else
-	/* wait for interrupt return */
-	accel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
-	#endif
+        parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
 
-	/* Calculated and retrieve converted IMU data */
-	sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
+        /*Compute State Estimations*/
 
-	/* Calculated to get body state */
-	sensor_body_state( &(sensor_data_ptr->imu_data) );
+        /* Calculated and retrieve converted IMU data */
+        sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
 
-	/* Calculated velocity and position */
-	sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+        /* Calculated to get body state */
+        sensor_body_state( &(sensor_data_ptr->imu_data) );
 
-	/* Calculated velocity from barometer */
-	sensor_baro_velo( sensor_data_ptr );
+        /* Calculated velocity and position */
+        sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+
+        /* Calculated velocity from barometer */
+        sensor_baro_velo( sensor_data_ptr );
 
 
-#elif defined( ENGINE_CONTROLLER )
+#elif defined( ENGINE_CONTROLLER    )
 	#ifndef L0002_REV5
 	/* Pressure Transducers */
-	pt_status    = pressure_poll_pts( &( sensor_data_ptr -> pt_pressures[0] ) );
+	pt_status     = pressure_poll_pts( &( sensor_data_ptr -> pt_pressures[0] ) );
 
 	/* Load cell */
-	lc_status    = loadcell_get_reading( &( sensor_data_ptr -> load_cell_force ) );
+	lc_status     = loadcell_get_reading( &( sensor_data_ptr -> load_cell_force ) );
 	#else
 	/* PTs and Load Cell */
 	sensor_status = sensor_adc_burst_read( sensor_data_ptr );
@@ -822,11 +795,6 @@ SENSOR_STATUS sensor_dump
 	/* Thermocouple */
 //	tc_status    = temp_get_temp( &( sensor_data_ptr -> tc_temp ), 
 	//                              THERMO_HOT_JUNCTION );
-#elif defined( FLIGHT_COMPUTER_LITE )
-	/* Baro sensors */
-	temp_status  = baro_get_temp    ( &(sensor_data_ptr -> baro_temp     ) );
-	press_status = baro_get_pressure( &(sensor_data_ptr -> baro_pressure ) );
-
 #elif defined( VALVE_CONTROLLER     )
 	/* Main Valve encoders */
 	sensor_data_ptr -> lox_valve_pos  = valve_get_ox_valve_pos();
@@ -838,27 +806,30 @@ SENSOR_STATUS sensor_dump
  Set command status from sensor API returns 
 ------------------------------------------------------------------------------*/
 #if defined( FLIGHT_COMPUTER )
-	if      ( accel_status != IMU_OK )
-		{
-		return SENSOR_ACCEL_ERROR;
-		}
-	else if ( gyro_status  != IMU_OK )
-		{
-		return SENSOR_GYRO_ERROR;
-		}
-	else if ( mag_status   != IMU_OK )
-		{
-		return SENSOR_MAG_ERROR;	
-		}
-	else if ( press_status != BARO_OK ||
-			temp_status  != BARO_OK  )
-		{
-		return SENSOR_BARO_ERROR;
-		}
-	else
-		{
-		return SENSOR_OK;
-		}
+        /* Start next measurement and return status */
+        parallel_status |= sensor_start_IT( sensor_data_ptr );
+
+        if( accel_status != IMU_OK )
+                {
+                return SENSOR_ACCEL_ERROR;
+                }
+        else if ( gyro_status  != IMU_OK )
+                {
+                return SENSOR_GYRO_ERROR;
+                }
+        else if ( press_status != BARO_OK ||
+                        temp_status  != BARO_OK  )
+                {
+                return SENSOR_BARO_ERROR;
+                }
+        else if ( parallel_status != SENSOR_OK )
+                {
+                return SENSOR_IT_TIMEOUT;
+                }
+        else
+                {
+                return SENSOR_OK;
+                }
 #elif defined( ENGINE_CONTROLLER )
 	#ifdef L0002_REV4
 		if      ( pt_status != PRESSURE_OK )
@@ -891,20 +862,9 @@ SENSOR_STATUS sensor_dump
 			return SENSOR_OK;
 			}
 	#endif
-#elif defined( FLIGHT_COMPUTER_LITE )
-	if ( press_status != BARO_OK ||
-		 temp_status  != BARO_OK  )
-		{
-		return SENSOR_BARO_ERROR;
-		}
-	else
-		{
-		return SENSOR_OK;
-		}
 #elif defined( VALVE_CONTROLLER     )
 	return SENSOR_OK;
 #endif /* #elif defined( ENGINE_CONTROLLER )*/
-
 } /* sensor_dump */
 
 
@@ -1755,7 +1715,7 @@ else
 } /* sensor_conv_pressure */
 #endif
 
-#if defined( USE_I2C_IT )
+#if defined( A0002_REV2 )
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -1782,98 +1742,6 @@ return SENSOR_OK;
 
 } /* sensor_start_IT */
 
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_dump_IT                                                   	   *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Process data and update sensor_data struct.                            *
-*                                                                              *
-*******************************************************************************/
-SENSOR_STATUS sensor_dump_IT
-	( 
-	SENSOR_DATA* sensor_data_ptr 
-	)
-{
-/*------------------------------------------------------------------------------
- Local Variables 
-------------------------------------------------------------------------------*/
-SENSOR_STATUS parallel_status = SENSOR_OK;
-IMU_STATUS accel_status = IMU_OK;
-IMU_STATUS gyro_status = IMU_OK;
-BARO_STATUS press_status = BARO_OK;
-BARO_STATUS temp_status = BARO_OK;
-IMU_RAW imu_raw;
-
-/*------------------------------------------------------------------------------
- Clear Structs
-------------------------------------------------------------------------------*/
-
-memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
-
-/*------------------------------------------------------------------------------
- Collect Data 
-------------------------------------------------------------------------------*/
-
-/* GPS sensor */
-sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
-sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
-sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
-sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
-sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
-sensor_data_ptr->gps_ns				= gps_data.ns;
-sensor_data_ptr->gps_ew				= gps_data.ew;
-sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
-sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
-
-parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
-
-/*------------------------------------------------------------------------------
- Compute State Estimations
-------------------------------------------------------------------------------*/
-
-/* Calculated and retrieve converted IMU data */
-sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
-
-/* Calculated to get body state */
-sensor_body_state( &(sensor_data_ptr->imu_data) );
-
-/* Calculated velocity and position */
-sensor_imu_velo( &(sensor_data_ptr->imu_data) );
-
-/* Calculated velocity from barometer */
-sensor_baro_velo( sensor_data_ptr );
-
-/*------------------------------------------------------------------------------
- Start next measurement and return status
-------------------------------------------------------------------------------*/
-
-parallel_status |= sensor_start_IT( sensor_data_ptr );
-
-if( accel_status != IMU_OK )
-	{
-	return SENSOR_ACCEL_ERROR;
-	}
-else if ( gyro_status  != IMU_OK )
-	{
-	return SENSOR_GYRO_ERROR;
-	}
-else if ( press_status != BARO_OK ||
-		temp_status  != BARO_OK  )
-	{
-	return SENSOR_BARO_ERROR;
-	}
-else if ( parallel_status != SENSOR_OK )
-	{
-	return SENSOR_IT_TIMEOUT;
-	}
-else
-	{
-	return SENSOR_OK;
-	}
-} /* sensor_dump_IT */
 #endif
 
 
@@ -2283,7 +2151,7 @@ HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 
 #endif /* #ifdef L0002_REV5 */
 
-#ifdef USE_I2C_IT
+#ifdef A0002_REV2
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -2330,7 +2198,7 @@ while( curr_time <= starting_time + timeout )
 
 return SENSOR_IT_TIMEOUT;
 }
-#endif /* #ifdef USE_I2C_IT */
+#endif /* #ifdef A0002_REV2 */
 
 
 #ifdef A0002_REV2

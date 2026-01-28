@@ -487,7 +487,7 @@ void IMU_config
     uint16_t mag_setting
     );
 
-#ifdef USE_I2C_IT
+#ifdef A0002_REV2
 IMU_STATUS start_imu_read_IT(void);
 IMU_STATUS imu_it_handler();
 IMU_STATUS get_imu_it(IMU_RAW* cpy_ptr);
