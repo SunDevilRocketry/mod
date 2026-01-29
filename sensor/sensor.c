@@ -64,6 +64,7 @@
 #if defined( VALVE_CONTROLLER  )
 	#include "valve.h"
 #endif
+#include "common.h"
 
 
 /*------------------------------------------------------------------------------
@@ -156,7 +157,7 @@ static void pt6_adc_channel_select
 #endif /* #ifdef L0002_REV5 */
 
 #ifdef A0002_REV2
-static SENSOR_STATUS sensor_it_imu_baro
+static SENSOR_STATUS sensor_get_it_ready
 	(
 	uint32_t timeout,
 	SENSOR_DATA* sensor_data_ptr,
@@ -750,35 +751,50 @@ SENSOR_STATUS sensor_dump
 #if defined( FLIGHT_COMPUTER        )
         /*Call sensor API functions*/
 
-        memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
+        /* check that IMU & BARO are ready to be read */
+        parallel_status = sensor_get_it_ready( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
 
-        /* GPS sensor */
-        sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
-        sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
-        sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
-        sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
-        sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
-        sensor_data_ptr->gps_ns		        = gps_data.ns;
-        sensor_data_ptr->gps_ew			= gps_data.ew;
-        sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
-        sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
+        /* If sensors are ready, then collect data, otherwise skip to status return */
+        if( parallel_status != SENSOR_IT_TIMEOUT ) 
+        {
+                /* Disabling interrupts to avoid race conditions */
+                disable_irq();
 
-        parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
+                /* CRITICAL SECTION BEGIN */
 
-        /*Compute State Estimations*/
+                memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
 
-        /* Calculated and retrieve converted IMU data */
-        sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
+                /* GPS sensor */
+                sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
+                sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
+                sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
+                sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
+                sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
+                sensor_data_ptr->gps_ns		        = gps_data.ns;
+                sensor_data_ptr->gps_ew			= gps_data.ew;
+                sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
+                sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
-        /* Calculated to get body state */
-        sensor_body_state( &(sensor_data_ptr->imu_data) );
 
-        /* Calculated velocity and position */
-        sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+                /*Compute State Estimations*/
 
-        /* Calculated velocity from barometer */
-        sensor_baro_velo( sensor_data_ptr );
+                /* Calculated and retrieve converted IMU data */
+                sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
 
+                /* Calculated to get body state */
+                sensor_body_state( &(sensor_data_ptr->imu_data) );
+
+                /* Calculated velocity and position */
+                sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+
+                /* Calculated velocity from barometer */
+                sensor_baro_velo( sensor_data_ptr );
+
+                /* CRITICAL SECTION END */
+
+                /* Reenabling interrupts after potentially dangerous reads/writes occur */
+                enable_irq();
+        }
 
 #elif defined( ENGINE_CONTROLLER    )
 	#ifndef L0002_REV5
@@ -2155,13 +2171,13 @@ HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		sensor_it_imu_baro											           *
+* 		sensor_get_it_ready                                            *
 *                                                                              *
 * DESCRIPTION:                                                                 *
 *       Collect data from the double buffers and put it in sensor_data.        *
 *                                                                              *
 *******************************************************************************/
-static SENSOR_STATUS sensor_it_imu_baro
+static SENSOR_STATUS sensor_get_it_ready
 	(
 	uint32_t timeout,
 	SENSOR_DATA* sensor_data_ptr,
