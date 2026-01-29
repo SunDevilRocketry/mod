@@ -48,6 +48,7 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #if defined( FLIGHT_COMPUTER )
+        #include "common.h"
 	#include "imu.h"
 	#include "baro.h"
 #elif defined( FLIGHT_COMPUTER_LITE )
@@ -64,7 +65,6 @@
 #if defined( VALVE_CONTROLLER  )
 	#include "valve.h"
 #endif
-#include "common.h"
 
 
 /*------------------------------------------------------------------------------
