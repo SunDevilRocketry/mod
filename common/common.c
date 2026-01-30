@@ -51,7 +51,7 @@
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		disable_irq()                                                  *
+* 		disable_irq                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		Disables IRQ interrupts                                        *
@@ -69,7 +69,7 @@ void disable_irq
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		enable_irq()                                                   *
+* 		enable_irq                                                     *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		Enables IRQ interrupts                                         *
