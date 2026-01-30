@@ -78,6 +78,9 @@ extern volatile uint32_t tdelta, previous_time;
 #ifdef FLIGHT_COMPUTER
 extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
+extern bool imu_data_ready;
+extern bool baro_data_ready;
+extern bool mag_data_ready;
 #endif
 
 
@@ -159,9 +162,7 @@ static void pt6_adc_channel_select
 #ifdef A0002_REV2
 static SENSOR_STATUS sensor_get_it_ready
 	(
-	uint32_t timeout,
-	SENSOR_DATA* sensor_data_ptr,
-	IMU_RAW* imu_raw
+	uint32_t timeout
 	);
 #endif
 
@@ -712,10 +713,8 @@ SENSOR_STATUS sensor_dump
 ------------------------------------------------------------------------------*/
 #if defined( FLIGHT_COMPUTER       )
         SENSOR_STATUS parallel_status; 
-        IMU_STATUS    accel_status; 
-        IMU_STATUS    gyro_status; 
-        BARO_STATUS   press_status; 
-        BARO_STATUS   temp_status; 
+        IMU_STATUS    imu_status;
+        BARO_STATUS   baro_status;
         IMU_RAW       imu_raw;
 #elif defined( ENGINE_CONTROLLER    )
 	#if defined(L0002_REV4      )
@@ -733,10 +732,8 @@ SENSOR_STATUS sensor_dump
 ------------------------------------------------------------------------------*/
 #if defined( FLIGHT_COMPUTER        )
         parallel_status = SENSOR_OK;
-        accel_status    = IMU_OK;
-        gyro_status     = IMU_OK;
-        press_status    = BARO_OK;
-        temp_status     = BARO_OK;
+        imu_status      = IMU_OK;
+        baro_status     = BARO_OK;
 #elif defined( ENGINE_CONTROLLER    )
 	#ifdef L0002_REV4
 		pt_status    = PRESSURE_OK;          
@@ -752,10 +749,9 @@ SENSOR_STATUS sensor_dump
         /*Call sensor API functions*/
 
         /* check that IMU & BARO are ready to be read */
-        parallel_status = sensor_get_it_ready( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
+        parallel_status = sensor_get_it_ready( HAL_DEFAULT_TIMEOUT);
 
-        /* If sensors are ready, then collect data, otherwise skip to status return */
-        if( parallel_status != SENSOR_IT_TIMEOUT ) 
+        if( parallel_status == SENSOR_OK) 
         {
                 /* Disabling interrupts to avoid race conditions */
                 disable_irq();
@@ -775,6 +771,11 @@ SENSOR_STATUS sensor_dump
                 sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
                 sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
+                /* IMU Read */
+                imu_status = get_imu_it( &imu_raw );
+
+                /* Baro Read */
+                baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
 
                 /*Compute State Estimations*/
 
@@ -792,7 +793,7 @@ SENSOR_STATUS sensor_dump
 
                 /* CRITICAL SECTION END */
 
-                /* Reenabling interrupts after potentially dangerous reads/writes occur */
+                /* Re-enabling interrupts after potentially dangerous reads/writes occur */
                 enable_irq();
         }
 
@@ -825,16 +826,11 @@ SENSOR_STATUS sensor_dump
         /* Start next measurement and return status */
         parallel_status |= sensor_start_IT( sensor_data_ptr );
 
-        if( accel_status != IMU_OK )
+        if( imu_status != IMU_OK )
                 {
-                return SENSOR_ACCEL_ERROR;
+                return SENSOR_IMU_FAIL;
                 }
-        else if ( gyro_status  != IMU_OK )
-                {
-                return SENSOR_GYRO_ERROR;
-                }
-        else if ( press_status != BARO_OK ||
-                        temp_status  != BARO_OK  )
+        else if ( baro_status != BARO_OK)
                 {
                 return SENSOR_BARO_ERROR;
                 }
@@ -2174,39 +2170,24 @@ HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 * 		sensor_get_it_ready                                            *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Collect data from the double buffers and put it in sensor_data.        *
+*       Ensures baro & imu are ready to be read from.                          *
 *                                                                              *
 *******************************************************************************/
 static SENSOR_STATUS sensor_get_it_ready
 	(
-	uint32_t timeout,
-	SENSOR_DATA* sensor_data_ptr,
-	IMU_RAW* imu_raw
+	uint32_t timeout
 	)
 {
 /* set up timeout */
 uint32_t starting_time = HAL_GetTick();
 uint32_t curr_time = HAL_GetTick();
-IMU_STATUS imu_ready = IMU_BUSY;
-BARO_STATUS baro_ready = BARO_BUSY;
 while( curr_time <= starting_time + timeout )
 	{
-	/* determine if ready */
-	if( imu_ready == IMU_BUSY )
-		{
-		imu_ready = get_imu_it( imu_raw );
-		}
-	if( baro_ready == BARO_BUSY )
-		{
-		/* doing IMU first. return ready. */
-		baro_ready = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
-		}
 
-	/* compute return if ready */
-	if( baro_ready != BARO_BUSY && imu_ready != IMU_BUSY )
-		{
-		return baro_ready | imu_ready;
-		}
+        /* Ensure both the IMU and barometer are ready to be read */                
+        if ( imu_data_ready && baro_data_ready && mag_data_ready) {
+                return SENSOR_OK;
+        }
 
 	/* update timeout poll */
 	curr_time = HAL_GetTick();
