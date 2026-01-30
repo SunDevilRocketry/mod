@@ -107,9 +107,15 @@ memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-void disable_irq();
+void disable_irq
+    (
+    void
+    );
 
-void enable_irq();
+void enable_irq
+    (
+    void
+    );
 
 uint32_t crc32
     (

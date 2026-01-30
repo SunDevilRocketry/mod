@@ -58,7 +58,10 @@
 * 		Wrapper for __disable_irq(); see cmsis_gcc.h                   *
 *                                                                              *
 *******************************************************************************/
-void disable_irq() 
+void disable_irq
+    (
+    void
+    ) 
 {
         __disable_irq();
 } /* disable_irq */
@@ -73,7 +76,10 @@ void disable_irq()
 * 		Wrapper for __enable_irq(); see cmsis_gcc.h                    *
 *                                                                              *
 *******************************************************************************/
-void enable_irq() 
+void enable_irq
+    (
+    void
+    ) 
 {
         __enable_irq();
 } /* enable_irq */
