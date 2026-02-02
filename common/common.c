@@ -66,6 +66,7 @@ void disable_irq
 __disable_irq();
 } /* disable_irq */
 
+
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
@@ -84,51 +85,6 @@ void enable_irq
 __enable_irq();
 } /* enable_irq */
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		crc32                                                                  *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Returns a 32bit checksum from the given data.                          *
-*                                                                              *
-*******************************************************************************/
-uint32_t crc32
-    (
-    const uint8_t *data, 
-    size_t len
-    ) 
-{
-uint32_t crc = 0xFFFFFFFF;
-while (len--) 
-    {
-    crc ^= *data++;
-    for (int i = 0; i < 8; ++i)
-        crc = (crc >> 1) ^ (0xEDB88320 & -(crc & 1));
-    }
-return ~crc;
-
-} /* crc32 */
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_fail_fast                                                        *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		In case of error occurrence, this function passes the error            *
-*       code to the error handler                                              *
-*                                                                              *
-*******************************************************************************/
-void error_fail_fast
-    (
-    volatile ERROR_CODE error_code
-    )
-{
-Error_Handler(error_code);
-
-} /* error_fail_fast */
 
 /*******************************************************************************
 *                                                                              *
@@ -147,6 +103,7 @@ void delay_ms
 HAL_Delay(delay);
 
 } /* delay_ms */
+
 
 /*******************************************************************************
 * END OF FILE                                                                  * 
