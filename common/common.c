@@ -28,7 +28,6 @@
 /*------------------------------------------------------------------------------
  Project Includes                                                                     
 ------------------------------------------------------------------------------*/
-#include "cmsis_gcc.h"
 #include "main.h"
 #include "common.h"
 #include "stm32h7xx_hal.h"
@@ -55,7 +54,7 @@
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		Disables IRQ interrupts                                        *
-* 		Wrapper for __disable_irq(); see cmsis_gcc.h                   *
+* 		Wrapper for __disable_irq();                   *
 *                                                                              *
 *******************************************************************************/
 void disable_irq
@@ -74,7 +73,7 @@ __disable_irq();
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		Enables IRQ interrupts                                         *
-* 		Wrapper for __enable_irq(); see cmsis_gcc.h                    *
+* 		Wrapper for __enable_irq()                    *
 *                                                                              *
 *******************************************************************************/
 void enable_irq
