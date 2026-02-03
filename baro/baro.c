@@ -49,7 +49,7 @@ static BARO_CAL_DATA baro_cal_data;
 uint8_t baro_raw_buffer[6];
 float baro_pres_proc = NAN;
 float baro_temp_proc = NAN;
-bool baro_data_ready = false;
+static bool baro_data_ready = false;
 
 
 /*------------------------------------------------------------------------------
