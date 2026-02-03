@@ -862,6 +862,21 @@ static BARO_STATUS baro_flush_fifo
 return write_reg( BARO_REG_CMD, BARO_CMD_FIFO_FLUSH );
 } /* baro_flush_fifo */
 
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+*       baro_get_baro_data_ready                                               *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Returns the baro_data_ready flag                                       *
+*                                                                              *
+*******************************************************************************/
+bool baro_get_baro_data_ready
+        (
+    void 
+        ) {
+return baro_data_ready;
+}/* baro_get_baro_data_ready */
 
 /*******************************************************************************
 *                                                                              *

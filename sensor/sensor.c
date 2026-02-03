@@ -78,9 +78,6 @@ extern volatile uint32_t tdelta, previous_time;
 #ifdef FLIGHT_COMPUTER
 extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
-extern bool imu_data_ready;
-extern bool baro_data_ready;
-extern bool mag_data_ready;
 #endif
 
 
@@ -2170,7 +2167,7 @@ HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 * 		sensor_get_it_ready                                            *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Ensures baro & imu are ready to be read from.                          *
+*       Ensures baro & mag & imu are ready to be read from.                          *
 *                                                                              *
 *******************************************************************************/
 static SENSOR_STATUS sensor_get_it_ready
@@ -2185,7 +2182,7 @@ while( curr_time <= starting_time + timeout )
 	{
 
         /* Ensure both the IMU and barometer are ready to be read */                
-        if ( imu_data_ready && baro_data_ready && mag_data_ready) {
+        if ( imu_get_imu_data_ready() && imu_get_mag_data_ready() && baro_get_baro_data_ready()) {
                 return SENSOR_OK;
         }
 

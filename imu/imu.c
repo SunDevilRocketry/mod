@@ -52,10 +52,10 @@
 #if defined( A0002_REV2 )
 uint8_t imu_raw_buffer[12];
 IMU_RAW imu_raw_processed;
-bool imu_data_ready;
+static bool imu_data_ready;
 
 uint8_t mag_raw_buffer[8];
-bool mag_data_ready;
+static bool mag_data_ready;
 #endif
 
 MAG_TRIM mag_trim;
@@ -870,6 +870,40 @@ else
 	}
 } /* read_imu_regs */
 
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		imu_get_imu_data_ready                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		                                                               * 
+*       Returns the imu_data_ready flag                                        *
+*                                                                              *
+*******************************************************************************/
+bool imu_get_imu_data_ready
+    (
+    void
+    ) {
+return imu_data_ready;
+} /* imu_get_imu_data_ready */
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		imu_get_mag_data_ready                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		                                                               * 
+*       Returns the mag_data_ready flag                                        *
+*                                                                              *
+*******************************************************************************/
+bool imu_get_mag_data_ready
+    (
+    void
+    ) {
+return mag_data_ready;
+} /* imu_get_mag_data_ready */
 
 #if defined( A0002_REV2 )
 /*******************************************************************************
