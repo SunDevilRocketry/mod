@@ -743,58 +743,58 @@ SENSOR_STATUS sensor_dump
 
 /* Poll Sensors  */
 #if defined( FLIGHT_COMPUTER        )
-        /*Call sensor API functions*/
+	/*Call sensor API functions*/
 
-        /* check that IMU & BARO are ready to be read */
-        parallel_status = sensor_get_it_ready( HAL_DEFAULT_TIMEOUT );
+	/* check that IMU & BARO are ready to be read */
+	parallel_status = sensor_get_it_ready( HAL_DEFAULT_TIMEOUT );
 
-        if( parallel_status != SENSOR_OK ) 
-                {
-                return parallel_status; 
-                }
+	if( parallel_status != SENSOR_OK ) 
+		{
+		return parallel_status; 
+		}
 
-        /* Disabling interrupts to avoid race conditions */
-        disable_irq();
+	/* Disabling interrupts to avoid race conditions */
+	disable_irq();
 
-        /* CRITICAL SECTION BEGIN */
+	/* CRITICAL SECTION BEGIN */
 
-        memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
+	memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
 
-        /* GPS sensor */
-        sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
-        sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
-        sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
-        sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
-        sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
-        sensor_data_ptr->gps_ns		        = gps_data.ns;
-        sensor_data_ptr->gps_ew			= gps_data.ew;
-        sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
-        sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
+	/* GPS sensor */
+	sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
+	sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
+	sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
+	sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
+	sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
+	sensor_data_ptr->gps_ns		        = gps_data.ns;
+	sensor_data_ptr->gps_ew				= gps_data.ew;
+	sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
+	sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
-        /* IMU Read */
-        imu_status = get_imu_it( &imu_raw );
+	/* IMU Read */
+	imu_status = get_imu_it( &imu_raw );
 
-        /* Baro Read */
-        baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
+	/* Baro Read */
+	baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
 
-        /*Compute State Estimations*/
+	/*Compute State Estimations*/
 
-        /* Calculated and retrieve converted IMU data */
-        sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
+	/* Calculated and retrieve converted IMU data */
+	sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
 
-        /* Calculated to get body state */
-        sensor_body_state( &(sensor_data_ptr->imu_data) );
+	/* Calculated to get body state */
+	sensor_body_state( &(sensor_data_ptr->imu_data) );
 
-        /* Calculated velocity and position */
-        sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+	/* Calculated velocity and position */
+	sensor_imu_velo( &(sensor_data_ptr->imu_data) );
 
-        /* Calculated velocity from barometer */
-        sensor_baro_velo( sensor_data_ptr );
+	/* Calculated velocity from barometer */
+	sensor_baro_velo( sensor_data_ptr );
 
-        /* CRITICAL SECTION END */
+	/* CRITICAL SECTION END */
 
-        /* Re-enabling interrupts after potentially dangerous reads/writes occur */
-        enable_irq();
+	/* Re-enabling interrupts after potentially dangerous reads/writes occur */
+	enable_irq();
 
 #elif defined( ENGINE_CONTROLLER    )
 	#ifndef L0002_REV5
@@ -826,21 +826,21 @@ SENSOR_STATUS sensor_dump
         parallel_status |= sensor_start_IT( sensor_data_ptr );
 
         if( imu_status != IMU_OK )
-                {
-                return SENSOR_IMU_FAIL;
-                }
+            {
+            return SENSOR_IMU_FAIL;
+            }
         else if ( baro_status != BARO_OK)
-                {
-                return SENSOR_BARO_ERROR;
-                }
+            {
+            return SENSOR_BARO_ERROR;
+            }
         else if ( parallel_status != SENSOR_OK )
-                {
-                return SENSOR_IT_TIMEOUT;
-                }
+            {
+            return SENSOR_IT_TIMEOUT;
+            }
         else
-                {
-                return SENSOR_OK;
-                }
+            {
+            return SENSOR_OK;
+            }
 #elif defined( ENGINE_CONTROLLER )
 	#ifdef L0002_REV4
 		if      ( pt_status != PRESSURE_OK )
@@ -2182,23 +2182,23 @@ uint32_t starting_time = HAL_GetTick();
 uint32_t curr_time = HAL_GetTick();
 while( curr_time <= starting_time + timeout )
 	{
-
-        /* Ensure both the IMU and barometer are ready to be read */                
-        if ( imu_get_imu_data_ready() && imu_get_mag_data_ready() && baro_get_baro_data_ready() ) 
-                {
-                return SENSOR_OK;
-                }
+	/* Ensure both the IMU and barometer are ready to be read */                
+	if ( imu_get_imu_data_ready() 
+	  && imu_get_mag_data_ready() 
+	  && baro_get_baro_data_ready() ) 
+		{
+		return SENSOR_OK;
+		}
 
 	/* update timeout poll */
 	curr_time = HAL_GetTick();
 	}
 
 return SENSOR_IT_TIMEOUT;
+
 }
-#endif /* #ifdef A0002_REV2 */
 
 
-#ifdef A0002_REV2
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *

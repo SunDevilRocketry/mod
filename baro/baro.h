@@ -284,9 +284,9 @@ BARO_STATUS baro_get_altitude
 
 /* returns the baro_data_ready flag */
 bool baro_get_baro_data_ready
-        (
-        void 
-        );
+    (
+    void 
+    );
 
 BARO_STATUS start_baro_read_IT();
 BARO_STATUS baro_IT_handler();

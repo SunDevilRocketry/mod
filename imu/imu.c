@@ -879,7 +879,6 @@ else
 * DESCRIPTION:                                                                 * 
 *       Returns the imu_data_ready flag                                        *
 *                                                                              *
-*                                                                              *
 *******************************************************************************/
 bool imu_get_imu_data_ready
     (
@@ -887,7 +886,9 @@ bool imu_get_imu_data_ready
     ) 
 {
 return imu_data_ready;
+
 } /* imu_get_imu_data_ready */
+
 
 /*******************************************************************************
 *                                                                              *
@@ -897,7 +898,6 @@ return imu_data_ready;
 * DESCRIPTION:                                                                 * 
 *        Returns the mag_data_ready flag                                       * 
 *                                                                              *
-*                                                                              *
 *******************************************************************************/
 bool imu_get_mag_data_ready
     (
@@ -905,7 +905,9 @@ bool imu_get_mag_data_ready
     ) 
 {
 return mag_data_ready;
+
 } /* imu_get_mag_data_ready */
+
 
 #if defined( A0002_REV2 )
 /*******************************************************************************
