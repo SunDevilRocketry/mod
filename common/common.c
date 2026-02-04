@@ -53,8 +53,8 @@
 * 		disable_irq                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Disables IRQ interrupts                                        *
-* 		Wrapper for __disable_irq();                   *
+* 		Disables IRQ interrupts; wrapper for __disable_irq()           *
+* 		                                                               *
 *                                                                              *
 *******************************************************************************/
 void disable_irq
@@ -72,8 +72,8 @@ __disable_irq();
 * 		enable_irq                                                     *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Enables IRQ interrupts                                         *
-* 		Wrapper for __enable_irq()                    *
+* 		Enables IRQ interrupts; wrapper for __enable_irq()             *
+* 		                                                               *
 *                                                                              *
 *******************************************************************************/
 void enable_irq

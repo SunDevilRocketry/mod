@@ -877,14 +877,15 @@ else
 * 		imu_get_imu_data_ready                                         *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		                                                               * 
-*       Returns the imu_data_ready flag                                        *
+* 		Returns the imu_data_ready flag                                *
+*                                                                              *
 *                                                                              *
 *******************************************************************************/
 bool imu_get_imu_data_ready
     (
     void
-    ) {
+    ) 
+{
 return imu_data_ready;
 } /* imu_get_imu_data_ready */
 
@@ -894,14 +895,15 @@ return imu_data_ready;
 * 		imu_get_mag_data_ready                                         *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		                                                               * 
-*       Returns the mag_data_ready flag                                        *
+* 		Returns the mag_data_ready flag                                * 
+*                                                                              *
 *                                                                              *
 *******************************************************************************/
 bool imu_get_mag_data_ready
     (
     void
-    ) {
+    ) 
+{
 return mag_data_ready;
 } /* imu_get_mag_data_ready */
 
