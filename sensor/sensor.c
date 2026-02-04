@@ -2184,7 +2184,7 @@ while( curr_time <= starting_time + timeout )
 	{
 
         /* Ensure both the IMU and barometer are ready to be read */                
-        if ( imu_get_imu_data_ready() && imu_get_mag_data_ready() && baro_get_baro_data_ready()) 
+        if ( imu_get_imu_data_ready() && imu_get_mag_data_ready() && baro_get_baro_data_ready() ) 
                 {
                 return SENSOR_OK;
                 }
