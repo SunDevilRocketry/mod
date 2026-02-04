@@ -48,9 +48,9 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #if defined( FLIGHT_COMPUTER )
+    #include "common.h"
 	#include "imu.h"
 	#include "baro.h"
-        #include "common.h"
 #elif defined( FLIGHT_COMPUTER_LITE )
 	#include "baro.h"
 #endif
