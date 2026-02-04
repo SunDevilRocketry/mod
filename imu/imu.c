@@ -874,10 +874,10 @@ else
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		imu_get_imu_data_ready                                         *
+*       imu_get_imu_data_ready                                                 *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Returns the imu_data_ready flag                                *
+*       Returns the imu_data_ready flag                                        *
 *                                                                              *
 *                                                                              *
 *******************************************************************************/
@@ -892,10 +892,10 @@ return imu_data_ready;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		imu_get_mag_data_ready                                         *
+*        imu_get_mag_data_ready                                                *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Returns the mag_data_ready flag                                * 
+*        Returns the mag_data_ready flag                                       * 
 *                                                                              *
 *                                                                              *
 *******************************************************************************/
