@@ -48,6 +48,7 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #if defined( FLIGHT_COMPUTER )
+    #include "common.h"
 	#include "imu.h"
 	#include "baro.h"
 #elif defined( FLIGHT_COMPUTER_LITE )
@@ -156,11 +157,9 @@ static void pt6_adc_channel_select
 #endif /* #ifdef L0002_REV5 */
 
 #ifdef A0002_REV2
-static SENSOR_STATUS sensor_it_imu_baro
+static SENSOR_STATUS sensor_get_it_ready
 	(
-	uint32_t timeout,
-	SENSOR_DATA* sensor_data_ptr,
-	IMU_RAW* imu_raw
+	uint32_t timeout
 	);
 #endif
 
@@ -711,10 +710,8 @@ SENSOR_STATUS sensor_dump
 ------------------------------------------------------------------------------*/
 #if defined( FLIGHT_COMPUTER       )
         SENSOR_STATUS parallel_status; 
-        IMU_STATUS    accel_status; 
-        IMU_STATUS    gyro_status; 
-        BARO_STATUS   press_status; 
-        BARO_STATUS   temp_status; 
+        IMU_STATUS    imu_status;
+        BARO_STATUS   baro_status;
         IMU_RAW       imu_raw;
 #elif defined( ENGINE_CONTROLLER    )
 	#if defined(L0002_REV4      )
@@ -732,10 +729,8 @@ SENSOR_STATUS sensor_dump
 ------------------------------------------------------------------------------*/
 #if defined( FLIGHT_COMPUTER        )
         parallel_status = SENSOR_OK;
-        accel_status    = IMU_OK;
-        gyro_status     = IMU_OK;
-        press_status    = BARO_OK;
-        temp_status     = BARO_OK;
+        imu_status      = IMU_OK;
+        baro_status     = BARO_OK;
 #elif defined( ENGINE_CONTROLLER    )
 	#ifdef L0002_REV4
 		pt_status    = PRESSURE_OK;          
@@ -748,37 +743,58 @@ SENSOR_STATUS sensor_dump
 
 /* Poll Sensors  */
 #if defined( FLIGHT_COMPUTER        )
-        /*Call sensor API functions*/
+	/*Call sensor API functions*/
 
-        memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
+	/* check that IMU & BARO are ready to be read */
+	parallel_status = sensor_get_it_ready( HAL_DEFAULT_TIMEOUT );
 
-        /* GPS sensor */
-        sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
-        sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
-        sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
-        sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
-        sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
-        sensor_data_ptr->gps_ns		        = gps_data.ns;
-        sensor_data_ptr->gps_ew			= gps_data.ew;
-        sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
-        sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
+	if( parallel_status != SENSOR_OK ) 
+		{
+		return parallel_status; 
+		}
 
-        parallel_status = sensor_it_imu_baro( HAL_DEFAULT_TIMEOUT, sensor_data_ptr, &imu_raw );
+	/* Disabling interrupts to avoid race conditions */
+	disable_irq();
 
-        /*Compute State Estimations*/
+	/* CRITICAL SECTION BEGIN */
 
-        /* Calculated and retrieve converted IMU data */
-        sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
+	memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
 
-        /* Calculated to get body state */
-        sensor_body_state( &(sensor_data_ptr->imu_data) );
+	/* GPS sensor */
+	sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
+	sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
+	sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
+	sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
+	sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
+	sensor_data_ptr->gps_ns		        = gps_data.ns;
+	sensor_data_ptr->gps_ew				= gps_data.ew;
+	sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
+	sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 
-        /* Calculated velocity and position */
-        sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+	/* IMU Read */
+	imu_status = get_imu_it( &imu_raw );
 
-        /* Calculated velocity from barometer */
-        sensor_baro_velo( sensor_data_ptr );
+	/* Baro Read */
+	baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
 
+	/*Compute State Estimations*/
+
+	/* Calculated and retrieve converted IMU data */
+	sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
+
+	/* Calculated to get body state */
+	sensor_body_state( &(sensor_data_ptr->imu_data) );
+
+	/* Calculated velocity and position */
+	sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+
+	/* Calculated velocity from barometer */
+	sensor_baro_velo( sensor_data_ptr );
+
+	/* CRITICAL SECTION END */
+
+	/* Re-enabling interrupts after potentially dangerous reads/writes occur */
+	enable_irq();
 
 #elif defined( ENGINE_CONTROLLER    )
 	#ifndef L0002_REV5
@@ -809,27 +825,22 @@ SENSOR_STATUS sensor_dump
         /* Start next measurement and return status */
         parallel_status |= sensor_start_IT( sensor_data_ptr );
 
-        if( accel_status != IMU_OK )
-                {
-                return SENSOR_ACCEL_ERROR;
-                }
-        else if ( gyro_status  != IMU_OK )
-                {
-                return SENSOR_GYRO_ERROR;
-                }
-        else if ( press_status != BARO_OK ||
-                        temp_status  != BARO_OK  )
-                {
-                return SENSOR_BARO_ERROR;
-                }
+        if( imu_status != IMU_OK )
+            {
+            return SENSOR_IMU_FAIL;
+            }
+        else if ( baro_status != BARO_OK)
+            {
+            return SENSOR_BARO_ERROR;
+            }
         else if ( parallel_status != SENSOR_OK )
-                {
-                return SENSOR_IT_TIMEOUT;
-                }
+            {
+            return SENSOR_IT_TIMEOUT;
+            }
         else
-                {
-                return SENSOR_OK;
-                }
+            {
+            return SENSOR_OK;
+            }
 #elif defined( ENGINE_CONTROLLER )
 	#ifdef L0002_REV4
 		if      ( pt_status != PRESSURE_OK )
@@ -2155,41 +2166,28 @@ HAL_ADC_ConfigChannel( &hadc3, &sConfig );
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		sensor_it_imu_baro											           *
+* 		sensor_get_it_ready                                            *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Collect data from the double buffers and put it in sensor_data.        *
+*       Ensures baro & mag & imu are ready to be read from.                          *
 *                                                                              *
 *******************************************************************************/
-static SENSOR_STATUS sensor_it_imu_baro
+static SENSOR_STATUS sensor_get_it_ready
 	(
-	uint32_t timeout,
-	SENSOR_DATA* sensor_data_ptr,
-	IMU_RAW* imu_raw
+	uint32_t timeout
 	)
 {
 /* set up timeout */
 uint32_t starting_time = HAL_GetTick();
 uint32_t curr_time = HAL_GetTick();
-IMU_STATUS imu_ready = IMU_BUSY;
-BARO_STATUS baro_ready = BARO_BUSY;
 while( curr_time <= starting_time + timeout )
 	{
-	/* determine if ready */
-	if( imu_ready == IMU_BUSY )
+	/* Ensure both the IMU and barometer are ready to be read */                
+	if ( imu_get_imu_data_ready() 
+	  && imu_get_mag_data_ready() 
+	  && baro_get_baro_data_ready() ) 
 		{
-		imu_ready = get_imu_it( imu_raw );
-		}
-	if( baro_ready == BARO_BUSY )
-		{
-		/* doing IMU first. return ready. */
-		baro_ready = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
-		}
-
-	/* compute return if ready */
-	if( baro_ready != BARO_BUSY && imu_ready != IMU_BUSY )
-		{
-		return baro_ready | imu_ready;
+		return SENSOR_OK;
 		}
 
 	/* update timeout poll */
@@ -2197,11 +2195,10 @@ while( curr_time <= starting_time + timeout )
 	}
 
 return SENSOR_IT_TIMEOUT;
+
 }
-#endif /* #ifdef A0002_REV2 */
 
 
-#ifdef A0002_REV2
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *

@@ -487,6 +487,18 @@ void IMU_config
     uint16_t mag_setting
     );
 
+/* Get the static variable imu_data_ready */
+bool imu_get_imu_data_ready
+    (
+    void
+    );
+
+/* Get the static variable mag_data_ready */
+bool imu_get_mag_data_ready
+    (
+    void
+    );
+
 #ifdef A0002_REV2
 IMU_STATUS start_imu_read_IT(void);
 IMU_STATUS imu_it_handler();

@@ -49,7 +49,7 @@ static BARO_CAL_DATA baro_cal_data;
 uint8_t baro_raw_buffer[6];
 float baro_pres_proc = NAN;
 float baro_temp_proc = NAN;
-bool baro_data_ready = false;
+static bool baro_data_ready = false;
 
 
 /*------------------------------------------------------------------------------
@@ -861,6 +861,25 @@ static BARO_STATUS baro_flush_fifo
 {
 return write_reg( BARO_REG_CMD, BARO_CMD_FIFO_FLUSH );
 } /* baro_flush_fifo */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+*       baro_get_baro_data_ready                                               *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Returns the baro_data_ready flag                                       *
+*                                                                              *
+*******************************************************************************/
+bool baro_get_baro_data_ready
+    (
+    void 
+    ) 
+{
+return baro_data_ready;
+
+} /* baro_get_baro_data_ready */
 
 
 /*******************************************************************************
