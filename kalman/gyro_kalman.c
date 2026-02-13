@@ -185,8 +185,8 @@ void gyro_kalman_filter_predict (float T){
     float sinphi = sin(gyro_state.phi_rad);
     float cosphi = cos(gyro_state.phi_rad);
 
-    float tantheta = tan(gyro_state.phi_rad);
-    float sectheta = 1/cos(gyro_state.phi_rad);
+    float tantheta = tan(gyro_state.theta_rad);
+    float sectheta = 1/cos(gyro_state.theta_rad);
 
     float cospsi = cos(gyro_state.psi_rad);
 
