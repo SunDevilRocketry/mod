@@ -400,8 +400,14 @@ LORA_STATUS lora_receive_ready() {
 // =============================================================================
 // lora_receive: receive a buffer from lora fifo with continuous mode
 // =============================================================================
-LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr){
+LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr, uint8_t* max_buffer_len){
     uint8_t timeout_flag;
+
+    
+    if (*buffer_len_ptr > *max_buffer_len) {
+        return LORA_FAIL;
+    }
+    
 
     // LORA_STATUS rx_done = lora_receive_ready(); // We check if we've received a packet.
     // If we haven't received a packet, the output will be similar to lora_receive_ready in that case.
