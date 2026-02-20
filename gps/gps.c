@@ -283,7 +283,7 @@ void GPS_parse(GPS_DATA* gps_ptr, char *GPSstrParse){
 /* Get message type */
 char token[8]; // Needs to be 8 chars for memory alignment
 strncpy(token, GPSstrParse, 6);
-token[7] = '\0';
+token[6] = '\0';
 int idx = 7; /* Skips "$GPXXX,"*/
 
 /* Parse by message type */
