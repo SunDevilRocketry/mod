@@ -400,13 +400,8 @@ LORA_STATUS lora_receive_ready() {
 // =============================================================================
 // lora_receive: receive a buffer from lora fifo with continuous mode
 // =============================================================================
-LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr, uint8_t* max_buffer_len){
+LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t buffer_len, uint8_t* num_bytes_received) {
     uint8_t timeout_flag;
-
-    
-    if (*buffer_len_ptr > *max_buffer_len) {
-        return LORA_FAIL;
-    }
     
 
     // LORA_STATUS rx_done = lora_receive_ready(); // We check if we've received a packet.
@@ -428,6 +423,11 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr, uint8_t* 
             // Read received number of bytes
             uint8_t num_bytes;
             LORA_STATUS fifo2_status = lora_read_register(LORA_REG_FIFO_RX_NUM_BYTES, &num_bytes);
+
+            if (num_bytes > buffer_len) 
+                {
+                return LORA_BUFFER_UNDERSIZED;
+                }
 
             #if defined( TESTRECEIVER )
             char buf[255];
@@ -456,7 +456,7 @@ LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr, uint8_t* 
                 pld_xtr_status = lora_read_register(LORA_REG_FIFO_RW, &packet);  // Access LoRA FIFO data buffer pointer
                 buffer_ptr[i] = packet;
             }
-            *buffer_len_ptr = num_bytes;
+            *num_bytes_received = num_bytes;
             if (pld_xtr_status == LORA_OK ) {
                 return LORA_OK;
             } else {

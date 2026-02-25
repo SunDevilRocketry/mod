@@ -39,6 +39,7 @@ typedef enum LORA_STATUS {
    LORA_TRANSMIT_FAIL,
    LORA_RECEIVE_FAIL,
    LORA_TIMEOUT_FAIL,
+   LORA_BUFFER_UNDERSIZED,
    LORA_READY,
    LORA_WAITING
 } LORA_STATUS;
@@ -165,6 +166,6 @@ LORA_STATUS lora_transmit(uint8_t* buffer_ptr, uint8_t buffer_len);
 
 LORA_STATUS lora_receive_ready();
 
-LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t* buffer_len_ptr);
+LORA_STATUS lora_receive(uint8_t* buffer_ptr, uint8_t buffer_len, uint8_t* num_bytes_received);
 
 #endif
