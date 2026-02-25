@@ -36,7 +36,7 @@ extern "C" {
 
 
 /*------------------------------------------------------------------------------
- Typdefs 
+ Typedefs 
 ------------------------------------------------------------------------------*/
 
 /* UID serial number (packed struct inhibits padding) */
@@ -107,7 +107,15 @@ memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-/* common */
+void disable_irq
+    (
+    void
+    );
+
+void enable_irq
+    (
+    void
+    );
 
 void delay_ms
     (
