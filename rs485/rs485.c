@@ -137,6 +137,55 @@ else
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
+* 		rs485_transmit_IT                                                         *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		transmits a buffer of bytes over RS485                                 *
+*                                                                              *
+*******************************************************************************/
+RS485_STATUS rs485_transmit_IT
+	(
+    void*    tx_buffer_ptr,   /* Pointer to buffer data    */
+	size_t   buffer_size      /* Number of bytes in buffer */
+	)
+{
+/*------------------------------------------------------------------------------
+ Local Variables
+------------------------------------------------------------------------------*/
+HAL_StatusTypeDef hal_status;    /* Return codes from HAL */
+
+
+/*------------------------------------------------------------------------------
+ Initializations 
+------------------------------------------------------------------------------*/
+hal_status = HAL_OK;
+
+
+/*------------------------------------------------------------------------------
+ API Function Implementation 
+------------------------------------------------------------------------------*/
+
+/* Transmit byte */
+hal_status = HAL_UART_Transmit_IT( &( RS485_HUART ),
+                                tx_buffer_ptr  , 
+                                buffer_size );
+
+/* Return HAL status */
+if ( hal_status != HAL_OK )
+	{
+	return RS485_ERROR;
+	}
+else
+	{
+	return RS485_OK;
+	}
+
+} /* rs485_transmit_IT */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
 * 		rs485_receieve_byte                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 *
