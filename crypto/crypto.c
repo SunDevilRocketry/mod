@@ -20,15 +20,14 @@
 #include "init.h"
 #include "main.h"
 #include "crypto.h"
-#include "stm32h7xx_hal_cryp.h"
+#include "stm32h7xx_hal.h"
 #include "error_sdr.h"
-
-
 
 /*------------------------------------------------------------------------------
  Global Variables  
 ------------------------------------------------------------------------------*/
 extern CRYP_HandleTypeDef hcryp;
+extern RNG_HandleTypeDef hrng;
 
 
 /*******************************************************************************
@@ -45,7 +44,9 @@ void crypto_init
     void
     ) 
 { 
-    CRYP_Init();
+CRYP_Init();
+RNG_Init();
+
 } /* crypto_init */
 
 
@@ -58,7 +59,7 @@ void crypto_init
 * 		Set the AES encryption key                                             *
 *                                                                              *
 *******************************************************************************/
-enum CRYP_STATUS crypto_set_key
+CRYP_STATUS crypto_set_key
     (
     AES_KEY *new_aes_key
     ) 
@@ -97,7 +98,7 @@ enum CRYP_STATUS crypto_set_key
 * 		Encrypt a message                                                      *
 *                                                                              *
 *******************************************************************************/
-enum CRYP_STATUS crypto_encrypt
+CRYP_STATUS crypto_encrypt
     (
     uint32_t *input,
     uint16_t size,
@@ -137,7 +138,7 @@ enum CRYP_STATUS crypto_encrypt
 * 		Decrypt an encrypted message                                           *
 *                                                                              *
 *******************************************************************************/
-enum CRYP_STATUS crypto_decrypt
+CRYP_STATUS crypto_decrypt
     (
     uint32_t *input,
     uint16_t size, 
@@ -165,6 +166,53 @@ enum CRYP_STATUS crypto_decrypt
         return CRYP_FAIL;
         }
 }
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+* 		crypto_rng                                                             *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Generate a random number.                                              *
+*                                                                              *
+*******************************************************************************/
+CRYP_STATUS crypto_rng
+    (
+    uint8_t* ret_buf,
+    uint8_t rng_size
+    )
+{
+uint32_t last_rand;
+uint8_t curr_gen_size = 0;
+HAL_StatusTypeDef hal_status = HAL_OK;
+while( curr_gen_size < rng_size )
+    {
+    hal_status |= HAL_RNG_GenerateRandomNumber(&hrng, &last_rand);
+    uint8_t size_to_go = rng_size - curr_gen_size;
+    if( size_to_go >= 4 )
+        {
+        memcpy( &ret_buf[curr_gen_size], &last_rand, 4 );
+        curr_gen_size += 4;
+        }
+    else
+        {
+        memcpy( &ret_buf[curr_gen_size], &last_rand, size_to_go );
+        curr_gen_size += size_to_go;
+        }
+    }
+
+/* compute status */
+if( hal_status == HAL_OK )
+    {
+    return CRYP_OK;
+    }
+else
+    {
+    return CRYP_FAIL;
+    }
+
+} /* crypto_rng */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 

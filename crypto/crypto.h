@@ -29,13 +29,12 @@ typedef struct _AES_KEY
     uint8_t key_buf[16];
     } AES_KEY;
 
-
 /* Status enum */
-enum CRYP_STATUS {
+typedef enum CRYP_STATUS {
+    CRYP_OK = 0,
     CRYP_FAIL,
-    CRYP_CONFIG_FAIL,
-    CRYP_OK
-};
+    CRYP_CONFIG_FAIL
+} CRYP_STATUS;
 
 /*------------------------------------------------------------------------------
  Macros & Inlines
@@ -50,14 +49,17 @@ enum CRYP_STATUS {
 ------------------------------------------------------------------------------*/
 void crypto_init(void);
 
-enum CRYP_STATUS crypto_set_key(AES_KEY *new_aes_key);
+CRYP_STATUS crypto_set_key(AES_KEY *new_aes_key);
 
-enum CRYP_STATUS crypto_encrypt(uint32_t *input, uint16_t size, uint32_t *output);
+CRYP_STATUS crypto_encrypt(uint32_t *input, uint16_t size, uint32_t *output);
 
-enum CRYP_STATUS crypto_decrypt(uint32_t *input, uint16_t size, uint32_t *output);
+CRYP_STATUS crypto_decrypt(uint32_t *input, uint16_t size, uint32_t *output);
 
-
-
+CRYP_STATUS crypto_rng
+    (
+    uint8_t* ret_buf,
+    uint8_t rng_size
+    );
 
 #ifdef __cplusplus
 }
