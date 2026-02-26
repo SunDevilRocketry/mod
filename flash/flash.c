@@ -820,7 +820,6 @@ for ( int i = 2; i < pflash_handle -> num_bytes; i += 2 )
 		else
 			{
 			timeout_ctr++;
-			HAL_Delay( 1 );
 			}
 		}
 
