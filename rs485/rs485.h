@@ -63,6 +63,13 @@ RS485_STATUS rs485_transmit
 	uint32_t timeout          /* Timeout in ms             */
 	);
 
+/* transmits a buffer of bytes in interrupt mode */
+RS485_STATUS rs485_transmit_IT
+	(
+    void*    tx_buffer_ptr,   /* Pointer to buffer data    */
+	size_t   buffer_size      /* Number of bytes in buffer */
+	);
+
 /* Receives a byte from the RS485 interface */
 RS485_STATUS rs485_receive_byte 
 	(
