@@ -117,11 +117,6 @@ void enable_irq
     void
     );
 
-void delay_ms
-    (
-    uint32_t delay
-    );
-
 #ifdef __cplusplus
 }
 #endif
