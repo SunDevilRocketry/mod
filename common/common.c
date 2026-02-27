@@ -30,13 +30,13 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "common.h"
-#include "stm32h7xx_hal.h"
+#include "sdr_pin_defines_A0002.h"
 
 
 /*------------------------------------------------------------------------------
  Global Variables  
 ------------------------------------------------------------------------------*/
-
+static const IRQn_Type non_critical_irqs[] = { BARO_I2C_EV_IRQn, IMU_I2C_EV_IRQn, FLASH_SPI_IRQn, GPS_UART_IRQn };
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -50,10 +50,10 @@
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		disable_irq                                                            *
+*       disable_irq                                                            *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Disables IRQ interrupts; wrapper for __disable_irq()                   *
+*       Disables IRQ interrupts that can be safely disabled                    *
 *                                                                              *
 *******************************************************************************/
 void disable_irq
@@ -61,17 +61,21 @@ void disable_irq
     void
     ) 
 {
-__disable_irq();
+for ( int i = 0; i < array_size( non_critical_irqs ); i++ )
+    {
+    HAL_NVIC_DisableIRQ( non_critical_irqs[i] );
+    }
+
 } /* disable_irq */
 
 
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		enable_irq                                                             *
+*       enable_irq                                                             *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Enables IRQ interrupts; wrapper for __enable_irq()                     *
+*       Enables IRQ interrupts that can be safely disabled                     *
 *                                                                              *
 *******************************************************************************/
 void enable_irq
@@ -79,7 +83,11 @@ void enable_irq
     void
     ) 
 {
-__enable_irq();
+for ( int i = 0; i < array_size( non_critical_irqs ); i++ )
+    {
+    HAL_NVIC_EnableIRQ( non_critical_irqs[i] );
+    }
+
 } /* enable_irq */
 
 
