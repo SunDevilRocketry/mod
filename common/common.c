@@ -36,7 +36,7 @@
 /*------------------------------------------------------------------------------
  Global Variables  
 ------------------------------------------------------------------------------*/
-static const IRQn_Type non_critical_irqs[] = { BARO_I2C_EV_IRQn, IMU_I2C_EV_IRQn, FLASH_SPI_IRQn, GPS_UART_IRQn };
+static const IRQn_Type non_critical_irqs[] = { BARO_I2C_EV_IRQn, IMU_I2C_EV_IRQn, GPS_UART_IRQn }; /* LoRa eventually too */
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
