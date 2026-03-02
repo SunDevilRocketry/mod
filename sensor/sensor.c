@@ -85,18 +85,6 @@ extern IMU_OFFSET imu_offset;
  Internal function prototypes 
 ------------------------------------------------------------------------------*/
 
-/* Reserve the sensor data struct mutex and disable interrupts to ISRs that will check out the mutex. */
-static void sensor_mutex_reserve
-    (
-    void
-    );
-
-/* Release the sensor data struct mutex and enable interrupts to ISRs that will check out the mutex. */
-static void sensor_mutex_release
-	(
-	void
-	);
-
 /* Sensor ID to size and pointer mapping */
 void static sensor_map
 	(
@@ -1765,12 +1753,6 @@ return SENSOR_OK;
 
 } /* sensor_start_IT */
 
-#endif
-
-
-/*------------------------------------------------------------------------------
- Internal procedures 
-------------------------------------------------------------------------------*/
 
 /*******************************************************************************
 *                                                                              *
@@ -1812,6 +1794,13 @@ HAL_NVIC_EnableIRQ( GPS_UART_IRQn );
 /* HAL_NVIC_EnableIRQ( [lora placeholder] ); */
 
 } /* sensor_mutex_release */
+
+#endif
+
+
+/*------------------------------------------------------------------------------
+ Internal procedures 
+------------------------------------------------------------------------------*/
 
 
 /*******************************************************************************
