@@ -36,7 +36,6 @@
 /*------------------------------------------------------------------------------
  Global Variables  
 ------------------------------------------------------------------------------*/
-static const IRQn_Type non_critical_irqs[] = { BARO_I2C_EV_IRQn, IMU_I2C_EV_IRQn, GPS_UART_IRQn }; /* LoRa eventually too */
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -46,50 +45,6 @@ static const IRQn_Type non_critical_irqs[] = { BARO_I2C_EV_IRQn, IMU_I2C_EV_IRQn
 /*------------------------------------------------------------------------------
  API Functions 
 ------------------------------------------------------------------------------*/
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-*       disable_irq                                                            *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-*       Disables IRQ interrupts that can be safely disabled                    *
-*                                                                              *
-*******************************************************************************/
-void disable_irq
-    (
-    void
-    ) 
-{
-for ( int i = 0; i < array_size( non_critical_irqs ); i++ )
-    {
-    HAL_NVIC_DisableIRQ( non_critical_irqs[i] );
-    }
-
-} /* disable_irq */
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-*       enable_irq                                                             *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-*       Enables IRQ interrupts that can be safely disabled                     *
-*                                                                              *
-*******************************************************************************/
-void enable_irq
-    (
-    void
-    ) 
-{
-for ( int i = 0; i < array_size( non_critical_irqs ); i++ )
-    {
-    HAL_NVIC_EnableIRQ( non_critical_irqs[i] );
-    }
-
-} /* enable_irq */
-
 
 /*******************************************************************************
 *                                                                              *

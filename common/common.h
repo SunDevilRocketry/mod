@@ -107,16 +107,6 @@ memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-void disable_irq
-    (
-    void
-    );
-
-void enable_irq
-    (
-    void
-    );
-
 void delay_ms
     (
     uint32_t delay

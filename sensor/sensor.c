@@ -85,6 +85,18 @@ extern IMU_OFFSET imu_offset;
  Internal function prototypes 
 ------------------------------------------------------------------------------*/
 
+/* Reserve the sensor data struct mutex and disable interrupts to ISRs that will check out the mutex. */
+static void sensor_mutex_reserve
+    (
+    void
+    );
+
+/* Release the sensor data struct mutex and enable interrupts to ISRs that will check out the mutex. */
+static void sensor_mutex_release
+	(
+	void
+	);
+
 /* Sensor ID to size and pointer mapping */
 void static sensor_map
 	(
@@ -754,7 +766,7 @@ SENSOR_STATUS sensor_dump
 		}
 
 	/* Disabling interrupts to avoid race conditions */
-	disable_irq();
+	sensor_mutex_reserve();
 
 	/* CRITICAL SECTION BEGIN */
 
@@ -794,7 +806,7 @@ SENSOR_STATUS sensor_dump
 	/* CRITICAL SECTION END */
 
 	/* Re-enabling interrupts after potentially dangerous reads/writes occur */
-	enable_irq();
+	sensor_mutex_release();
 
 #elif defined( ENGINE_CONTROLLER    )
 	#ifndef L0002_REV5
@@ -1759,6 +1771,48 @@ return SENSOR_OK;
 /*------------------------------------------------------------------------------
  Internal procedures 
 ------------------------------------------------------------------------------*/
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+*       sensor_mutex_reserve                                                   *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+*       Reserve the sensor data struct mutex and disable interrupts            *
+*       to ISRs that will check out the mutex.                                 *
+*                                                                              *
+*******************************************************************************/
+void sensor_mutex_reserve
+    (
+    void
+    ) 
+{
+HAL_NVIC_DisableIRQ( GPS_UART_IRQn );
+/* HAL_NVIC_DisableIRQ( [lora placeholder] ); */
+
+} /* sensor_mutex_reserve */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   * 
+*       sensor_mutex_release                                                   *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+*       Release the sensor data struct mutex and enable interrupts             *
+*       to ISRs that will check out the mutex.                                 *
+*                                                                              *
+*******************************************************************************/
+void sensor_mutex_release
+    (
+    void
+    ) 
+{
+HAL_NVIC_EnableIRQ( GPS_UART_IRQn );
+/* HAL_NVIC_EnableIRQ( [lora placeholder] ); */
+
+} /* sensor_mutex_release */
+
 
 /*******************************************************************************
 *                                                                              *
