@@ -61,7 +61,9 @@ void disable_irq
     void
     ) 
 {
+#ifndef EMULATOR
 __disable_irq();
+#endif
 } /* disable_irq */
 
 
@@ -79,7 +81,9 @@ void enable_irq
     void
     ) 
 {
+#ifndef EMULATOR
 __enable_irq();
+#endif
 } /* enable_irq */
 
 
