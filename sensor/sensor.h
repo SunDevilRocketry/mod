@@ -313,6 +313,18 @@ SENSOR_STATUS sensor_start_IT
 	( 
 	SENSOR_DATA* sensor_data_ptr 
 	);
+
+/* Reserve the sensor data struct mutex and disable interrupts to ISRs that will check out the mutex. */
+void sensor_mutex_reserve
+    (
+    void
+    );
+
+/* Release the sensor data struct mutex and enable interrupts to ISRs that will check out the mutex. */
+void sensor_mutex_release
+	(
+	void
+	);
 #endif
 
 #ifdef __cplusplus
