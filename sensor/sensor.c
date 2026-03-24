@@ -51,6 +51,7 @@
     #include "common.h"
 	#include "imu.h"
 	#include "baro.h"
+	#include "timer.h"
 #elif defined( FLIGHT_COMPUTER_LITE )
 	#include "baro.h"
 #endif
@@ -73,7 +74,10 @@
 
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
-extern volatile uint32_t tdelta, previous_time;
+
+/* Timing (sensors) */
+uint64_t baro_velo_tick = 0;
+uint64_t imu_velo_tick = 0;
 
 #ifdef FLIGHT_COMPUTER
 extern GPS_DATA gps_data;
@@ -496,9 +500,6 @@ switch ( subcommand )
 				}
 		#endif
 
-		// Reset start time
-		previous_time = HAL_GetTick();
-
 		/* Start polling sensors */
 		while ( sensor_poll_cmd != SENSOR_POLL_STOP )
 			{
@@ -541,8 +542,6 @@ switch ( subcommand )
 				/* Poll Sensors */
 				case SENSOR_POLL_REQUEST:
 					{
-					tdelta = HAL_GetTick() - previous_time;
-					previous_time = HAL_GetTick();
 					sensor_status = sensor_poll( &sensor_data    , 
 												 &poll_sensors[0],
 												 num_sensors );
@@ -571,9 +570,6 @@ switch ( subcommand )
 				/* STOP Executtion */
 				case SENSOR_POLL_STOP:
 					{
-					// Reset timing
-					previous_time = 0;
-					tdelta = 0;
 					break;
 					} /* case SENSOR_POLL_STOP */
 
@@ -1614,7 +1610,9 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	float accel_y = imu_data->imu_converted.accel_y;
 	float accel_z = imu_data->imu_converted.accel_z;
 
-	float ts_delta = tdelta / 1000.0;
+	uint64_t current_tick = get_us_tick();
+	uint64_t imu_tdelta = current_tick - baro_velo_tick;
+	float ts_delta = imu_tdelta / 1000000.0;
 
 	// Calculate 3 velocity vectors using motion equations
 	velo_x = velo_x_prev + accel_x*ts_delta;
@@ -1632,6 +1630,9 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	velo_z_prev = velo_z;
 
 	imu_data->state_estimate.position = 0; //TODO: Implement position
+
+	imu_velo_tick = current_tick;
+
 }
 
 /*******************************************************************************
@@ -1652,7 +1653,9 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 	float temp = sen_data->baro_temp;
 	// conv pressure to pascal for equation
 	// pressure *= 6894.76;
-	float ts_delta = tdelta / 1000.0;
+	uint64_t current_tick = get_us_tick();
+	uint64_t baro_tdelta = current_tick - baro_velo_tick;
+	float ts_delta = baro_tdelta / 1000000.0;
 
 	// calc altitude
 	float PRESSURE_SEA_LEVEL = 101325;
@@ -1669,6 +1672,8 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 
 	sen_data->baro_alt = alt;
 	sen_data->baro_velo = velocity;
+
+	baro_velo_tick = current_tick;
 
 }
 
