@@ -6,6 +6,17 @@
 * DESCRIPTION: 
 * 		Contains utility functions for SDR code.
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 
@@ -22,6 +33,9 @@ extern "C" {
  Macros 
 ------------------------------------------------------------------------------*/
 
+/* Constants */
+#define COMP_ALPHA 0.98f /* Used in sensor fusion */
+
 /*******************************************************************************
 *                                                                              *
 * MACRO:                                                                       * 
@@ -32,6 +46,30 @@ extern "C" {
 *                                                                              *
 *******************************************************************************/
 #define util_set_bit( orig, idx ) ( orig | ( 1 << idx ) )
+
+
+/*******************************************************************************
+*                                                                              *
+* MACRO:                                                                       * 
+*       rad_to_deg                                                             *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Convert a value in radians to degrees.                                 *
+*                                                                              *
+*******************************************************************************/
+#define rad_to_deg(x) ((x) * 57.29577951f)
+
+
+/*******************************************************************************
+*                                                                              *
+* MACRO:                                                                       * 
+*       deg_to_rad                                                             *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Convert a value in degrees to radians.                                 *
+*                                                                              *
+*******************************************************************************/
+#define deg_to_rad(x) ((x) * 0.01745329252f)
 
 
 /*------------------------------------------------------------------------------

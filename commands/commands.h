@@ -6,6 +6,17 @@
 * DESCRIPTION: 
 * 		Contains general command functions common to all embedded controllers
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -87,7 +98,12 @@ extern "C" {
 
 typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
 	{
-	IMU_CONVERTED imu_converted;
+	float acc_x;
+	float acc_y;
+	float acc_z;
+	float gyro_x;
+	float gyro_y;
+	float gyro_z;
 	float roll_angle;
 	float pitch_angle;
 	float yaw_angle;
