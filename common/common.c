@@ -30,13 +30,11 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "common.h"
-#include "stm32h7xx_hal.h"
 
 
 /*------------------------------------------------------------------------------
  Global Variables  
 ------------------------------------------------------------------------------*/
-
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -50,34 +48,22 @@
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		disable_irq                                                            *
+* 		delay_ms                                                               *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Disables IRQ interrupts; wrapper for __disable_irq()                   *
+* 		Minimum delay in miliseconds                                           *
 *                                                                              *
 *******************************************************************************/
-void disable_irq
+void delay_ms
     (
-    void
-    ) 
+    uint32_t delay
+    )
 {
-__disable_irq();
-} /* disable_irq */
+HAL_Delay(delay);
+
+} /* delay_ms */
 
 
 /*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		enable_irq                                                             *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Enables IRQ interrupts; wrapper for __enable_irq()                     *
-*                                                                              *
+* END OF FILE                                                                  * 
 *******************************************************************************/
-void enable_irq
-    (
-    void
-    ) 
-{
-__enable_irq();
-} /* enable_irq */
