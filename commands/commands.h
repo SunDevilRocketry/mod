@@ -49,6 +49,7 @@ extern "C" {
 #define SERVO_OP	   0x08	   /* servo command opcode		 */
 #define PRESET_OP	   0x24	   /* preset command opcode 	 */
 #define DASHBOARD_OP   0x30	   /* dashboard command opcode 	 */
+#define LORA_OP        0x31    /* LORA command opcode        */
 
 #define FIN_OP		   0x21    /* fin calibrate opcode (NOTE: DUPLICATE OF POWER_OP) */
 

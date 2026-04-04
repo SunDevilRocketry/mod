@@ -108,6 +108,7 @@ typedef enum _ERROR_CODE
     ERROR_IGNITION_CONTINUITY_ERROR    , /* No continuity on IGN terminals    */
     ERROR_LORA_SPI_INIT_ERROR          , /* Error with LoRa SPI init          */
     ERROR_LORA_INIT_ERROR              , /* Error with LoRa init              */
+    ERROR_LORA_CMD_ERROR               , /* Error with LoRa command           */
     } ERROR_CODE;
 
 /* Error callback table entry */
