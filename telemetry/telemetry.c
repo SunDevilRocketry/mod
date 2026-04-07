@@ -129,7 +129,8 @@ switch( telemetry_state )
         /* check return. if not standby, cancel telem fsm and go back to blocking */
         if ((register_contents[1] & 0b111) != LORA_STANDBY_MODE)
             {
-            telemetry_state = TELEMETRY_STATE_BLOCKING; /* cancel telemetry FSM */
+            telemetry_state = TELEMETRY_STATE_BLOCKING;
+            lora_status = lora_write_register_IT(LORA_REG_OPERATION_MODE, LORA_STANDBY_MODE);
             return;
             }
         else /* success: go to next state*/
@@ -208,7 +209,7 @@ switch( telemetry_state )
         telemetry_state = TELEMETRY_STATE_STARTING_TRANSMISSION;
         uint8_t new_opmode_register = (register_contents[1] & ~(0x7));
         new_opmode_register = (new_opmode_register | LORA_TRANSMIT_MODE);
-        LORA_STATUS write_status = lora_write_register_IT( LORA_REG_OPERATION_MODE, new_opmode_register );
+        lora_status = lora_write_register_IT( LORA_REG_OPERATION_MODE, new_opmode_register );
         return;
         }
     
@@ -223,6 +224,7 @@ switch( telemetry_state )
         /* opmode change complete, we are now transmitting */
         telemetry_state = TELEMETRY_STATE_TRANSMITTING;
         register_contents[1] = 0xFF; /* set this to FF so we can detect when the contents have changed */
+        lora_status = lora_read_register_IT(LORA_REG_OPERATION_MODE, register_contents);
         return;
         }
 
@@ -247,7 +249,7 @@ switch( telemetry_state )
             }
         return;
         }
-
+        
     }
 
 
