@@ -24,6 +24,7 @@
 ------------------------------------------------------------------------------*/
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 /*------------------------------------------------------------------------------ 
  Project Includes                                                                     
@@ -101,6 +102,11 @@ if( ( lora_status & ( LORA_FAIL | LORA_TRANSMIT_FAIL | LORA_TIMEOUT_FAIL ) )
     return;
     }
 
+// ETS TEMP: Test
+// telemetry_get_next_message();
+// lora_transmit( &payload, sizeof( LORA_MESSAGE ) );
+// return;
+
 /* update the current telemetry state */
 switch( telemetry_state )
     {
@@ -129,8 +135,12 @@ switch( telemetry_state )
         /* check return. if not standby, cancel telem fsm and go back to blocking */
         if ((register_contents[1] & 0b111) != LORA_STANDBY_MODE)
             {
-            telemetry_state = TELEMETRY_STATE_BLOCKING;
-            lora_status = lora_write_register_IT(LORA_REG_OPERATION_MODE, LORA_STANDBY_MODE);
+            telemetry_state = TELEMETRY_STATE_BLOCKING; /* wait for next synchronous check */
+            /* Preserve LoRa mode (bit 7) and other upper bits; only set mode. */
+            lora_status = lora_write_register_IT(
+                LORA_REG_OPERATION_MODE,
+                (uint8_t)( ( register_contents[1] & (uint8_t) ~0x7 ) | (uint8_t) LORA_STANDBY_MODE )
+                );
             return;
             }
         else /* success: go to next state*/
@@ -163,7 +173,6 @@ switch( telemetry_state )
             }
 
         telemetry_state = TELEMETRY_STATE_WRITING_MSG_LEN;
-        telemetry_get_next_message();
         lora_status = lora_write_register_IT(LORA_REG_SIGNAL_TO_NOISE, LORA_MESSAGE_SIZE);
         return;
         }
@@ -177,6 +186,7 @@ switch( telemetry_state )
             }
 
         telemetry_state = TELEMETRY_STATE_WRITING_MSG;
+        telemetry_get_next_message();
         burst_write_buf[0] = (LORA_REG_FIFO_RW | 0x80); /* set up reg write */
         memcpy(&(burst_write_buf[1]), &payload, LORA_MESSAGE_SIZE);
         lora_status = lora_write_IT(burst_write_buf, LORA_MESSAGE_SIZE + 1);
@@ -287,6 +297,7 @@ else
     msg_type = LORA_MSG_DASHBOARD_DATA;
     }
 telemetry_build_payload(&payload, msg_type);
+message_idx++;
 
 } /* telemetry_get_next_message */
 
@@ -466,3 +477,15 @@ switch( message_type )
 memcpy( &(msg_buf->payload.text_message.msg), &text_message, sizeof( TEXT_MESSAGE ) );
 
 } /* telemetry_build_text_message */
+
+
+#ifdef DEBUG
+TELEMETRY_FSM_STATE telemetry_get_fsm_state
+    (
+    void
+    ) 
+{
+return telemetry_state;
+
+} /* telemetry_get_fsm_state */
+#endif

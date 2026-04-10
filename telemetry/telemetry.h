@@ -149,6 +149,14 @@ void telemetry_build_payload
     LORA_MESSAGE_TYPES  message_type  /* i: what kind of message           */
     );
 
+/* Debug only function for retrieval of telemetry FSM state */
+#ifdef DEBUG
+TELEMETRY_FSM_STATE telemetry_get_fsm_state
+    (
+    void
+    );
+#endif
+
 #ifdef __cplusplus
 }
 #endif
