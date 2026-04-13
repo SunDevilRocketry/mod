@@ -979,22 +979,22 @@ if ( HAL_GPIO_ReadPin( LOX_ENC_GPIO_PORT, LOX_ENC_A_PIN ) )
 	if ( !lox_channelB_state )
 		{
 		//lox_valve_pos -= 1;
-		dec_lox_encoder();
+		// dec_lox_encoder();
 
 		/* Detect valve closed position */
-		if ( ox_valve_closing && ( lox_valve_pos == VALVE_CLOSED_POS ) )
-			{
-			HAL_TIM_PWM_Stop( &( VALVE_LOX_TIM ), VALVE_LOX_TIM_CHANNEL );
-			ox_valve_closing = false;
-			}
-		/*
+		// if ( ox_valve_closing && ( lox_valve_pos == VALVE_CLOSED_POS ) )
+		// 	{
+		// 	HAL_TIM_PWM_Stop( &( VALVE_LOX_TIM ), VALVE_LOX_TIM_CHANNEL );
+		// 	ox_valve_closing = false;
+		// 	}
+		
 		if ( ox_valve_closing && ( valve_get_ox_valve_state() == VALVE_CLOSED ) )
 			{
 			HAL_TIM_PWM_Stop( &( VALVE_LOX_TIM ), VALVE_LOX_TIM_CHANNEL );
 			ox_valve_closing = false;
 			lox_valve_pos = 0;
 			}
-		*/
+		
 		}
 	}
 /* High to Low Transition */
@@ -1072,13 +1072,21 @@ if ( HAL_GPIO_ReadPin( KER_ENC_GPIO_PORT, KER_ENC_A_PIN ) )
 	if ( !fuel_channelB_state )
 		{
 		//fuel_valve_pos -= 1;
-		dec_fuel_encoder();
+		// dec_fuel_encoder();
 
 		/* Detect valve closed */
-		if ( fuel_valve_closing && ( fuel_valve_pos == VALVE_CLOSED_POS ) )
+		// if ( fuel_valve_closing && ( fuel_valve_pos == VALVE_CLOSED_POS ) )
+		// 	{
+		// 	HAL_TIM_PWM_Stop( &( VALVE_FUEL_TIM ), VALVE_FUEL_TIM_CHANNEL );
+		// 	fuel_valve_closing = false;
+		// 	}
+		// }
+		
+		if ( fuel_valve_closing && ( valve_get_fuel_valve_state() == VALVE_CLOSED ) )
 			{
 			HAL_TIM_PWM_Stop( &( VALVE_FUEL_TIM ), VALVE_FUEL_TIM_CHANNEL );
 			fuel_valve_closing = false;
+			fuel_valve_pos = 0;
 			}
 		}
 	}
