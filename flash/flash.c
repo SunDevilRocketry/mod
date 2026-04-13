@@ -731,8 +731,8 @@ FLASH_STATUS flash_write
 HAL_StatusTypeDef hal_status[3];    /* Status codes returned by HAL           */
 FLASH_STATUS      flash_status;     /* Status codes returned by flash API     */
 uint8_t           flash_opcode;     /* Opcode for flash instructions          */
-uint32_t          timeout;          /* Timeout for flash write calls          */
-uint32_t          timeout_ctr;      /* Counter to trigger timeout             */
+uint32_t          timeout;          /* Timeout for flash write calls (ms)     */
+uint32_t          timeout_start;    /* HAL tick at start of flash write       */
 uint8_t*          pbuffer;          /* Pointer to data in flash buffer        */
 uint8_t           address_bytes[3]; /* Flash memory address in byte form      */
 
@@ -743,7 +743,7 @@ uint8_t           address_bytes[3]; /* Flash memory address in byte form      */
 flash_opcode  = FLASH_OP_HW_AAI_PROGRAM; 
 flash_status  = FLASH_OK;
 timeout       = pflash_handle -> num_bytes; /* 1 ms/byte timeout */
-timeout_ctr   = 0;
+timeout_start = HAL_GetTick();
 pbuffer       = pflash_handle -> pbuffer;
 address_to_bytes( pflash_handle -> address, &address_bytes[0] );
 
@@ -813,13 +813,9 @@ for ( int i = 2; i < pflash_handle -> num_bytes; i += 2 )
 	/* Wait for flash to be ready */
 	while( flash_is_flash_busy() == FLASH_BUSY )
 		{
-		if ( timeout_ctr >= timeout )
+		if ( ( HAL_GetTick() - timeout_start ) >= timeout )
 			{
 			return FLASH_TIMEOUT;
-			}
-		else
-			{
-			timeout_ctr++;
 			}
 		}
 
