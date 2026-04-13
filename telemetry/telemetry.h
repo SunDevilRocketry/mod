@@ -53,6 +53,12 @@ extern "C" {
  Typedefs
 ------------------------------------------------------------------------------*/
 
+
+/* Aliased type if it doesn't exist on this platform */
+#ifndef FLIGHT_COMPUTER
+typedef uint8_t FLIGHT_COMP_STATE_TYPE;
+#endif
+
 typedef uint32_t VERSION_INFO_TYPE; /* hw version : fw version : fw patch : fw prerelease */
 									/* msb									lsb			  */
 
