@@ -909,7 +909,7 @@ else
 	{
 	return VALVE_CLOSED;
 	}
-} /* valve_get_main_valve_state */
+} /* valve_get_fuel_valve_state */
 
 
 /*******************************************************************************

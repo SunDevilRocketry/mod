@@ -20,6 +20,7 @@ extern "C" {
 #include "stm32h7xx_hal.h"
 #if defined( FLIGHT_COMPUTER )
 	#include "imu.h"
+	#include "gps.h"
 #endif
 
 /*------------------------------------------------------------------------------
@@ -50,9 +51,9 @@ Includes
 
 #if   defined( FLIGHT_COMPUTER   )
 	/* General */
-	#define NUM_SENSORS         ( 12   )
-	#define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 28   )
+	#define NUM_SENSORS         ( 38   )
+	// #define IMU_DATA_SIZE       ( 20   )
+	#define SENSOR_DATA_SIZE	( 120   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -126,18 +127,45 @@ typedef uint8_t SENSOR_ID;
 typedef enum
 	{
 	#if defined( FLIGHT_COMPUTER )
-		SENSOR_ACCX  = 0x00,
-		SENSOR_ACCY  = 0x01,
-		SENSOR_ACCZ  = 0x02,
-		SENSOR_GYROX = 0x03,
-		SENSOR_GYROY = 0x04,
-		SENSOR_GYROZ = 0x05,
-		SENSOR_MAGX  = 0x06,
-		SENSOR_MAGY  = 0x07,
-		SENSOR_MAGZ  = 0x08,
-		SENSOR_IMUT  = 0x09,
-		SENSOR_PRES  = 0x0A,
-		SENSOR_TEMP  = 0x0B
+		SENSOR_ACCX  		= 0x00,
+		SENSOR_ACCY  		= 0x01,
+		SENSOR_ACCZ  		= 0x02,
+		SENSOR_GYROX 		= 0x03,
+		SENSOR_GYROY 		= 0x04,
+		SENSOR_GYROZ 		= 0x05,
+		SENSOR_MAGX  		= 0x06,
+		SENSOR_MAGY  		= 0x07,
+		SENSOR_MAGZ  		= 0x08,
+		SENSOR_IMUT  		= 0x09,
+		SENSOR_ACCX_CONV 	= 0x0A,
+		SENSOR_ACCY_CONV 	= 0x0B,
+		SENSOR_ACCZ_CONV 	= 0x0C,
+		SENSOR_GYROX_CONV 	= 0x0D,
+		SENSOR_GYROY_CONV 	= 0x0E,
+		SENSOR_GYROZ_CONV 	= 0x0F,
+		SENSOR_ROLL_DEG 	= 0x10,
+		SENSOR_PITCH_DEG 	= 0x11,
+		SENSOR_ROLL_RATE 	= 0x12,
+		SENSOR_PITCH_RATE 	= 0x13,
+		SENSOR_VELOCITY 	= 0x14,
+		SENSOR_VELO_X		= 0x15,
+		SENSOR_VELO_Y		= 0x16,
+		SENSOR_VELO_Z		= 0x17,
+		SENSOR_POSITION 	= 0x18,
+		SENSOR_PRES  		= 0x19,
+		SENSOR_TEMP  		= 0x1A,
+		SENSOR_BARO_ALT		= 0x1B,
+		SENSOR_BARO_VELO	= 0x1C,
+		SENSOR_GPS_ALT		= 0x1D,
+		SENSOR_GPS_SPEED	= 0x1E,
+		SENSOR_GPS_TIME		= 0x1F,
+		SENSOR_GPS_DEC_LONG	= 0x20,
+		SENSOR_GPS_DEC_LAT 	= 0x21,
+		SENSOR_GPS_NS		= 0x22,
+		SENSOR_GPS_EW		= 0x23,
+		SENSOR_GPS_GLL		= 0x24,
+		SENSOR_GPS_RMC		= 0x25,
+
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		SENSOR_PT0   = 0x00,
 		SENSOR_PT1   = 0x01,
@@ -163,8 +191,19 @@ typedef struct SENSOR_DATA
 	{
 	#if   defined( FLIGHT_COMPUTER      )
 		IMU_DATA imu_data;
-		float    baro_pressure;
+		float    baro_pressure; 
 		float    baro_temp;	
+		float	 baro_alt;
+		float 	 baro_velo;
+		float	 gps_altitude_ft;
+		float 	 gps_speed_kmh;
+		float 	 gps_utc_time;
+		float	 gps_dec_longitude;
+		float	 gps_dec_latitude;
+		char	 gps_ns;
+		char	 gps_ew;
+		char	 gps_gll_status;
+		char 	 gps_rmc_status;
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		uint32_t pt_pressures[ NUM_PTS ];
 		uint32_t load_cell_force;
@@ -177,6 +216,14 @@ typedef struct SENSOR_DATA
 		int32_t fuel_valve_pos;
 	#endif /* #elif defined( ENGINE_CONTROLLER ) */
 	} SENSOR_DATA;
+
+/* Baro Preset data */
+typedef struct _BARO_PRESET
+	{
+	float baro_pres;
+	float baro_temp;
+	} BARO_PRESET;
+
 
 /* Sensor Data sizes and offsets */
 typedef struct SENSOR_DATA_SIZE_OFFSETS
@@ -234,6 +281,15 @@ SENSOR_STATUS sensor_dump
 	(
     SENSOR_DATA* sensor_data_ptr 
     );
+
+#ifdef FLIGHT_COMPUTER
+void sensor_body_state(IMU_DATA* imu_data);
+void sensor_imu_velo(IMU_DATA* imu_data);
+void sensor_conv_imu(IMU_DATA* imu_data);
+float sensor_acc_conv(uint16_t readout);
+float sensor_gyro_conv(uint16_t readout);
+void sensor_baro_velo(SENSOR_DATA* sensor_data_ptr);
+#endif
 
 #ifdef ENGINE_CONTROLLER
 /* Converts a pressure transducer ADC readout to a floating point pressure in 

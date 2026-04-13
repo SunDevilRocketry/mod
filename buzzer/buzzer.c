@@ -101,6 +101,40 @@ else
 
 /*******************************************************************************
 *                                                                              *
+* PROCEDURE:                                                                   * 
+*       buzzer_multi_beeps                                                     *
+*                                                                              *
+* DESCRIPTION:                                                                 * 
+* 		Beep the flight computer buzzer a specified number of times (blocking) *
+*                                                                              *
+*******************************************************************************/
+BUZZ_STATUS buzzer_multi_beeps
+	(
+	uint32_t beep_duration, 		/* Length of beep in milliseconds */
+	uint32_t time_between_beeps,	/* How long to wait between beeps in ms */
+	uint8_t	 num_beeps 				/* How many times to repeat */
+	)
+{
+BUZZ_STATUS status = BUZZ_OK;
+for ( uint8_t i = 0; i < num_beeps; i++ )
+	{
+	status = buzzer_beep(beep_duration);
+
+	if ( status != BUZZ_OK )
+		{
+		return status;
+		}
+	
+	HAL_Delay(time_between_beeps);
+	}
+
+	return status;
+
+}
+
+
+/*******************************************************************************
+*                                                                              *
 * PROCEDURE:                                                                   *
 *       buzzer_num_beeps                                                       *
 *                                                                              *
