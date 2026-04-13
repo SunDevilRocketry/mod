@@ -53,6 +53,9 @@ extern "C" {
  Typedefs
 ------------------------------------------------------------------------------*/
 
+typedef uint32_t VERSION_INFO_TYPE; /* hw version : fw version : fw patch : fw prerelease */
+									/* msb									lsb			  */
+
 typedef enum _LORA_MESSAGE_TYPES
     {
     LORA_MSG_VEHICLE_ID = 0x00000001,
