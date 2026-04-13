@@ -165,10 +165,13 @@ switch(solenoid_base_code)
 	case SOL_GETSTATE_CODE:
 		{
 		sol_state = solenoid_get_state();
-		#if   defined( TERMINAL )
+		#if   defined( TERMINAL ) 
 			usb_transmit( &sol_state, sizeof( sol_state ), HAL_DEFAULT_TIMEOUT );
-		#elif defined( HOTFIRE  ) 
-			valve_transmit( &sol_state, sizeof( sol_state ), HAL_DEFAULT_TIMEOUT );
+		#elif defined( HOTFIRE  )
+			if (USB_MODE)
+				usb_transmit( &sol_state, sizeof( sol_state ), HAL_DEFAULT_TIMEOUT );
+			else
+				valve_transmit( &sol_state, sizeof( sol_state ), HAL_DEFAULT_TIMEOUT );
 		#endif
 		break;
 		}

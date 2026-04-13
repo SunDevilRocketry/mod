@@ -149,6 +149,12 @@ VALVE_STATUS valve_open_fuel_valve
 	void
 	);
 
+/* Slowly open the main fuel valve */
+VALVE_STATUS valve_slow_open_fuel_valve
+	(
+	void
+	);
+
 /* Close the main oxidizer valve */
 VALVE_STATUS valve_close_ox_valve
 	(
