@@ -31,7 +31,7 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Standard Includes                                                                    
 ------------------------------------------------------------------------------*/
-#include "stm32h7xx_hal.h"
+
 
 /*------------------------------------------------------------------------------
  Project Includes  
@@ -39,8 +39,12 @@ extern "C" {
 #include "math_sdr.h"
 #include "error_sdr.h"
 #include "commands.h"
-#include "sensor.h"
 #include "main.h"
+
+#ifndef F1_TESTBED
+#include "stm32h7xx_hal.h"
+#include "sensor.h"
+#endif
 
 /*------------------------------------------------------------------------------
  Constants

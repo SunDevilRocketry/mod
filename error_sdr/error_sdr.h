@@ -38,7 +38,10 @@ extern "C" {
  Constants 
 ------------------------------------------------------------------------------*/
 #define TEXT_MESSAGE_LENGTH 72
+
+#ifndef F1_TESTBED
 #define Error_Handler( a ) error_fail_fast( a ) /* backwards compatible */
+#endif
 
 /*------------------------------------------------------------------------------
  Typdefs 
