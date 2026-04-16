@@ -36,7 +36,7 @@
 #ifdef STM32H750xx
 #include "led.h"
 #include "stm32h7xx_hal.h"
-#else if defined( F1_TESTBED )
+#elif defined( F1_TESTBED )
 // LEDs not supported. Provide a stub.
 typedef enum {
     LED_RED,
