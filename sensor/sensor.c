@@ -1598,7 +1598,7 @@ float sensor_gyro_conv(uint16_t readout){
 * 		sensor_imu_velo                                                        *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Calculate the velocity depending on accel 								*
+*       Calculate the velocity depending on accel 							   *
 *                                                                              *
 *******************************************************************************/
 float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
@@ -1607,24 +1607,26 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 
 	float accel_x = imu_data->imu_converted.accel_x;
 	float accel_y = imu_data->imu_converted.accel_y;
-	float accel_z = imu_data->imu_converted.accel_z; /* NA TMP: for some reason this number is really high */
+	float accel_z = imu_data->imu_converted.accel_z;
 
 	float ts_delta;
 	
 	uint64_t current_tick = get_us_tick();
-	uint64_t imu_tdelta = current_tick - baro_velo_tick;
-	// if ( baro_velo_tick != 0 ) // Could discard first value completely
-		ts_delta = imu_tdelta / 1000000.0;
-	// else
-	// 	ts_delta = 0; 
+	uint64_t imu_tdelta = current_tick - imu_velo_tick;
+	ts_delta = imu_tdelta / 1000000.0;
 
 	// Calculate 3 velocity vectors using motion equations
 	velo_x = velo_x_prev + accel_x*ts_delta;
 	velo_y = velo_y_prev + accel_y*ts_delta;
 	velo_z = velo_z_prev + accel_z*ts_delta;
-	
+
 	// Calculate the velocity scalar
 	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
+
+	/* Update state estimations*/
+	imu_data->state_estimate.velo_x = velo_x;
+	imu_data->state_estimate.velo_y = velo_y;
+	imu_data->state_estimate.velo_z = velo_z;
 
 	imu_data->state_estimate.velocity = velocity;
 
@@ -1657,10 +1659,6 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 	float temp = sen_data->baro_temp;
 	// conv pressure to pascal for equation
 	// pressure *= 6894.76;
-	/* NA: weird stuff still happens for the first frame because there's a large delay between
-	   when the FC is powered on and the first tick measured here. We might want to consider setting 
-	   the baro_velo_tick and imu_velo_tick to the current tick when we enter the fsm.
-	*/
 	uint64_t current_tick = get_us_tick();
 	uint64_t baro_tdelta = current_tick - baro_velo_tick;
 	float ts_delta = baro_tdelta / 1000000.0;
