@@ -65,7 +65,6 @@ Includes
 	#define NUM_SENSORS         ( 38   )
 	// #define IMU_DATA_SIZE       ( 20   )
 	#define SENSOR_DATA_SIZE	( 128   )
-	#define MICROSEC_PER_SEC	( 1000000.0 )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
