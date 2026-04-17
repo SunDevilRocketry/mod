@@ -65,6 +65,7 @@ Includes
 	#define NUM_SENSORS         ( 38   )
 	// #define IMU_DATA_SIZE       ( 20   )
 	#define SENSOR_DATA_SIZE	( 128   )
+	#define MICROSEC_PER_SEC	( 1000000.0 )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -290,6 +291,7 @@ SENSOR_STATUS sensor_dump
     );
 
 #ifdef FLIGHT_COMPUTER
+void sensor_initialize_tick(void);
 void sensor_body_state(IMU_DATA* imu_data);
 void sensor_imu_velo(IMU_DATA* imu_data);
 void sensor_conv_imu(IMU_DATA* imu_data, IMU_RAW* imu_raw);

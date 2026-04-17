@@ -1431,6 +1431,25 @@ return SENSOR_OK;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
+* 		sensor_initialize_tick                                                 *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Set the initial values for baro and imu tick at calibration            *
+*                                                                              *
+*******************************************************************************/
+void sensor_initialize_tick
+	(
+	void
+	)
+{
+baro_velo_tick = get_us_tick();
+imu_velo_tick = baro_velo_tick;
+
+}
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
 * 		sensor_conv_imu                                                   *
 *                                                                              *
 * DESCRIPTION:                                                                 *
@@ -1613,7 +1632,7 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	
 	uint64_t current_tick = get_us_tick();
 	uint64_t imu_tdelta = current_tick - imu_velo_tick;
-	ts_delta = imu_tdelta / 1000000.0;
+	ts_delta = imu_tdelta / MICROSEC_PER_SEC;
 
 	// Calculate 3 velocity vectors using motion equations
 	velo_x = velo_x_prev + accel_x*ts_delta;
@@ -1661,7 +1680,7 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 	// pressure *= 6894.76;
 	uint64_t current_tick = get_us_tick();
 	uint64_t baro_tdelta = current_tick - baro_velo_tick;
-	float ts_delta = baro_tdelta / 1000000.0;
+	float ts_delta = baro_tdelta / MICROSEC_PER_SEC;
 
 	// calc altitude
 	float PRESSURE_SEA_LEVEL = 101325;
