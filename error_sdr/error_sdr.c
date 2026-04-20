@@ -32,8 +32,25 @@
 #include "main.h"
 #include "math_sdr.h"
 #include "error_sdr.h"
-#include "stm32h7xx_hal.h"
+
+#ifdef STM32H750xx
 #include "led.h"
+#include "stm32h7xx_hal.h"
+#elif defined( F1_TESTBED )
+// LEDs not supported. Provide a stub.
+typedef enum {
+    LED_RED,
+    LED_BLUE,
+    LED_GREEN,
+    LED_PURPLE,
+    LED_CYAN,
+    LED_YELLOW,
+    LED_WHITE
+} LED_COLOR;
+
+void led_set_color( LED_COLOR color )
+{} // stub
+#endif
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
