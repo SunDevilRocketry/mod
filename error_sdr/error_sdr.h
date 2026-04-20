@@ -112,6 +112,8 @@ typedef enum _ERROR_CODE
     ERROR_LORA_SPI_INIT_ERROR          , /* Error with LoRa SPI init          */
     ERROR_LORA_INIT_ERROR              , /* Error with LoRa init              */
     ERROR_LORA_CMD_ERROR               , /* Error with LoRa command           */
+    ERROR_GPS_INIT_ERROR               , /* Error with GPS init               */
+    ERROR_GPS_CMD_ERROR                , /* Error with GPS command            */
     } ERROR_CODE;
 
 /* Error callback table entry */
