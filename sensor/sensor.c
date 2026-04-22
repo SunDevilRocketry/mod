@@ -1456,6 +1456,30 @@ imu_velo_tick = baro_velo_tick;
 
 }
 
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_reset_velo                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Reset velocity values to prevent accumulation of drift                 *
+*                                                                              *
+*******************************************************************************/
+void sensor_reset_velo
+	(
+	void
+	)
+{
+velo_prev = 0;
+velo_x_prev = 0;
+velo_y_prev = 0;
+velo_z_prev = 0;
+
+}
+
+
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
