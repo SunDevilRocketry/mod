@@ -290,6 +290,8 @@ SENSOR_STATUS sensor_dump
     );
 
 #ifdef FLIGHT_COMPUTER
+void sensor_initialize_tick(void);
+void sensor_reset_velo(void);
 void sensor_body_state(IMU_DATA* imu_data);
 void sensor_imu_velo(IMU_DATA* imu_data);
 void sensor_conv_imu(IMU_DATA* imu_data, IMU_RAW* imu_raw);
