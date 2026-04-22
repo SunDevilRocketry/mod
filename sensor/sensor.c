@@ -1454,7 +1454,7 @@ void sensor_initialize_tick
 baro_velo_tick = get_us_tick();
 imu_velo_tick = baro_velo_tick;
 
-}
+} /* sensor_initialize_tick */
 
 
 
@@ -1477,7 +1477,7 @@ velo_x_prev = 0;
 velo_y_prev = 0;
 velo_z_prev = 0;
 
-}
+} /* sensor_reset_velo */
 
 
 /*******************************************************************************
