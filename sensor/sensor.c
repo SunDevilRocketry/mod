@@ -1457,29 +1457,6 @@ imu_velo_tick = baro_velo_tick;
 } /* sensor_initialize_tick */
 
 
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_reset_velo                                                      *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Reset velocity values to prevent accumulation of drift                 *
-*                                                                              *
-*******************************************************************************/
-void sensor_reset_velo
-	(
-	void
-	)
-{
-velo_prev = 0;
-velo_x_prev = 0;
-velo_y_prev = 0;
-velo_z_prev = 0;
-
-} /* sensor_reset_velo */
-
-
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -1734,6 +1711,28 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 	baro_velo_tick = current_tick;
 
 }
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_reset_velo                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Reset velocity values to prevent accumulation of drift                 *
+*                                                                              *
+*******************************************************************************/
+void sensor_reset_velo
+	(
+	void
+	)
+{
+velo_prev = 0;
+velo_x_prev = 0;
+velo_y_prev = 0;
+velo_z_prev = 0;
+
+} /* sensor_reset_velo */
 
 #endif
 
