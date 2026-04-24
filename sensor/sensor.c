@@ -792,6 +792,9 @@ SENSOR_STATUS sensor_dump
 	/* Calculated velocity and position */
 	sensor_imu_velo( &(sensor_data_ptr->imu_data) );
 
+    /* Filter baro */
+    sensor_baro_lpf( sensor_data_ptr );
+
 	/* Calculated velocity from barometer */
 	sensor_baro_velo( sensor_data_ptr );
 
@@ -1669,6 +1672,40 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 	imu_velo_tick = current_tick;
 
 }
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_baro_lpf                                                        *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Filter the barometric pressure and temperature with a low-pass filter. *
+*                                                                              *
+*******************************************************************************/
+void sensor_baro_lpf
+    (
+    SENSOR_DATA* sensor_data_ptr
+    )
+{
+static float baro_pres_prev = 0.0f;
+static float baro_temp_prev = 0.0f;
+static bool initialized = false;
+
+if ( !initialized )
+    {
+    baro_pres_prev = sensor_data_ptr->baro_pressure;
+    baro_temp_prev = sensor_data_ptr->baro_temp;
+    initialized = true;
+    }
+else
+    {
+    baro_pres_prev = ( BARO_PRES_LPF_ALPHA * sensor_data_ptr->baro_pressure ) + ( ( 1.0f - BARO_PRES_LPF_ALPHA ) * baro_pres_prev );
+    baro_temp_prev = ( BARO_TEMP_LPF_ALPHA * sensor_data_ptr->baro_temp ) + ( ( 1.0f - BARO_TEMP_LPF_ALPHA ) * baro_temp_prev );
+    }
+
+} /* sensor_baro_lpf */
+
 
 /*******************************************************************************
 *                                                                              *

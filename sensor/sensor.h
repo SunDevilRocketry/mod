@@ -93,6 +93,10 @@ Includes
 	#error Board is not compatible with SENSOR module
 #endif
 
+#define BARO_PRES_LPF_ALPHA 0.05f
+#define BARO_TEMP_LPF_ALPHA 0.05f
+
+
 /*------------------------------------------------------------------------------
  Typdefs 
 ------------------------------------------------------------------------------*/
@@ -298,6 +302,7 @@ void sensor_conv_imu(IMU_DATA* imu_data, IMU_RAW* imu_raw);
 float sensor_acc_conv(uint16_t readout);
 float sensor_gyro_conv(uint16_t readout);
 void sensor_baro_velo(SENSOR_DATA* sensor_data_ptr);
+void sensor_baro_lpf(SENSOR_DATA* sensor_data_ptr);
 #endif
 
 #ifdef ENGINE_CONTROLLER
