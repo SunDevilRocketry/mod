@@ -32,9 +32,9 @@
 #include "main.h"
 #include "math_sdr.h"
 #include "error_sdr.h"
+#include "led.h"
 
 #ifdef STM32H750xx
-#include "led.h"
 #include "stm32h7xx_hal.h"
 #elif defined( F1_TESTBED )
 // LEDs not supported. Provide a stub.
