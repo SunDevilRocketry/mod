@@ -6,6 +6,17 @@
 * DESCRIPTION: 
 * 		Contains general command functions common to all embedded controllers
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -16,6 +27,10 @@
 extern "C" {
 #endif
 
+/* platform specific includes */
+#if defined( A0002_REV2 ) || defined( A0005_REV1 )
+#include "imu.h"
+#endif
 
 /*------------------------------------------------------------------------------
  Macros 
@@ -31,8 +46,10 @@ extern "C" {
 #define SOL_OP         0x51    /* solenoid command opcode    */
 #define VALVE_OP       0x52    /* Valve command opcode       */
 #define DUAL_DEPLOY_OP 0xA0    /* dual-deploy command opcode */
-#define SERVO_OP	   0x08
-#define PRESET_OP	   0x24
+#define SERVO_OP	   0x08	   /* servo command opcode		 */
+#define PRESET_OP	   0x24	   /* preset command opcode 	 */
+#define DASHBOARD_OP   0x30	   /* dashboard command opcode 	 */
+#define LORA_OP        0x31    /* LORA command opcode        */
 
 #define FIN_OP		   0x21    /* fin calibrate opcode (NOTE: DUPLICATE OF POWER_OP) */
 
@@ -61,9 +78,12 @@ extern "C" {
 #elif defined ( A0005_REV2 ) /* Ground Station Rev 2.0 */
 	/* Rev 2 */
 	#define PING_RESPONSE_CODE    ( 0x09 ) 
+#elif defined ( A0005_REV1 ) /* Ground Station Rev 1.0 */
+	/* Rev 1 */
+	#define PING_RESPONSE_CODE	  ( 0x10 )
 #endif
 
-/* Firmware Identifier Code */
+/* Firmware Identifier Code - FC */
 #define FIRMWARE_TERMINAL       ( 0x01 ) /* Terminal Firmware    */
 #define FIRMWARE_DATA_LOGGER    ( 0x02 ) /* Data Logger Firmware */
 #define FIRMWARE_DUAL_DEPLOY    ( 0x03 ) /* Dual Deploy Firmware */
@@ -71,6 +91,34 @@ extern "C" {
 #define FIRMWARE_CANARD			( 0x05 ) /* Canard Firmware      */
 #define FIRMWARE_APPA			( 0x06 ) /* APPA Firmware     	 */
 
+/* Firmware Identifier Code - GS */
+#define FIRMWARE_RECEIVER	    ( 0x11 ) /* Reciever Firmware 	 */
+
+/* Other macros */
+#define DASHBOARD_DUMP_SIZE	( 72 )
+
+typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
+	{
+	float acc_x;
+	float acc_y;
+	float acc_z;
+	float gyro_x;
+	float gyro_y;
+	float gyro_z;
+	float roll_angle;
+	float pitch_angle;
+	float yaw_angle;
+	float roll_rate;
+	float pitch_rate;
+	float yaw_rate;
+	float    baro_pressure; 
+	float    baro_temp;	
+	float	 baro_alt;
+	float 	 baro_velo;
+	float	 gps_dec_longitude;
+	float	 gps_dec_latitude;
+	} DASHBOARD_DUMP_TYPE;
+	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == 72, "DASHBOARD_DUMP_TYPE size invalid.");
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
@@ -85,6 +133,18 @@ void ping
 		CMD_SOURCE cmd_source
 	#endif
 	);
+
+#ifdef A0002_REV2
+USB_STATUS dashboard_dump
+    (
+    void
+    );
+
+void dashboard_construct_dump
+    (
+    DASHBOARD_DUMP_TYPE* buffer /* must be DASHBOARD_DUMP_SIZE */
+    );
+#endif
 
 #ifdef __cplusplus
 }

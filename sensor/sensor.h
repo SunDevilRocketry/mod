@@ -7,6 +7,17 @@
 * 		Contains functions to interface between sdec terminal commands and SDR
 *       sensor APIs
 *
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
+*
 *******************************************************************************/
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -53,7 +64,7 @@ Includes
 	/* General */
 	#define NUM_SENSORS         ( 38   )
 	// #define IMU_DATA_SIZE       ( 20   )
-	#define SENSOR_DATA_SIZE	( 120   )
+	#define SENSOR_DATA_SIZE	( 128   )
 #elif defined( ENGINE_CONTROLLER )
 	/* General */
 	#define NUM_SENSORS         ( 10   )
@@ -107,7 +118,8 @@ typedef enum
 	SENSOR_POLL_UNRECOGNIZED_CMD ,
 	SENSOR_VALVE_UART_ERROR      ,
 	SENSOR_ADC_POLL_ERROR        ,
-    SENSOR_FAIL   
+    SENSOR_FAIL   				 ,
+	SENSOR_IT_TIMEOUT
     } SENSOR_STATUS;
 
 /* Sensor poll command codes */
@@ -127,44 +139,39 @@ typedef uint8_t SENSOR_ID;
 typedef enum
 	{
 	#if defined( FLIGHT_COMPUTER )
-		SENSOR_ACCX  		= 0x00,
-		SENSOR_ACCY  		= 0x01,
-		SENSOR_ACCZ  		= 0x02,
-		SENSOR_GYROX 		= 0x03,
-		SENSOR_GYROY 		= 0x04,
-		SENSOR_GYROZ 		= 0x05,
-		SENSOR_MAGX  		= 0x06,
-		SENSOR_MAGY  		= 0x07,
-		SENSOR_MAGZ  		= 0x08,
-		SENSOR_IMUT  		= 0x09,
-		SENSOR_ACCX_CONV 	= 0x0A,
-		SENSOR_ACCY_CONV 	= 0x0B,
-		SENSOR_ACCZ_CONV 	= 0x0C,
-		SENSOR_GYROX_CONV 	= 0x0D,
-		SENSOR_GYROY_CONV 	= 0x0E,
-		SENSOR_GYROZ_CONV 	= 0x0F,
-		SENSOR_ROLL_DEG 	= 0x10,
-		SENSOR_PITCH_DEG 	= 0x11,
-		SENSOR_ROLL_RATE 	= 0x12,
-		SENSOR_PITCH_RATE 	= 0x13,
-		SENSOR_VELOCITY 	= 0x14,
-		SENSOR_VELO_X		= 0x15,
-		SENSOR_VELO_Y		= 0x16,
-		SENSOR_VELO_Z		= 0x17,
-		SENSOR_POSITION 	= 0x18,
-		SENSOR_PRES  		= 0x19,
-		SENSOR_TEMP  		= 0x1A,
-		SENSOR_BARO_ALT		= 0x1B,
-		SENSOR_BARO_VELO	= 0x1C,
-		SENSOR_GPS_ALT		= 0x1D,
-		SENSOR_GPS_SPEED	= 0x1E,
-		SENSOR_GPS_TIME		= 0x1F,
-		SENSOR_GPS_DEC_LONG	= 0x20,
-		SENSOR_GPS_DEC_LAT 	= 0x21,
-		SENSOR_GPS_NS		= 0x22,
-		SENSOR_GPS_EW		= 0x23,
-		SENSOR_GPS_GLL		= 0x24,
-		SENSOR_GPS_RMC		= 0x25,
+		SENSOR_ACCX_CONV 	= 0x00,
+		SENSOR_ACCY_CONV 	= 0x01,
+		SENSOR_ACCZ_CONV 	= 0x02,
+		SENSOR_GYROX_CONV 	= 0x03,
+		SENSOR_GYROY_CONV 	= 0x04,
+		SENSOR_GYROZ_CONV 	= 0x05,
+		SENSOR_MAGX_CONV 	= 0x06,
+		SENSOR_MAGY_CONV 	= 0x07,
+		SENSOR_MAGZ_CONV 	= 0x08,
+		SENSOR_ROLL_DEG 	= 0x09,
+		SENSOR_PITCH_DEG 	= 0x0A,
+		SENSOR_YAW_DEG		= 0x0B,
+		SENSOR_ROLL_RATE 	= 0x0C,
+		SENSOR_PITCH_RATE 	= 0x0D,
+		SENSOR_YAW_RATE		= 0x0E,
+		SENSOR_VELOCITY 	= 0x0F,
+		SENSOR_VELO_X		= 0x10,
+		SENSOR_VELO_Y		= 0x11,
+		SENSOR_VELO_Z		= 0x12,
+		SENSOR_POSITION 	= 0x13,
+		SENSOR_PRES  		= 0x14,
+		SENSOR_TEMP  		= 0x15,
+		SENSOR_BARO_ALT		= 0x16,
+		SENSOR_BARO_VELO	= 0x17,
+		SENSOR_GPS_ALT		= 0x18,
+		SENSOR_GPS_SPEED	= 0x19,
+		SENSOR_GPS_TIME		= 0x1A,
+		SENSOR_GPS_DEC_LONG	= 0x1B,
+		SENSOR_GPS_DEC_LAT 	= 0x1C,
+		SENSOR_GPS_NS		= 0x1D,
+		SENSOR_GPS_EW		= 0x1E,
+		SENSOR_GPS_GLL		= 0x1F,
+		SENSOR_GPS_RMC		= 0x20,
 
 	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
 		SENSOR_PT0   = 0x00,
@@ -204,7 +211,7 @@ typedef struct SENSOR_DATA
 		char	 gps_ew;
 		char	 gps_gll_status;
 		char 	 gps_rmc_status;
-	#elif ( defined( ENGINE_CONTROLLER ) || defined( GROUND_STATION ) )
+	#elif ( defined( ENGINE_CONTROLLER ) ) /* ETS TEMP: This may break EC compatibility. Verify when merging EC to dev branch. */
 		uint32_t pt_pressures[ NUM_PTS ];
 		uint32_t load_cell_force;
 		uint32_t tc_temp;
@@ -283,9 +290,11 @@ SENSOR_STATUS sensor_dump
     );
 
 #ifdef FLIGHT_COMPUTER
+void sensor_initialize_tick(void);
+void sensor_reset_velo(void);
 void sensor_body_state(IMU_DATA* imu_data);
 void sensor_imu_velo(IMU_DATA* imu_data);
-void sensor_conv_imu(IMU_DATA* imu_data);
+void sensor_conv_imu(IMU_DATA* imu_data, IMU_RAW* imu_raw);
 float sensor_acc_conv(uint16_t readout);
 float sensor_gyro_conv(uint16_t readout);
 void sensor_baro_velo(SENSOR_DATA* sensor_data_ptr);
@@ -298,6 +307,25 @@ float sensor_conv_pressure
 	( 
 	uint32_t adc_readout, /* Pressure readout from ADC */
 	PT_INDEX pt_num       /* PT used for readout       */
+	);
+#endif
+
+#ifdef A0002_REV2 
+SENSOR_STATUS sensor_start_IT
+	( 
+	SENSOR_DATA* sensor_data_ptr 
+	);
+
+/* Reserve the sensor data struct mutex and disable interrupts to ISRs that will check out the mutex. */
+void sensor_mutex_reserve
+    (
+    void
+    );
+
+/* Release the sensor data struct mutex and enable interrupts to ISRs that will check out the mutex. */
+void sensor_mutex_release
+	(
+	void
 	);
 #endif
 

@@ -1,0 +1,3 @@
+This larger work, the Sun Devil Rocketry mod Submodule, uses the BSD-3-Clause. This software project does not have any official dependencies, however some derivative code is used. This is attributed below.
+
+sensor.c:sensor_conv_mag - Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved. BSD-3-Clause license. https://opensource.org/license/bsd-3-clause

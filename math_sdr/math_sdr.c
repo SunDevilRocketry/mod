@@ -1,13 +1,23 @@
 /*******************************************************************************
 *
-* FILE: 
-* 		power.c
+* FILE:
+* 		math_sdr.c
 *
 * DESCRIPTION: 
-* 		Contains API functions to manage the engine controller power supply
+* 		Contains math functions for SDR code.
+*
+* COPYRIGHT:                                                                   
+*       Copyright (c) 2025 Sun Devil Rocketry.                                 
+*       All rights reserved.                                                   
+*                                                                              
+*       This software is licensed under terms that can be found in the LICENSE 
+*       file in the root directory of this software component.                 
+*       If no LICENSE file comes with this software, it is covered under the   
+*       BSD-3-Clause.                                                          
+*                                                                              
+*       https://opensource.org/license/bsd-3-clause          
 *
 *******************************************************************************/
-
 
 /*------------------------------------------------------------------------------
  Standard Includes                                                                     
@@ -18,58 +28,37 @@
  Project Includes                                                                     
 ------------------------------------------------------------------------------*/
 #include "main.h"
-#include "sdr_pin_defines_L0002.h"
-#include "power.h"
-
+#include "math_sdr.h"
 
 /*------------------------------------------------------------------------------
- Procedures 
+ API Functions 
 ------------------------------------------------------------------------------*/
-
 
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		pwr_get_source                                                         *
+* 		crc32                                                                  *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
-* 		Reads the 5V power multiplexor source pin to determine if the MCU is   *
-*       being powered by USB or by the buck converter                          *
+* 		Returns a 32bit checksum from the given data.                          *
 *                                                                              *
 *******************************************************************************/
-PWR_SRC pwr_get_source
-	(
-    void
-    )
+uint32_t crc32
+    (
+    const uint8_t *data, 
+    size_t len
+    ) 
 {
-/*------------------------------------------------------------------------------
- Local Variables 
-------------------------------------------------------------------------------*/
-uint8_t pwr_source; /* USB or buck converter power supply */
-
-
-/*------------------------------------------------------------------------------
- API Function Implementation 
-------------------------------------------------------------------------------*/
-
-/* Read the MCU pin */
-pwr_source = HAL_GPIO_ReadPin(PWR_SRC_GPIO_PORT, PWR_SRC_PIN);
-
-/* Return the corresponding code */
-if (pwr_source == GPIO_PIN_RESET)
-	{
-	/* Buck converter 5V source */
-	return BUCK_5V_SRC; 
+uint32_t crc = 0xFFFFFFFF;
+while (len--) 
+    {
+    crc ^= *data++;
+    for (int i = 0; i < 8; ++i)
+        crc = (crc >> 1) ^ (0x82F63B78 & -(crc & 1));
     }
-else
-	{
-	/* USB 5V source */
-	return USB_5V_SRC;
-	}
+return ~crc;
 
-}
-
-
+} /* crc32 */
 
 /*******************************************************************************
 * END OF FILE                                                                  * 
