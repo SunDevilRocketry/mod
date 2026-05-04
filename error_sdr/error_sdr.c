@@ -286,7 +286,7 @@ static volatile ERROR_CALLBACK* callback_table_lookup
     volatile ERROR_CODE error_code
     )
 {
-for( uint8_t i = 0; i < error_callback_table_size; i++ )
+for( uint16_t i = 0; i < error_callback_table_size; i++ )
     {
     if( error_callback_table[i].error_code == error_code )
         {
