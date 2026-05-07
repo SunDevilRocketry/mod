@@ -99,26 +99,17 @@ extern "C" {
 
 typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
 	{
+	float quat_w;
+	float quat_x;
+	float quat_y;
+	float quat_z;
+	float alt;
+	float latitude;
+	float longitude;
 	float acc_x;
-	float acc_y;
-	float acc_z;
-	float gyro_x;
-	float gyro_y;
-	float gyro_z;
-	float roll_angle;
-	float pitch_angle;
-	float yaw_angle;
 	float roll_rate;
-	float pitch_rate;
-	float yaw_rate;
-	float    baro_pressure; 
-	float    baro_temp;	
-	float	 baro_alt;
-	float 	 baro_velo;
-	float	 gps_dec_longitude;
-	float	 gps_dec_latitude;
 	} DASHBOARD_DUMP_TYPE;
-	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == 72, "DASHBOARD_DUMP_TYPE size invalid.");
+	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == 36, "DASHBOARD_DUMP_TYPE size invalid.");
 
 /*------------------------------------------------------------------------------
  Function Prototypes 

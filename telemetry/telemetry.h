@@ -49,8 +49,8 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Constants
 ------------------------------------------------------------------------------*/
-#define LORA_INTERNAL_HEADER_SIZE 20U
-#define LORA_PAYLOAD_SIZE 76U
+#define LORA_INTERNAL_HEADER_SIZE 8U
+#define LORA_PAYLOAD_SIZE 40U
 #define LORA_MESSAGE_SIZE (LORA_INTERNAL_HEADER_SIZE + LORA_PAYLOAD_SIZE)
 
 /*------------------------------------------------------------------------------
@@ -78,7 +78,6 @@ typedef enum _LORA_MESSAGE_TYPES
 
 typedef struct __attribute__((packed)) _LORA_INTERNAL_HEADER_TYPE
     {
-    ST_UID_TYPE uid;
     LORA_MESSAGE_TYPES mid;
     uint32_t timestamp;
     } LORA_INTERNAL_HEADER_TYPE;
@@ -86,11 +85,12 @@ typedef struct __attribute__((packed)) _LORA_INTERNAL_HEADER_TYPE
 
 typedef struct __attribute((packed)) _LORA_MSG_VEHICLE_ID_TYPE
     {
+    ST_UID_TYPE uid;
     uint8_t hw_opcode;
 	uint8_t fw_opcode;
 	VERSION_INFO_TYPE version;
 	char flight_id[16];
-    uint8_t explicit_padding[54];
+    uint8_t explicit_padding[6];
     } LORA_MSG_VEHICLE_ID_TYPE;
     _Static_assert( sizeof(LORA_MSG_VEHICLE_ID_TYPE) == LORA_PAYLOAD_SIZE, "LORA_MSG_VEHICLE_ID_TYPE size invalid.");
 

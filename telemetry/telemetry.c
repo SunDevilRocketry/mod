@@ -321,7 +321,6 @@ void telemetry_build_payload
  Construct Header                                                                    
 ------------------------------------------------------------------------------*/
 memset(msg_buf, 0, LORA_MESSAGE_SIZE);
-get_uid( &(msg_buf->header.uid) );
 msg_buf->header.mid = message_type;
 msg_buf->header.timestamp = HAL_GetTick();
 
@@ -390,6 +389,7 @@ static void telemetry_build_msg_vehicle_id
 /* hardware & firmware identifiers */
 msg_buf->payload.vehicle_id.hw_opcode = PING_RESPONSE_CODE;
 msg_buf->payload.vehicle_id.fw_opcode = FIRMWARE_APPA;
+get_uid( &(msg_buf->payload.vehicle_id.uid) );
 
 /* version string */
 msg_buf->payload.vehicle_id.version |= ( VERSION_HARDWARE << 24 );

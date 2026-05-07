@@ -37,7 +37,7 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Constants 
 ------------------------------------------------------------------------------*/
-#define TEXT_MESSAGE_LENGTH 72
+#define TEXT_MESSAGE_LENGTH 36
 
 #ifndef F1_TESTBED
 #define Error_Handler( a ) error_fail_fast( a ) /* backwards compatible */
@@ -142,6 +142,22 @@ typedef struct TEXT_MESSAGE
 *******************************************************************************/
 #define assert_fail_fast( condition, error ) if ( !condition ) error_fail_fast( error )
 
+/* type check, bounds check, then execute */
+/* if either of these macros fail to expand, then its possible the user passed a pointer and not a literal. */
+#define error_log_warning( string ) \
+    do { \
+    _Static_assert( sizeof( "" string ) <= TEXT_MESSAGE_LENGTH, "Warning Message is oversized." ); \
+    __sdr_log_warning( string ); \
+    } while(0)
+
+/* type check, bounds check, then execute */
+/* if either of these macros fail to expand, then its possible the user passed a pointer and not a literal. */
+#define error_log_info( string ) \
+    do { \
+    _Static_assert( sizeof( "" string ) <= TEXT_MESSAGE_LENGTH, "Info Message is oversized." ); \
+    __sdr_log_info( string ); \
+    } while(0)
+
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
@@ -154,14 +170,14 @@ void error_fail_fast
     );
 
 /* warnings and info for telemetry */
-void error_log_info
+void __sdr_log_info
     (
-    char* message
+    const char* message
     );
 
-void error_log_warning
+void __sdr_log_warning
     (
-    char* message
+    const char* message
     );
 
 bool error_get_warning
