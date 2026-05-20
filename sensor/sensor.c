@@ -1578,22 +1578,18 @@ imu_data->state_estimate.yaw_rate    = yaw_rate;
 *       Convert Acc readouts to m/s^2                                          *
 *                                                                              *
 *******************************************************************************/
-float sensor_acc_conv(uint16_t readout){
-	// sign check
-	uint16_t num_sign = (readout & (0x8000)) >> 0xF;
-	int8_t sign_bit = 1;
+float sensor_acc_conv
+	(
+	int16_t readout
+	)
+{
+/* Scale readout value from integer limits to +/- the g_setting * g */
+const uint8_t g_setting = 16;
+const float g = 9.8f;
+const float accel_step = (2.0f * g_setting * g ) / 65535.0f;
 
-	if (num_sign == 1){
-		readout = ((uint16_t) ( ( ~readout + 1 ) & (0xFFFF) ));
-		sign_bit = -1;
-	}
+return accel_step * readout;
 
-	// Convert to accel
-	uint8_t g_setting = 16;
-	float g = 9.8;
-	float accel_step = 2*g_setting*g/65535.0;
-
-	return sign_bit*(accel_step*readout);
 }
 
 /*******************************************************************************
@@ -1605,20 +1601,16 @@ float sensor_acc_conv(uint16_t readout){
 *       Convert gyro readouts to deg/s                                         *
 *                                                                              *
 *******************************************************************************/
-float sensor_gyro_conv(uint16_t readout){
-	// sign check
-	uint16_t num_sign = (readout & (0x8000)) >> 0xF;
-	int8_t sign_bit = 1;
-	if (num_sign == 1){
-		readout = ((uint16_t) ( ( ~readout + 1 ) & (0xFFFF) ));
-		sign_bit = -1;
-	}
+float sensor_gyro_conv
+	(
+	int16_t readout
+	)
+{
+float gyro_setting = 2000.0f;
+float gyro_sens = 65535.0f / ( 2.0f * gyro_setting );
 
-	// Convert to accel
-	float gyro_setting = 2000.0;
-	float gyro_sens = 65535.0 / (2*gyro_setting);
-	
-	return sign_bit * (readout / gyro_sens);
+return readout / gyro_sens;
+
 }
 
 /*******************************************************************************
