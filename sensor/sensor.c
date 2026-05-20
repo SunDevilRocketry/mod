@@ -1606,8 +1606,8 @@ float sensor_gyro_conv
 	int16_t readout
 	)
 {
-float gyro_setting = 2000.0f;
-float gyro_sens = 65535.0f / ( 2.0f * gyro_setting );
+const float gyro_setting = 2000.0f;
+const float gyro_sens = 65535.0f / ( 2.0f * gyro_setting );
 
 return readout / gyro_sens;
 
