@@ -153,8 +153,13 @@ typedef struct TEXT_MESSAGE
 *       builds only -- release builds will do nothing.                         *
 *                                                                              *
 *******************************************************************************/
-#define debug_assert( condition, error ) \
-do { if ( !(condition) && ( defined(DEBUG) || !defined(RELBLD) ) ) error_fail_fast( error ); } while(0)
+#if defined(DEBUG) || !defined(RELBLD)
+    #define debug_assert( condition, error ) \
+        do { if ( !(condition) ) error_fail_fast( error ); } while(0)
+#else
+    #define debug_assert( condition, error ) \
+        do { } while(0)
+#endif
 
 
 /*------------------------------------------------------------------------------
