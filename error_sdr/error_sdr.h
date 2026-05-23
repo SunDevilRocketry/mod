@@ -140,7 +140,7 @@ typedef struct TEXT_MESSAGE
 * 		Checks condition, if false calls error_fail_fast with error            *
 *                                                                              *
 *******************************************************************************/
-#define assert_fail_fast( condition, error ) if ( !condition ) error_fail_fast( error )
+#define assert_fail_fast( condition, error ) if ( !(condition) ) error_fail_fast( error )
 
 
 /*******************************************************************************
@@ -154,7 +154,7 @@ typedef struct TEXT_MESSAGE
 *                                                                              *
 *******************************************************************************/
 #define debug_assert( condition, error ) \
-if ( !condition && ( defined(DEBUG) || !defined(RELBLD) ) ) error_fail_fast( error )
+if ( !(condition) && ( defined(DEBUG) || !defined(RELBLD) ) ) error_fail_fast( error )
 
 
 /*------------------------------------------------------------------------------
