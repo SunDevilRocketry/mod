@@ -40,8 +40,6 @@ extern "C" {
 
 #include "main.h"
 
-#include "stm32h7xx_hal.h"
-
 /* Constants -----------------------------------------------------------------*/
 #ifndef DEBUG_INTF_BUF_SIZE /* allow the project to override the buffer length if needed */
 #define DEBUG_INTF_BUF_SIZE 2048 /* bytes */

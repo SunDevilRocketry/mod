@@ -48,8 +48,6 @@
 #include "error_sdr.h"
 #include "timer.h"
 
-#include "stm32h7xx_hal.h"
-
 /* Static Variables ----------------------------------------------------------*/
 static DEBUG_HANDLE debug_handle; /* This module may be conditionally compiled 
                                      for debug mode only. Holding the handle 
@@ -152,8 +150,6 @@ DEBUG_STATUS debug_log
 /* Local Variables */
 char temp_msg[DEBUG_MSG_MAX_LEN];
 size_t true_len = 0;
-size_t space_to_end = debug_handle.tx_buf + DEBUG_INTF_BUF_SIZE - debug_handle.buf_put_head;
-
 memset(temp_msg, 0, DEBUG_MSG_MAX_LEN);
 
 /* Begin with an invariant check */
@@ -191,13 +187,17 @@ if( debug_handle.buffer_size_cnt + true_len > DEBUG_INTF_BUF_SIZE )
     }
 
 /* Put the message in the buffer */
+size_t space_to_end = debug_handle.tx_buf + DEBUG_INTF_BUF_SIZE - debug_handle.buf_put_head;
 if( true_len <= space_to_end )
     {
+    memset( debug_handle.buf_put_head, 0, true_len );
     memcpy( debug_handle.buf_put_head, temp_msg, true_len );
     }
 else
     {
     /* two copies to handle wraparound */
+    memset( debug_handle.buf_put_head, 0, space_to_end );
+    memset( debug_handle.tx_buf, 0, true_len - space_to_end );
     memcpy( debug_handle.buf_put_head, temp_msg, space_to_end );
     memcpy( debug_handle.tx_buf, temp_msg + space_to_end, true_len - space_to_end );
     }
@@ -223,15 +223,12 @@ void debug_callback_handler
     void
     )
 {
+debug_handle.transmitting = false;
 if( debug_handle.buffer_size_cnt > 0 )
     {
     start_tx();
     }
-else
-    {
-    debug_handle.transmitting = false;
-    }
-    
+
 } /* debug_callback_handler */
 
 
@@ -245,6 +242,7 @@ size_t msg_len = 0;
 uint8_t* tx_addr = debug_handle.buf_tx_head;
 size_t space_to_end = debug_handle.tx_buf + DEBUG_INTF_BUF_SIZE - tx_addr;
 static uint8_t staging_buf[DEBUG_MSG_MAX_LEN];
+memset( staging_buf, 0, DEBUG_MSG_MAX_LEN );
 
 /* Get the length of the string to be written */
 for( uint16_t i = 0; i < DEBUG_MSG_MAX_LEN; i++ )
@@ -266,12 +264,15 @@ assert_return( msg_len <= debug_handle.buffer_size_cnt, DEBUG_FAIL );
 if( msg_len <= space_to_end )
     {
     memcpy( staging_buf, tx_addr, msg_len );
+    memset( tx_addr, 0, msg_len );
     }
 else
     {
     /* Message wraps: write in two halves */
     memcpy( staging_buf, tx_addr, space_to_end );
+    memset( tx_addr, 0, space_to_end );
     memcpy( staging_buf + space_to_end, debug_handle.tx_buf, msg_len - space_to_end );
+    memset( debug_handle.tx_buf, 0, msg_len - space_to_end );
     }
 
 /* Kick off write */
@@ -294,6 +295,6 @@ static void default_overflow_handler
 const char* msg = "Debug buffer overflowed!";
 /* Clear the buffer and put a new message */
 debug_clear();
-debug_log(msg, sizeof( msg ), LOG_LVL_WARN);
+debug_log(msg, strlen( msg ), LOG_LVL_WARN);
 
 } /* default_overflow_handler */
