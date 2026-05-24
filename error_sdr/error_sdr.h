@@ -161,6 +161,17 @@ typedef struct TEXT_MESSAGE
         do { } while(0)
 #endif
 
+/*******************************************************************************
+*                                                                              *
+* MACRO:                                                                       * 
+*       assert_return                                                          *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Checks condition, if false returns the given value                     *
+*                                                                              *
+*******************************************************************************/
+#define assert_return( condition, retval ) do { if ( !(condition) ) return retval; } while(0)
+
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
