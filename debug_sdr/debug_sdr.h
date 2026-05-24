@@ -144,4 +144,20 @@ void debug_callback_handler
 #endif
 
 
+/*******************************************************************************
+*                                                                              *
+* MACRO:                                                                       * 
+*       debug_is_connected                                                     *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		  Checks if the debug interface is connected. HW dependent.              *
+*                                                                              *
+*******************************************************************************/
+#ifdef STM32H7XX
+#define debug_is_connected() (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk)
+#else
+#define debug_is_connected() (false)
+#endif
+
+
 #endif /* DEBUG_H */
