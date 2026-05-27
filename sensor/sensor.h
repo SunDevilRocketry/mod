@@ -60,6 +60,11 @@ Includes
 /* Max allowed number of sensors for polling */
 #define SENSOR_MAX_NUM_POLL     ( 5    )
 
+#if defined( A0002_REV2 )
+	#define ACCEL_G_RANGE ( 16 ) /* Accelerometer measurement range */
+	#define GYRO_RANGE ( 2000 )  /* Gyroscope sensitivity in degrees/sec */
+#endif
+
 #if   defined( FLIGHT_COMPUTER   )
 	/* General */
 	#define NUM_SENSORS         ( 38   )

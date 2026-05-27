@@ -1583,14 +1583,12 @@ float sensor_acc_conv
 	int16_t readout
 	)
 {
-/* Scale readout value from integer limits to +/- the g_setting * g */
-const uint8_t g_setting = 16;
-const float g = 9.8f;
-const float accel_step = (2.0f * g_setting * g ) / 65535.0f;
+/* Scale readout value from integer limits to +/- the accelerometer measurement range */
+const float accel_step = (2.0f * ACCEL_G_RANGE * GRAVITY ) / UINT16_MAX;
 
 return accel_step * readout;
-
-}
+ 
+} /* sensor_acc_conv */
 
 /*******************************************************************************
 *                                                                              *
@@ -1606,12 +1604,11 @@ float sensor_gyro_conv
 	int16_t readout
 	)
 {
-const float gyro_setting = 2000.0f;
-const float gyro_sens = 65535.0f / ( 2.0f * gyro_setting );
+const float gyro_sens = UINT16_MAX / ( 2.0f * GYRO_RANGE );
 
 return readout / gyro_sens;
 
-}
+} /* sensor_gyro_conv */
 
 /*******************************************************************************
 *                                                                              *
