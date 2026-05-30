@@ -146,24 +146,6 @@ typedef struct TEXT_MESSAGE
 /*******************************************************************************
 *                                                                              *
 * MACRO:                                                                       * 
-*       debug_assert                                                           *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		Checks condition, if false calls error_fail_fast with error. Debug     *
-*       builds only -- release builds will do nothing.                         *
-*                                                                              *
-*******************************************************************************/
-#if defined(DEBUG) || !defined(RELBLD)
-    #define debug_assert( condition, error ) \
-        do { if ( !(condition) ) error_fail_fast( error ); } while(0)
-#else
-    #define debug_assert( condition, error ) \
-        do { } while(0)
-#endif
-
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
 *       assert_return                                                          *
 *                                                                              *
 * DESCRIPTION:                                                                 *

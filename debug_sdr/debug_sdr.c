@@ -218,6 +218,9 @@ else
 } /* debug_log */
 
 
+/**
+ * @brief The function to call after a write completes.
+ */
 void debug_callback_handler
     (
     void
@@ -232,6 +235,11 @@ if( debug_handle.buffer_size_cnt > 0 )
 } /* debug_callback_handler */
 
 
+/**
+ * @brief Start a transmission over the debug interface.
+ * 
+ * @retval The status of the debug module.
+ */
 static DEBUG_STATUS start_tx
     (
     void
@@ -286,6 +294,12 @@ return DEBUG_OK;
 } /* start_tx */
 
 
+/**
+ * @brief The default callback for a buffer overflow event.
+ * 
+ * @param trigger_msg The message that overflowed the buffer.
+ * @param len The length of the trigger message.
+ */
 static void default_overflow_handler
     (
     const char* trigger_msg, 

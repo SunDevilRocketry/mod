@@ -105,18 +105,32 @@ void debug_callback_handler
     void
     );
 
-/* Alias Macros --------------------------------------------------------------*/
+/* Debug Only Alias Macros --------------------------------------------------------------*/
 
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       debug_log_assert                                                       *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		  Checks condition, if false logs a message at the given severity. Debug *
-*       mode only.                                                             *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Call error_fail_fast in debug builds when the condition
+  * is false, and ignore otherwise.
+  *
+  * @param condition A predicate that evaluates to TRUE or FALSE.
+  * @param error The error code to log.
+  */
+#if defined(DEBUG) || !defined(RELBLD)
+    #define debug_assert( condition, error ) \
+        do { if ( !(condition) ) error_fail_fast( error ); } while(0)
+#else
+    #define debug_assert( condition, error ) \
+        do { } while(0)
+#endif
+
+
+/**
+  * @brief Log a message in debug builds when the condition is false, 
+  * and ignore otherwise.
+  *
+  * @param condition A predicate that evaluates to TRUE or FALSE.
+  * @param msg The message to log.
+  * @param level The severity of the message to log.
+  */
 #if defined(DEBUG) || !defined(RELBLD)
     #define debug_log_assert( condition, msg, level ) \
         do { if ( !(condition) ) debug_log(msg, sizeof(msg), level); } while(0)
@@ -126,37 +140,19 @@ void debug_callback_handler
 #endif
 
 
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       debug_log_msg                                                          *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		  Logs a message at the given severity. Debug mode only.                 *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Log a message in debug builds, 
+  * and ignore otherwise.
+  *
+  * @param msg The message to log.
+  * @param level The severity of the message to log.
+  */
 #if defined(DEBUG) || !defined(RELBLD)
     #define debug_log_msg( msg, level ) \
         do { debug_log(msg, sizeof(msg), level); } while(0)
 #else
     #define debug_log_msg( msg, level ) \
         do { } while(0)
-#endif
-
-
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       debug_is_connected                                                     *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		  Checks if the debug interface is connected. HW dependent.              *
-*                                                                              *
-*******************************************************************************/
-#ifdef STM32H7XX
-#define debug_is_connected() (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk)
-#else
-#define debug_is_connected() (false)
 #endif
 
 
