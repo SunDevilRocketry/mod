@@ -133,7 +133,7 @@ void debug_callback_handler
   */
 #if defined(DEBUG) || !defined(RELBLD)
     #define debug_log_assert( condition, msg, level ) \
-        do { if ( !(condition) ) debug_log(msg, sizeof(msg), level); } while(0)
+        do { if ( !(condition) ) debug_log(msg, strlen(msg), level); } while(0)
 #else
     #define debug_log_assert( condition, msg, level ) \
         do { } while(0)
@@ -149,10 +149,41 @@ void debug_callback_handler
   */
 #if defined(DEBUG) || !defined(RELBLD)
     #define debug_log_msg( msg, level ) \
-        do { debug_log(msg, sizeof(msg), level); } while(0)
+        do { debug_log(msg, strlen(msg), level); } while(0)
 #else
     #define debug_log_msg( msg, level ) \
         do { } while(0)
+#endif
+
+
+/**
+  * @brief Ignore certain emulator-only cross-architecture
+  * compiler warnings. Must pair with the stop macro.
+  *
+  * @param msg The message to log.
+  * @param level The severity of the message to log.
+  */
+#if defined(EMULATOR)
+  #define debug_ignore_emulator_warnings_start()        \
+    _Pragma("GCC diagnostic push")                      \
+    _Pragma("GCC diagnostic ignored \"-Wformat\"")
+#else
+  #define debug_ignore_emulator_warnings_start() /* do nothing */
+#endif
+
+
+/**
+  * @brief Ignore certain emulator-only cross-architecture
+  * compiler warnings. Must come after the start macro.
+  *
+  * @param msg The message to log.
+  * @param level The severity of the message to log.
+  */
+#if defined(EMULATOR)
+  #define debug_ignore_emulator_warnings_stop()        \
+    _Pragma("GCC diagnostic pop")
+#else
+  #define debug_ignore_emulator_warnings_stop() /* do nothing */
 #endif
 
 
