@@ -28,8 +28,8 @@
       logging to it. This can be initialized as soon as the debug write interface 
       is initialized, so consider HAL -> debug write intf -> debug module -> rest
       of init to ensure you get useful logging throughout.
-  (+) Register [ETS TEMP] (the callback handler) to your async write function's
-      callback handler.
+  (+) Register debug_callback_handler (the callback handler) to your async write 
+      function's callback handler.
   (+) Optionally, register an overflow handler callback to handle circular buffer
       overflows. This takes the full, constructed message that triggered the 
       overflow as an argument. Pass NULL to use the default handler.
