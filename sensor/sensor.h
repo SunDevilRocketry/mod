@@ -60,6 +60,11 @@ Includes
 /* Max allowed number of sensors for polling */
 #define SENSOR_MAX_NUM_POLL     ( 5    )
 
+#if defined( A0002_REV2 )
+	#define ACCEL_G_RANGE ( 16 ) /* Accelerometer measurement range */
+	#define GYRO_RANGE ( 2000 )  /* Gyroscope sensitivity in degrees/sec */
+#endif
+
 #if   defined( FLIGHT_COMPUTER   )
 	/* General */
 	#define NUM_SENSORS         ( 38   )
@@ -295,8 +300,8 @@ void sensor_reset_velo(void);
 void sensor_body_state(IMU_DATA* imu_data);
 void sensor_imu_velo(IMU_DATA* imu_data);
 void sensor_conv_imu(IMU_DATA* imu_data, IMU_RAW* imu_raw);
-float sensor_acc_conv(uint16_t readout);
-float sensor_gyro_conv(uint16_t readout);
+float sensor_acc_conv(int16_t readout);
+float sensor_gyro_conv(int16_t readout);
 void sensor_baro_velo(SENSOR_DATA* sensor_data_ptr);
 #endif
 

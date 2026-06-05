@@ -57,6 +57,7 @@ _Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
 
 /* Constants */
 #define COMP_ALPHA 0.98f /* Used in sensor fusion */
+#define GRAVITY 9.8f
 
 /*******************************************************************************
 *                                                                              *
