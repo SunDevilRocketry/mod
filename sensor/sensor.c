@@ -198,83 +198,83 @@ void sensor_init
 #if defined( FLIGHT_COMPUTER )
 	/* Sensor offsets */
 	sensor_size_offsets_table[ 0  ].offset = 0;  /* SENSOR_ACCX  */
-	sensor_size_offsets_table[ 1  ].offset = 2;  /* SENSOR_ACCY  */
-	sensor_size_offsets_table[ 2  ].offset = 4;  /* SENSOR_ACCZ  */
-	sensor_size_offsets_table[ 3  ].offset = 6;  /* SENSOR_GYROX */
-	sensor_size_offsets_table[ 4  ].offset = 8;  /* SENSOR_GYROY */
-	sensor_size_offsets_table[ 5  ].offset = 10; /* SENSOR_GYROZ */
-	sensor_size_offsets_table[ 6  ].offset = 12; /* SENSOR_MAGX  */
-	sensor_size_offsets_table[ 7  ].offset = 14; /* SENSOR_MAGY  */
-	sensor_size_offsets_table[ 8  ].offset = 16; /* SENSOR_MAGZ  */
-	sensor_size_offsets_table[ 9  ].offset = 18; /* SENSOR_IMUT  */
-	sensor_size_offsets_table[ 10 ].offset = 20; /* SENSOR_ACCX_CONV  */
-	sensor_size_offsets_table[ 11 ].offset = 24; /* SENSOR_ACCY_CONV  */
-	sensor_size_offsets_table[ 12 ].offset = 28; /* SENSOR_ACCZ_CONV  */
-	sensor_size_offsets_table[ 13 ].offset = 32; /* SENSOR_GYROX_CONV  */
-	sensor_size_offsets_table[ 14 ].offset = 36; /* SENSOR_GYROY_CONV  */
-	sensor_size_offsets_table[ 15 ].offset = 40; /* SENSOR_GYROZ_CONV  */
-	sensor_size_offsets_table[ 16 ].offset = 44; /* SENSOR_ROLL_DEG  */
-	sensor_size_offsets_table[ 17 ].offset = 48; /* SENSOR_PITCH_DEG  */
-	sensor_size_offsets_table[ 18 ].offset = 52; /* SENSOR_ROLL_RATE  */
-	sensor_size_offsets_table[ 19 ].offset = 56; /* SENSOR_PITCH_RATE  */
-	sensor_size_offsets_table[ 20 ].offset = 60; /* SENSOR_VELOCITY  */
-	sensor_size_offsets_table[ 21 ].offset = 64; /* SENSOR_VELO_X  */
-	sensor_size_offsets_table[ 22 ].offset = 68; /* SENSOR_VELO_Y  */
-	sensor_size_offsets_table[ 23 ].offset = 72; /* SENSOR_VELO_Z  */
-	sensor_size_offsets_table[ 24 ].offset = 76; /* SENSOR_POSITION  */
-	sensor_size_offsets_table[ 25 ].offset = 80; /* SENSOR_BARO_PRES */
-	sensor_size_offsets_table[ 26 ].offset = 84; /* SENSOR_BARO_TEMP  */
-	sensor_size_offsets_table[ 27 ].offset = 88; /* SENSOR_BARO_ALT  */
-	sensor_size_offsets_table[ 28 ].offset = 92; /* SENSOR_BARO_VELO  */
-	sensor_size_offsets_table[ 29 ].offset = 96; /* SENSOR_GPS_ALT  */
-	sensor_size_offsets_table[ 30 ].offset = 100; /* SENSOR_GPS_SPEED  */
-	sensor_size_offsets_table[ 31 ].offset = 104; /* SENSOR_GPS_TIME  */
-	sensor_size_offsets_table[ 32 ].offset = 108; /* SENSOR_GPS_LONG  */
-	sensor_size_offsets_table[ 33 ].offset = 112; /* SENSOR_GPS_LAT  */
-	sensor_size_offsets_table[ 34 ].offset = 116; /* SENSOR_GPS_NS  */
-	sensor_size_offsets_table[ 35 ].offset = 117; /* SENSOR_GPS_EW  */
-	sensor_size_offsets_table[ 36 ].offset = 118; /* SENSOR_GPS_GLL  */
-	sensor_size_offsets_table[ 37 ].offset = 119; /* SENSOR_GPS_RMC  */
+    sensor_size_offsets_table[ 1  ].offset = 2;  /* SENSOR_ACCY  */
+    sensor_size_offsets_table[ 2  ].offset = 4;  /* SENSOR_ACCZ  */
+    sensor_size_offsets_table[ 3  ].offset = 6;  /* SENSOR_GYROX */
+    sensor_size_offsets_table[ 4  ].offset = 8;  /* SENSOR_GYROY */
+    sensor_size_offsets_table[ 5  ].offset = 10; /* SENSOR_GYROZ */
+    sensor_size_offsets_table[ 6  ].offset = 12; /* SENSOR_MAGX  */
+    sensor_size_offsets_table[ 7  ].offset = 14; /* SENSOR_MAGY  */
+    sensor_size_offsets_table[ 8  ].offset = 16; /* SENSOR_MAGZ  */
+    sensor_size_offsets_table[ 9  ].offset = 18; /* SENSOR_IMUT  */
+    sensor_size_offsets_table[ 10 ].offset = 20; /* SENSOR_ACCX_CONV  */
+    sensor_size_offsets_table[ 11 ].offset = 24; /* SENSOR_ACCY_CONV  */
+    sensor_size_offsets_table[ 12 ].offset = 28; /* SENSOR_ACCZ_CONV  */
+    sensor_size_offsets_table[ 13 ].offset = 32; /* SENSOR_GYROX_CONV  */
+    sensor_size_offsets_table[ 14 ].offset = 36; /* SENSOR_GYROY_CONV  */
+    sensor_size_offsets_table[ 15 ].offset = 40; /* SENSOR_GYROZ_CONV  */
+    sensor_size_offsets_table[ 16 ].offset = 44; /* SENSOR_ROLL_DEG  */
+    sensor_size_offsets_table[ 17 ].offset = 48; /* SENSOR_PITCH_DEG  */
+    sensor_size_offsets_table[ 18 ].offset = 52; /* SENSOR_ROLL_RATE  */
+    sensor_size_offsets_table[ 19 ].offset = 56; /* SENSOR_PITCH_RATE  */
+    sensor_size_offsets_table[ 20 ].offset = 60; /* SENSOR_VELOCITY  */
+    sensor_size_offsets_table[ 21 ].offset = 64; /* SENSOR_VELO_X  */
+    sensor_size_offsets_table[ 22 ].offset = 68; /* SENSOR_VELO_Y  */
+    sensor_size_offsets_table[ 23 ].offset = 72; /* SENSOR_VELO_Z  */
+    sensor_size_offsets_table[ 24 ].offset = 76; /* SENSOR_POSITION  */
+    sensor_size_offsets_table[ 25 ].offset = 80; /* SENSOR_BARO_PRES */
+    sensor_size_offsets_table[ 26 ].offset = 84; /* SENSOR_BARO_TEMP  */
+    sensor_size_offsets_table[ 27 ].offset = 88; /* SENSOR_BARO_ALT  */
+    sensor_size_offsets_table[ 28 ].offset = 92; /* SENSOR_BARO_VELO  */
+    sensor_size_offsets_table[ 29 ].offset = 96; /* SENSOR_GPS_ALT  */
+    sensor_size_offsets_table[ 30 ].offset = 100; /* SENSOR_GPS_SPEED  */
+    sensor_size_offsets_table[ 31 ].offset = 104; /* SENSOR_GPS_TIME  */
+    sensor_size_offsets_table[ 32 ].offset = 108; /* SENSOR_GPS_LONG  */
+    sensor_size_offsets_table[ 33 ].offset = 112; /* SENSOR_GPS_LAT  */
+    sensor_size_offsets_table[ 34 ].offset = 116; /* SENSOR_GPS_NS  */
+    sensor_size_offsets_table[ 35 ].offset = 117; /* SENSOR_GPS_EW  */
+    sensor_size_offsets_table[ 36 ].offset = 118; /* SENSOR_GPS_GLL  */
+    sensor_size_offsets_table[ 37 ].offset = 119; /* SENSOR_GPS_RMC  */
 
-	/* Sensor Sizes   */
-	sensor_size_offsets_table[ 0  ].size   = 2;  /* SENSOR_ACCX  */
-	sensor_size_offsets_table[ 1  ].size   = 2;  /* SENSOR_ACCY  */
-	sensor_size_offsets_table[ 2  ].size   = 2;  /* SENSOR_ACCZ  */
-	sensor_size_offsets_table[ 3  ].size   = 2;  /* SENSOR_GYROX */
-	sensor_size_offsets_table[ 4  ].size   = 2;  /* SENSOR_GYROY */
-	sensor_size_offsets_table[ 5  ].size   = 2;  /* SENSOR_GYROZ */
-	sensor_size_offsets_table[ 6  ].size   = 2;  /* SENSOR_MAGX  */
-	sensor_size_offsets_table[ 7  ].size   = 2;  /* SENSOR_MAGY  */
-	sensor_size_offsets_table[ 8  ].size   = 2;  /* SENSOR_MAGZ  */
-	sensor_size_offsets_table[ 9  ].size   = 2;  /* SENSOR_IMUT  */
-	sensor_size_offsets_table[ 10 ].size   = 4; /* SENSOR_ACCX_CONV  */
-	sensor_size_offsets_table[ 11 ].size 	= 4; /* SENSOR_ACCY_CONV  */
-	sensor_size_offsets_table[ 12 ].size 	= 4; /* SENSOR_ACCZ_CONV  */
-	sensor_size_offsets_table[ 13 ].size	= 4; /* SENSOR_GYROX_CONV  */
-	sensor_size_offsets_table[ 14 ].size 	= 4; /* SENSOR_GYROY_CONV  */
-	sensor_size_offsets_table[ 15 ].size	= 4; /* SENSOR_GYROZ_CONV  */
-	sensor_size_offsets_table[ 16 ].size	= 4; /* SENSOR_ROLL_DEG  */
-	sensor_size_offsets_table[ 17 ].size	= 4; /* SENSOR_PITCH_DEG  */
-	sensor_size_offsets_table[ 18 ].size	= 4; /* SENSOR_ROLL_RATE  */
-	sensor_size_offsets_table[ 19 ].size	= 4; /* SENSOR_PITCH_RATE  */
-	sensor_size_offsets_table[ 20 ].size	= 4; /* VELOCITY  */
-	sensor_size_offsets_table[ 21 ].size	= 4; /* VELO_X  */
-	sensor_size_offsets_table[ 22 ].size	= 4; /* VELO_Y  */
-	sensor_size_offsets_table[ 23 ].size	= 4; /* VELO_Z  */
-	sensor_size_offsets_table[ 24 ].size	= 4; /* POSITION  */
-	sensor_size_offsets_table[ 25 ].size	= 4; /* SENSOR_PRES  */
-	sensor_size_offsets_table[ 26 ].size	= 4; /* SENSOR_TEMP  */
-	sensor_size_offsets_table[ 27 ].size	= 4; /* SENSOR_BARO_ALT  */
-	sensor_size_offsets_table[ 28 ].size	= 4; /* SENSOR_BARO_VELO  */
-	sensor_size_offsets_table[ 29 ].size	= 4; /* SENSOR_GPS_ALT  */
-	sensor_size_offsets_table[ 30 ].size	= 4; /* SENSOR_GPS_SPEED  */
-	sensor_size_offsets_table[ 31 ].size	= 4; /* SENSOR_GPS_TIME  */
-	sensor_size_offsets_table[ 32 ].size	= 4; /* SENSOR_GPS_LONG  */
-	sensor_size_offsets_table[ 33 ].size	= 4; /* SENSOR_GPS_LAT  */
-	sensor_size_offsets_table[ 34 ].size	= 1; /* SENSOR_GPS_NS  */
-	sensor_size_offsets_table[ 35 ].size	= 1; /* SENSOR_GPS_EW  */
-	sensor_size_offsets_table[ 36 ].size	= 1; /* SENSOR_GPS_GLL  */
-	sensor_size_offsets_table[ 37 ].size	= 1; /* SENSOR_GPS_RMC  */
+    /* Sensor Sizes   */
+    sensor_size_offsets_table[ 0  ].size   = 2;  /* SENSOR_ACCX  */
+    sensor_size_offsets_table[ 1  ].size   = 2;  /* SENSOR_ACCY  */
+    sensor_size_offsets_table[ 2  ].size   = 2;  /* SENSOR_ACCZ  */
+    sensor_size_offsets_table[ 3  ].size   = 2;  /* SENSOR_GYROX */
+    sensor_size_offsets_table[ 4  ].size   = 2;  /* SENSOR_GYROY */
+    sensor_size_offsets_table[ 5  ].size   = 2;  /* SENSOR_GYROZ */
+    sensor_size_offsets_table[ 6  ].size   = 2;  /* SENSOR_MAGX  */
+    sensor_size_offsets_table[ 7  ].size   = 2;  /* SENSOR_MAGY  */
+    sensor_size_offsets_table[ 8  ].size   = 2;  /* SENSOR_MAGZ  */
+    sensor_size_offsets_table[ 9  ].size   = 2;  /* SENSOR_IMUT  */
+    sensor_size_offsets_table[ 10 ].size   = 4; /* SENSOR_ACCX_CONV  */
+    sensor_size_offsets_table[ 11 ].size 	= 4; /* SENSOR_ACCY_CONV  */
+    sensor_size_offsets_table[ 12 ].size 	= 4; /* SENSOR_ACCZ_CONV  */
+    sensor_size_offsets_table[ 13 ].size	= 4; /* SENSOR_GYROX_CONV  */
+    sensor_size_offsets_table[ 14 ].size 	= 4; /* SENSOR_GYROY_CONV  */
+    sensor_size_offsets_table[ 15 ].size	= 4; /* SENSOR_GYROZ_CONV  */
+    sensor_size_offsets_table[ 16 ].size	= 4; /* SENSOR_ROLL_DEG  */
+    sensor_size_offsets_table[ 17 ].size	= 4; /* SENSOR_PITCH_DEG  */
+    sensor_size_offsets_table[ 18 ].size	= 4; /* SENSOR_ROLL_RATE  */
+    sensor_size_offsets_table[ 19 ].size	= 4; /* SENSOR_PITCH_RATE  */
+    sensor_size_offsets_table[ 20 ].size	= 4; /* VELOCITY  */
+    sensor_size_offsets_table[ 21 ].size	= 4; /* VELO_X  */
+    sensor_size_offsets_table[ 22 ].size	= 4; /* VELO_Y  */
+    sensor_size_offsets_table[ 23 ].size	= 4; /* VELO_Z  */
+    sensor_size_offsets_table[ 24 ].size	= 4; /* POSITION  */
+    sensor_size_offsets_table[ 25 ].size	= 4; /* SENSOR_PRES  */
+    sensor_size_offsets_table[ 26 ].size	= 4; /* SENSOR_TEMP  */
+    sensor_size_offsets_table[ 27 ].size	= 4; /* SENSOR_BARO_ALT  */
+    sensor_size_offsets_table[ 28 ].size	= 4; /* SENSOR_BARO_VELO  */
+    sensor_size_offsets_table[ 29 ].size	= 4; /* SENSOR_GPS_ALT  */
+    sensor_size_offsets_table[ 30 ].size	= 4; /* SENSOR_GPS_SPEED  */
+    sensor_size_offsets_table[ 31 ].size	= 4; /* SENSOR_GPS_TIME  */
+    sensor_size_offsets_table[ 32 ].size	= 4; /* SENSOR_GPS_LONG  */
+    sensor_size_offsets_table[ 33 ].size	= 4; /* SENSOR_GPS_LAT  */
+    sensor_size_offsets_table[ 34 ].size	= 1; /* SENSOR_GPS_NS  */
+    sensor_size_offsets_table[ 35 ].size	= 1; /* SENSOR_GPS_EW  */
+    sensor_size_offsets_table[ 36 ].size	= 1; /* SENSOR_GPS_GLL  */
+    sensor_size_offsets_table[ 37 ].size	= 1; /* SENSOR_GPS_RMC  */
 
 
 	
@@ -1531,6 +1531,37 @@ float gz = imu_data->imu_converted.gyro_z;
 /* Compute pitch/roll from accelerometer */
 float acc_roll  = -rad_to_deg(atan2f(ay, ax));
 float acc_pitch = rad_to_deg(atan2f(-az, sqrtf(ax * ax + ay * ay)));
+
+/* --------- WIP Quaternion body state --------- */
+
+static QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f }; /* NA temp: consider using q15 to reduce size since this will always end up as a unit quat */
+
+/* Convert gyro to pure quaternion */
+QUAT q_gyro; /* Radians for the conversion! */
+q_gyro.w = 0.0f;
+q_gyro.y = deg_to_rad(gy);
+q_gyro.x = deg_to_rad(gx);
+q_gyro.z = deg_to_rad(gz);
+
+/* NA temp: consider RK4 methods for integrating rate (if possible and reasonable), or don't if sensor fusion mitigates inaccuracies */
+
+/* q_rate = 0.5 * attitude * q_gyro */
+QUAT q_rate = quat_mult(attitude, q_gyro);
+q_rate = quat_scale(q_rate, 0.5f);
+
+/* attitude += dt * q_rate */
+QUAT rate_dt = quat_scale(q_rate, dt);
+attitude = quat_add(attitude, rate_dt);
+
+/* Complementary filter fusion */
+/* attitude = COMP_ALPHA * attitude + (1 - COMP_ALPHA) * q_acc */
+QUAT q_acc = eul2quat(0.0f, acc_pitch, acc_roll);  /* NA temp: Not sure if using gravity vector like this works under acceleration */
+QUAT comp_gyro = quat_scale(attitude, COMP_ALPHA);
+QUAT comp_acc = quat_scale(q_acc, 1.0f - COMP_ALPHA);
+attitude = quat_add(comp_gyro, comp_acc);
+
+/* Scale back to unit quaternion to avoid drift */
+attitude = quat_normalize(attitude);
 
 /* Integrate gyro data */
 static float roll = 0.0f;

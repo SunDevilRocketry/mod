@@ -51,6 +51,13 @@ typedef struct __attribute__((packed)) _ST_UID_TYPE
 _Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
 
 
+/* Quaternion */
+typedef struct _QUAT
+	{
+	float w, x, y, z;
+	} QUAT;
+
+
 /*------------------------------------------------------------------------------
  Macros and Inlines
 ------------------------------------------------------------------------------*/
@@ -140,6 +147,41 @@ uint32_t crc32
     (
     const uint8_t *data, 
     size_t len
+    );
+
+QUAT eul2quat
+    (
+    float yaw,
+    float pitch,
+    float roll
+    );
+
+QUAT quat_mult
+    (
+    QUAT a,
+    QUAT b
+    );
+
+QUAT quat_add
+    (
+    QUAT a,
+    QUAT b
+    );
+
+QUAT quat_scale
+    (
+    QUAT q,
+    float s
+    );
+
+QUAT quat_normalize
+    (
+    QUAT q
+    );
+
+QUAT quat_conj
+    (
+    QUAT q
     );
     
 #ifdef __cplusplus
