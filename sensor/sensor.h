@@ -198,6 +198,13 @@ typedef enum
 	#endif
 	} SENSOR_IDS;
 
+/* Mount configuration of FC */
+typedef enum 
+	{
+	MOUNT_ORIENTATION_Z_DOWN	 = -1,
+	MOUNT_ORIENTATION_Z_UP	 = 1
+	} MOUNT_ORIENTATION;
+
 /* Sensor Data */
 typedef struct SENSOR_DATA 
 	{
@@ -300,6 +307,16 @@ void sensor_reset_velo(void);
 void sensor_body_state(IMU_DATA* imu_data);
 void sensor_imu_velo(IMU_DATA* imu_data);
 void sensor_conv_imu(IMU_DATA* imu_data, IMU_RAW* imu_raw);
+MOUNT_ORIENTATION get_mount_orientation
+	(
+	void
+	);
+
+void set_mount_orientation
+	(
+	MOUNT_ORIENTATION orientation
+	);
+
 float sensor_acc_conv(int16_t readout);
 float sensor_gyro_conv(int16_t readout);
 void sensor_baro_velo(SENSOR_DATA* sensor_data_ptr);

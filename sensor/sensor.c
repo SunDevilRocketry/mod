@@ -79,10 +79,9 @@ extern volatile uint32_t tdelta, previous_time;
 uint64_t baro_velo_tick = 0;
 uint64_t imu_velo_tick = 0;
 
-#ifdef FLIGHT_COMPUTER
 extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
-#endif
+MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_Z_UP; /* Assume up by default */
 
 
 /*------------------------------------------------------------------------------
@@ -1472,10 +1471,10 @@ void sensor_conv_imu
 	IMU_RAW* imu_raw
 	)
 {
-/* Convert raw accel values */
-imu_data->imu_converted.accel_x = sensor_acc_conv(imu_raw->accel_x);
+/* Convert raw accel values and remap axes so Z is vertical in the flight configuration */ 
+imu_data->imu_converted.accel_x = sensor_acc_conv(imu_raw->accel_z);
 imu_data->imu_converted.accel_y = sensor_acc_conv(imu_raw->accel_y);
-imu_data->imu_converted.accel_z = sensor_acc_conv(imu_raw->accel_z);
+imu_data->imu_converted.accel_z = mount_orientation * sensor_acc_conv(imu_raw->accel_x); /* Flip so gravity is always down*/
 
 /* Do not use offset compensation for accel to preserve gravity */
 /*
@@ -1484,10 +1483,10 @@ imu_data->imu_converted.accel_y -= imu_offset.accel_y;
 imu_data->imu_converted.accel_z -= imu_offset.accel_z;
 */
 
-/* Convert raw gyroscope values to deg/s */
-imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_raw->gyro_x);
+/* Convert raw gyroscope values to deg/s and remap axes */
+imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_raw->gyro_z);
 imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
-imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_raw->gyro_z);
+imu_data->imu_converted.gyro_z = mount_orientation * sensor_gyro_conv(imu_raw->gyro_x);
 
 /* Remove gyro bias */
 imu_data->imu_converted.gyro_x -= imu_offset.gyro_x;
@@ -1495,6 +1494,24 @@ imu_data->imu_converted.gyro_y -= imu_offset.gyro_y;
 imu_data->imu_converted.gyro_z -= imu_offset.gyro_z;
 
 sensor_conv_mag(imu_data, imu_raw);
+}
+
+
+MOUNT_ORIENTATION get_mount_orientation
+	(
+	void
+	)
+{
+return mount_orientation;
+}
+
+
+void set_mount_orientation
+	(
+	MOUNT_ORIENTATION orientation
+	)
+{
+mount_orientation = orientation;
 }
 
 
@@ -1534,7 +1551,7 @@ float acc_pitch = rad_to_deg(atan2f(-az, sqrtf(ax * ax + ay * ay)));
 
 /* --------- WIP Quaternion body state --------- */
 
-static QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f }; /* NA temp: consider using q15 to reduce size since this will always end up as a unit quat */
+static QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f }; /* TODO: initialize at calibration with accelerometer only */
 
 /* Convert gyro to pure quaternion */
 QUAT q_gyro; /* Radians for the conversion! */
@@ -1562,6 +1579,8 @@ attitude = quat_add(comp_gyro, comp_acc);
 
 /* Scale back to unit quaternion to avoid drift */
 attitude = quat_normalize(attitude);
+
+/* --------- End Quaternion body state --------- */
 
 /* Integrate gyro data */
 static float roll = 0.0f;
