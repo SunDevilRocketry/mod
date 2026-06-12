@@ -48,6 +48,8 @@ Includes
 	#include "pressure.h"
 #endif
 
+typedef struct _PRESET_DATA PRESET_DATA; /* From main.h */
+
 
 /*------------------------------------------------------------------------------
  Macros 
@@ -201,7 +203,7 @@ typedef enum
 /* Mount configuration of FC */
 typedef enum 
 	{
-	MOUNT_ORIENTATION_Z_DOWN	 = -1,
+	MOUNT_ORIENTATION_Z_DOWN = -1,
 	MOUNT_ORIENTATION_Z_UP	 = 1
 	} MOUNT_ORIENTATION;
 
@@ -271,7 +273,7 @@ typedef struct SENSOR_DATA_SIZE_OFFSETS
 ------------------------------------------------------------------------------*/
 
 /* Initialize the sensor module */
-void sensor_init 
+void sensor_init_offsets 
 	(
 	void
 	);
@@ -302,7 +304,7 @@ SENSOR_STATUS sensor_dump
     );
 
 #ifdef FLIGHT_COMPUTER
-void sensor_initialize_tick(void);
+void sensor_init(PRESET_DATA* preset_data);
 void sensor_reset_velo(void);
 void sensor_body_state(IMU_DATA* imu_data);
 void sensor_imu_velo(IMU_DATA* imu_data);

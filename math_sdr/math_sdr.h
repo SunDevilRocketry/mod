@@ -149,7 +149,7 @@ uint32_t crc32
     size_t len
     );
 
-QUAT eul2quat
+QUAT eul_to_quat
     (
     float yaw,
     float pitch,

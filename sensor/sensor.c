@@ -70,6 +70,8 @@
 /*------------------------------------------------------------------------------
  Global Variables 
 ------------------------------------------------------------------------------*/
+extern GPS_DATA gps_data;
+extern IMU_OFFSET imu_offset;
 
 /* Hash table of sensor readout sizes and offsets */
 static SENSOR_DATA_SIZE_OFFSETS sensor_size_offsets_table[ NUM_SENSORS ];
@@ -79,8 +81,14 @@ extern volatile uint32_t tdelta, previous_time;
 uint64_t baro_velo_tick = 0;
 uint64_t imu_velo_tick = 0;
 
-extern GPS_DATA gps_data;
-extern IMU_OFFSET imu_offset;
+/* IMU */
+float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
+
+/* Baro */
+float velo_prev, alt_prev = 0.0;
+
+/* State estimation */
+QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
 MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_Z_UP; /* Assume up by default */
 
 
@@ -105,6 +113,13 @@ void static extract_sensor_bytes
 	uint8_t      num_sensors          ,
 	uint8_t*     sensor_data_bytes_ptr,
 	uint8_t*     num_sensor_bytes
+	);
+
+static QUAT quat_acc_attitude
+	(
+	float ax,
+	float ay,
+	float az
 	);
 
 /* reads from all sensors using the MCUs ADCs */
@@ -182,13 +197,13 @@ static void sensor_conv_mag
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		sensor_init                                                            *
+* 		sensor_init_offsets                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Initialize the sensor module                                           *
+*       Initialize sensor module offsets                                       *
 *                                                                              *
 *******************************************************************************/
-void sensor_init 
+void sensor_init_offsets 
 	(
 	void
 	)
@@ -319,7 +334,7 @@ void sensor_init
 	sensor_size_offsets_table[ 1 ].size   = 4;  /* SENSOR_ENCF */
 #endif
 
-} /* sensor_init */
+} /* sensor_init_offsets */
 
 
 /*******************************************************************************
@@ -1439,27 +1454,39 @@ return SENSOR_OK;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		sensor_initialize_tick                                                 *
+* 		sensor_init                                                            *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Set the initial values for baro and imu tick at calibration            *
+*       Initialize sensor ticks, velo, and attitude at calibration             *
 *                                                                              *
 *******************************************************************************/
-void sensor_initialize_tick
+void sensor_init
 	(
-	void
+	PRESET_DATA* preset_data
 	)
 {
 baro_velo_tick = get_us_tick();
 imu_velo_tick = baro_velo_tick;
 
-} /* sensor_initialize_tick */
+velo_prev = 0.0;
+velo_x_prev = 0.00;
+velo_y_prev = 0.00;
+velo_z_prev = 0.00;
+
+float ax = preset_data->imu_offset.accel_x;
+float ay = preset_data->imu_offset.accel_y;
+float az = preset_data->imu_offset.accel_z;
+
+attitude = quat_acc_attitude(ax, ay, az);
+
+
+} /* sensor_init */
 
 
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		sensor_conv_imu                                                   *
+* 		sensor_conv_imu                                                        *
 *                                                                              *
 * DESCRIPTION:                                                                 *
 *       Conversion of IMU raw chip readouts into 9-axis Accelerometer and Gyro.*
@@ -1551,8 +1578,6 @@ float acc_pitch = rad_to_deg(atan2f(-az, sqrtf(ax * ax + ay * ay)));
 
 /* --------- WIP Quaternion body state --------- */
 
-static QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f }; /* TODO: initialize at calibration with accelerometer only */
-
 /* Convert gyro to pure quaternion */
 QUAT q_gyro; /* Radians for the conversion! */
 q_gyro.w = 0.0f;
@@ -1572,7 +1597,7 @@ attitude = quat_add(attitude, rate_dt);
 
 /* Complementary filter fusion */
 /* attitude = COMP_ALPHA * attitude + (1 - COMP_ALPHA) * q_acc */
-QUAT q_acc = eul2quat(0.0f, acc_pitch, acc_roll);  /* NA temp: Not sure if using gravity vector like this works under acceleration */
+QUAT q_acc = quat_acc_attitude(ax, ay, az);
 QUAT comp_gyro = quat_scale(attitude, COMP_ALPHA);
 QUAT comp_acc = quat_scale(q_acc, 1.0f - COMP_ALPHA);
 attitude = quat_add(comp_gyro, comp_acc);
@@ -1615,6 +1640,31 @@ imu_data->state_estimate.yaw_angle   = yaw;
 imu_data->state_estimate.roll_rate   = roll_rate;
 imu_data->state_estimate.pitch_rate  = pitch_rate;
 imu_data->state_estimate.yaw_rate    = yaw_rate;
+
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		quat_acc_attitude                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Computes quaternion attitude from static accelerometer data            *
+*                                                                              *
+*******************************************************************************/
+static QUAT quat_acc_attitude
+	(
+	float ax,
+	float ay,
+	float az
+	)
+{
+/* Compute pitch/roll from accelerometer */
+float acc_roll  = -atan2f(ay, ax);
+float acc_pitch = atan2f(-az, sqrtf(ax * ax + ay * ay));
+
+return eul_to_quat(0.0f, acc_pitch, acc_roll);
 
 }
 
@@ -1669,7 +1719,6 @@ return readout / gyro_sens;
 *       Calculate the velocity depending on accel 							   *
 *                                                                              *
 *******************************************************************************/
-float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
 void sensor_imu_velo(IMU_DATA* imu_data){
 	float velo_x, velo_y, velo_z, velocity;
 
@@ -1718,7 +1767,6 @@ void sensor_imu_velo(IMU_DATA* imu_data){
 *       Calculate the velocity from pressure readings 								*
 *                                                                              *
 *******************************************************************************/
-float velo_prev, alt_prev = 0.0;
 void sensor_baro_velo(SENSOR_DATA* sen_data)
 {
 	float velocity;

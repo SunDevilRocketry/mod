@@ -62,13 +62,9 @@ return ~crc;
 
 
 /* Standard ZYX conversion - maybe not the right order? */
-/* TAKES DEGREES */
-QUAT eul2quat(float yaw, float pitch, float roll)
+/* TAKES RADIANS */
+QUAT eul_to_quat(float yaw, float pitch, float roll)
 {
-yaw = deg_to_rad(yaw);
-pitch = deg_to_rad(pitch);
-roll = deg_to_rad(roll);
-
 float cos_yaw = cosf(yaw / 2.0f);
 float cos_pitch = cosf(pitch / 2.0f);
 float cos_roll = cosf(roll / 2.0f);
