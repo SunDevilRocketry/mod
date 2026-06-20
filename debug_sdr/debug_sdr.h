@@ -114,7 +114,7 @@ void debug_callback_handler
   * @param condition A predicate that evaluates to TRUE or FALSE.
   * @param error The error code to log.
   */
-#if defined(DEBUG) || !defined(RELBLD)
+#if defined( DEBUG ) || !defined( RELBLD )
     #define debug_assert( condition, error ) \
         do { if ( !(condition) ) error_fail_fast( error ); } while(0)
 #else
@@ -131,7 +131,7 @@ void debug_callback_handler
   * @param msg The message to log.
   * @param level The severity of the message to log.
   */
-#if defined(DEBUG) || !defined(RELBLD)
+#if defined( DEBUG ) || !defined( RELBLD )
     #define debug_log_assert( condition, msg, level ) \
         do { if ( !(condition) ) debug_log(msg, strlen(msg), level); } while(0)
 #else
@@ -147,7 +147,7 @@ void debug_callback_handler
   * @param msg The message to log.
   * @param level The severity of the message to log.
   */
-#if defined(DEBUG) || !defined(RELBLD)
+#if defined( DEBUG ) || !defined( RELBLD )
     #define debug_log_msg( msg, level ) \
         do { debug_log(msg, strlen(msg), level); } while(0)
 #else
@@ -163,7 +163,7 @@ void debug_callback_handler
   * @param msg The message to log.
   * @param level The severity of the message to log.
   */
-#if defined(EMULATOR)
+#if defined( EMULATOR )
   #define debug_ignore_emulator_warnings_start()        \
     _Pragma("GCC diagnostic push")                      \
     _Pragma("GCC diagnostic ignored \"-Wformat\"")
@@ -179,7 +179,7 @@ void debug_callback_handler
   * @param msg The message to log.
   * @param level The severity of the message to log.
   */
-#if defined(EMULATOR)
+#if defined( EMULATOR )
   #define debug_ignore_emulator_warnings_stop()        \
     _Pragma("GCC diagnostic pop")
 #else

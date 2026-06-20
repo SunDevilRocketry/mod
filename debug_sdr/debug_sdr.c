@@ -77,7 +77,7 @@ static DEBUG_STATUS start_tx(void);
   *        Pass (void*)NULL as the overflow callback if you want to use
   *        the default overflow handler.
   * 
-  * @retval The status of the debug module.
+  * @return The status of the debug module.
   */
 DEBUG_STATUS debug_init
     (
@@ -138,7 +138,7 @@ debug_handle.buffer_size_cnt = 0;
   * @param len The length of the message you want to send.
   * @param log_level The severity of the debug message.
   * 
-  * @retval The status of the debug module.
+  * @return The status of the debug module.
   */
 DEBUG_STATUS debug_log
     (
@@ -238,7 +238,7 @@ if( debug_handle.buffer_size_cnt > 0 )
 /**
  * @brief Start a transmission over the debug interface.
  * 
- * @retval The status of the debug module.
+ * @return The status of the debug module.
  */
 static DEBUG_STATUS start_tx
     (
