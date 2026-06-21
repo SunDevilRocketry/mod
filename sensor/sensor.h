@@ -92,6 +92,8 @@ typedef struct SENSOR_DATA
     BARO_DATA baro_data;
     GPS_DATA gps_data;
 	} SENSOR_DATA;
+_Static_assert( sizeof( SENSOR_DATA ) == ( sizeof( IMU_DATA ) + sizeof( BARO_DATA ) + sizeof( GPS_DATA ) ),
+                "SENSOR_DATA struct size mismatch (padding).");
 
 /* Baro Preset data */
 typedef struct _BARO_PRESET
