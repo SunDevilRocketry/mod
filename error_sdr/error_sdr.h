@@ -113,6 +113,8 @@ typedef enum _ERROR_CODE
     ERROR_LORA_SPI_INIT_ERROR          , /* Error with LoRa SPI init          */
     ERROR_LORA_INIT_ERROR              , /* Error with LoRa init              */
     ERROR_LORA_CMD_ERROR               , /* Error with LoRa command           */
+    ERROR_IMU_I2C_ERROR                , /* Error with IMU I2C handle         */
+    ERROR_BARO_I2C_ERROR               , /* Error with Baro I2C handle        */
     } ERROR_CODE;
 
 /* Error callback table entry */
@@ -140,7 +142,26 @@ typedef struct TEXT_MESSAGE
 * 		Checks condition, if false calls error_fail_fast with error            *
 *                                                                              *
 *******************************************************************************/
-#define assert_fail_fast( condition, error ) if ( !condition ) error_fail_fast( error )
+#define assert_fail_fast( condition, error ) do { if ( !(condition) ) error_fail_fast( error ); } while(0)
+
+
+/*******************************************************************************
+*                                                                              *
+* MACRO:                                                                       * 
+*       debug_assert                                                           *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Checks condition, if false calls error_fail_fast with error. Debug     *
+*       builds only -- release builds will do nothing.                         *
+*                                                                              *
+*******************************************************************************/
+#if defined(DEBUG) || !defined(RELBLD)
+    #define debug_assert( condition, error ) \
+        do { if ( !(condition) ) error_fail_fast( error ); } while(0)
+#else
+    #define debug_assert( condition, error ) \
+        do { } while(0)
+#endif
 
 /* type check, bounds check, then execute */
 /* if either of these macros fail to expand, then its possible the user passed a pointer and not a literal. */
