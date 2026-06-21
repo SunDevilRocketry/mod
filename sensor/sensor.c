@@ -48,6 +48,21 @@
 
 
 /*------------------------------------------------------------------------------
+ Macros
+------------------------------------------------------------------------------*/
+
+/* Aliases for different flight platforms */
+#ifdef FLIGHT_COMPUTER
+    #ifdef A0002_REV2
+    #define FC_R2
+    #elifdef A0010
+    #define FC_R3
+    #endif
+#else
+#error "The sensor module does not support the current platform."
+#endif
+
+/*------------------------------------------------------------------------------
  Global Variables 
 ------------------------------------------------------------------------------*/
 
@@ -56,9 +71,8 @@ extern volatile uint32_t tdelta, previous_time;
 uint64_t baro_velo_tick = 0;
 uint64_t imu_velo_tick = 0;
 
-extern GPS_DATA gps_data;
-extern IMU_OFFSET imu_offset;
-
+extern RAW_GPS_DATA gps_data;
+extern IMU_OFFSET   imu_offset;
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -221,21 +235,21 @@ sensor_mutex_reserve();
 memset( &(imu_raw), 0, sizeof( IMU_RAW ) );
 
 /* GPS sensor */
-sensor_data_ptr->gps_altitude_ft	= gps_data.altitude_ft;
-sensor_data_ptr->gps_speed_kmh		= gps_data.speed_km;
-sensor_data_ptr->gps_utc_time 		= gps_data.utc_time;
-sensor_data_ptr->gps_dec_longitude 	= gps_data.dec_longitude;
-sensor_data_ptr->gps_dec_latitude 	= gps_data.dec_latitude;
-sensor_data_ptr->gps_ns		        = gps_data.ns;
-sensor_data_ptr->gps_ew				= gps_data.ew;
-sensor_data_ptr->gps_gll_status		= gps_data.gll_status;
-sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
+sensor_data_ptr->gps_data.gps_altitude_ft	    = gps_data.altitude_ft;
+sensor_data_ptr->gps_data.gps_speed_kmh		    = gps_data.speed_km;
+sensor_data_ptr->gps_data.gps_utc_time 		    = gps_data.utc_time;
+sensor_data_ptr->gps_data.gps_dec_longitude 	= gps_data.dec_longitude;
+sensor_data_ptr->gps_data.gps_dec_latitude 	    = gps_data.dec_latitude;
+sensor_data_ptr->gps_data.gps_ns		        = gps_data.ns;
+sensor_data_ptr->gps_data.gps_ew				= gps_data.ew;
+sensor_data_ptr->gps_data.gps_gll_status		= gps_data.gll_status;
+sensor_data_ptr->gps_data.gps_rmc_status		= gps_data.rmc_status;
 
 /* IMU Read */
 imu_status = get_imu_it( &imu_raw );
 
 /* Baro Read */
-baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
+baro_status = get_baro_it( &(sensor_data_ptr->baro_data.baro_pressure), &(sensor_data_ptr->baro_data.baro_temp) );
 
 /*Compute State Estimations*/
 
@@ -518,8 +532,8 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 {
 	float velocity;
 
-	float pressure = sen_data->baro_pressure;
-	float temp = sen_data->baro_temp;
+	float pressure = sen_data->baro_data.baro_pressure;
+	float temp = sen_data->baro_data.baro_temp;
 	// conv pressure to pascal for equation
 	// pressure *= 6894.76;
 	uint64_t current_tick = get_us_tick();
@@ -539,8 +553,8 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 	alt_prev = alt;
 	velo_prev = velocity;
 
-	sen_data->baro_alt = alt;
-	sen_data->baro_velo = velocity;
+	sen_data->baro_data.baro_alt = alt;
+	sen_data->baro_data.baro_velo = velocity;
 
 	baro_velo_tick = current_tick;
 

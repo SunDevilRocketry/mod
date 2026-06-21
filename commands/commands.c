@@ -180,14 +180,14 @@ dump_buffer_ptr->roll_rate = sensor_data.imu_data.state_estimate.roll_rate;
 dump_buffer_ptr->yaw_rate = sensor_data.imu_data.state_estimate.yaw_rate;
 
 /* Baro */
-dump_buffer_ptr->baro_pressure = sensor_data.baro_pressure;
-dump_buffer_ptr->baro_temp = sensor_data.baro_temp;
-dump_buffer_ptr->baro_alt = sensor_data.baro_alt;
-dump_buffer_ptr->baro_velo = sensor_data.baro_velo;
+dump_buffer_ptr->baro_pressure = sensor_data.baro_data.baro_pressure;
+dump_buffer_ptr->baro_temp = sensor_data.baro_data.baro_temp;
+dump_buffer_ptr->baro_alt = sensor_data.baro_data.baro_alt;
+dump_buffer_ptr->baro_velo = sensor_data.baro_data.baro_velo;
 
 /* GPS */
-dump_buffer_ptr->gps_dec_longitude = sensor_data.gps_dec_longitude;
-dump_buffer_ptr->gps_dec_latitude = sensor_data.gps_dec_latitude;
+dump_buffer_ptr->gps_dec_longitude = sensor_data.gps_data.gps_dec_longitude;
+dump_buffer_ptr->gps_dec_latitude = sensor_data.gps_data.gps_dec_latitude;
 
 }
 #endif

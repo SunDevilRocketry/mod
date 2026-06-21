@@ -30,6 +30,7 @@ extern "C" {
 
 #include "stm32h7xx_hal.h"
 #include "imu.h"
+#include "baro.h"
 #include "gps.h"
 
 /*------------------------------------------------------------------------------
@@ -88,19 +89,8 @@ typedef enum
 typedef struct SENSOR_DATA 
 	{
 	IMU_DATA imu_data;
-	float    baro_pressure; 
-	float    baro_temp;	
-	float	 baro_alt;
-	float 	 baro_velo;
-	float	 gps_altitude_ft;
-	float 	 gps_speed_kmh;
-	float 	 gps_utc_time;
-	float	 gps_dec_longitude;
-	float	 gps_dec_latitude;
-	char	 gps_ns;
-	char	 gps_ew;
-	char	 gps_gll_status;
-	char 	 gps_rmc_status;
+    BARO_DATA baro_data;
+    GPS_DATA gps_data;
 	} SENSOR_DATA;
 
 /* Baro Preset data */
