@@ -30,6 +30,7 @@ extern "C" {
 /* platform specific includes */
 #if defined( A0002_REV2 ) || defined( A0005_REV1 )
 #include "imu.h"
+#include "usb.h"
 #endif
 
 /*------------------------------------------------------------------------------
