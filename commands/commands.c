@@ -165,7 +165,8 @@ void dashboard_construct_dump
     DASHBOARD_DUMP_TYPE* dump_buffer_ptr /* must be DASHBOARD_DUMP_SIZE */
     )
 {
-/* Quats (TODO) */
+/* Quats */
+dump_buffer_ptr->attitude = sensor_data.state_estimate.attitude;
 
 /* Baro */
 dump_buffer_ptr->alt = sensor_data.baro_alt;
@@ -175,8 +176,8 @@ dump_buffer_ptr->longitude = sensor_data.gps_dec_longitude;
 dump_buffer_ptr->latitude = sensor_data.gps_dec_latitude;
 
 /* Controls */
-dump_buffer_ptr->acc_x = sensor_data.imu_data.imu_converted.accel_x;
-dump_buffer_ptr->roll_rate = sensor_data.imu_data.state_estimate.roll_rate;
+dump_buffer_ptr->acc_x = sensor_data.imu_converted.accel_x;
+dump_buffer_ptr->roll_rate = sensor_data.state_estimate.roll_rate;
 
 }
 #endif

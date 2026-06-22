@@ -100,10 +100,7 @@ extern "C" {
 
 typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
 	{
-	float quat_w;
-	float quat_x;
-	float quat_y;
-	float quat_z;
+	QUAT attitude;
 	float alt;
 	float latitude;
 	float longitude;
