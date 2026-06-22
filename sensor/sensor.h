@@ -110,7 +110,6 @@ typedef struct SENSOR_DATA
 	float    baro_pressure; 
 	float    baro_temp;	
 	float	 baro_alt;
-	float 	 baro_velo;
 	float	 gps_altitude_ft;
 	float 	 gps_speed_kmh;
 	float 	 gps_utc_time;
@@ -200,7 +199,7 @@ float sensor_gyro_conv
 	);
 
 /* Calculate the velocity from pressure readings */
-void sensor_baro_velo
+void sensor_baro_alt
 	(
 	SENSOR_DATA* sensor_data_ptr
 	);

@@ -54,15 +54,10 @@ extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
 
 /* Timing (sensors) */
-extern volatile uint32_t tdelta, previous_time;
-uint64_t baro_velo_tick = 0;
 uint64_t imu_velo_tick = 0;
 
 /* IMU */
 float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
-
-/* Baro */
-float velo_prev, alt_prev = 0.0;
 
 /* State estimation */
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
@@ -264,8 +259,8 @@ sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_e
 /* Calculated velocity and position */
 sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
-/* Calculated velocity from barometer */
-sensor_baro_velo( sensor_data_ptr );
+/* Calculated altitude from barometer */
+sensor_baro_alt( sensor_data_ptr );
 
 /* CRITICAL SECTION END */
 
@@ -312,13 +307,9 @@ void sensor_init
 	PRESET_DATA* preset_data
 	)
 {
-baro_velo_tick = get_us_tick();
-imu_velo_tick = baro_velo_tick;
+imu_velo_tick = get_us_tick();
 
-velo_prev = 0.0;
-velo_x_prev = 0.00;
-velo_y_prev = 0.00;
-velo_z_prev = 0.00;
+sensor_reset_velo();
 
 float ax = preset_data->imu_offset.accel_x;
 float ay = preset_data->imu_offset.accel_y;
@@ -576,23 +567,18 @@ imu_velo_tick = current_tick;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		sensor_baro_velo                                                       *
+* 		sensor_baro_alt                                                        *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Calculate the velocity from pressure readings 						   *
+*       Calculate the altitude from pressure readings 						   *
 *                                                                              *
 *******************************************************************************/
-void sensor_baro_velo(SENSOR_DATA* sen_data)
+void sensor_baro_alt(SENSOR_DATA* sen_data)
 {
-	float velocity;
-
 	float pressure = sen_data->baro_pressure;
 	float temp = sen_data->baro_temp;
 	// conv pressure to pascal for equation
 	// pressure *= 6894.76;
-	uint64_t current_tick = get_us_tick();
-	uint64_t baro_tdelta = current_tick - baro_velo_tick;
-	float ts_delta = baro_tdelta / MICROSEC_PER_SEC;
 
 	// calc altitude
 	float PRESSURE_SEA_LEVEL = 101325;
@@ -601,16 +587,7 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 
     float alt = (pow(PRESSURE_SEA_LEVEL / pressure, EXP) - 1) * (temp + 273.15) / TEMP_LAPSE_RATE;
 
-
-	// Calculate the velocity scalar
-	velocity = (alt-alt_prev)/ts_delta;
-	alt_prev = alt;
-	velo_prev = velocity;
-
 	sen_data->baro_alt = alt;
-	sen_data->baro_velo = velocity;
-
-	baro_velo_tick = current_tick;
 
 }
 
@@ -629,7 +606,6 @@ void sensor_reset_velo
 	void
 	)
 {
-velo_prev = 0;
 velo_x_prev = 0;
 velo_y_prev = 0;
 velo_z_prev = 0;
