@@ -104,7 +104,7 @@ typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
 	float alt;
 	float latitude;
 	float longitude;
-	float acc_x;
+	float acc_z;
 	float roll_rate;
 	} DASHBOARD_DUMP_TYPE;
 	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == 36, "DASHBOARD_DUMP_TYPE size invalid.");
