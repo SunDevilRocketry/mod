@@ -61,7 +61,7 @@ float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
 
 /* State estimation */
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
-MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_Z_UP; /* Assume up by default */
+MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_Z_DOWN; /* Default assumption: antennta pointing up */
 
 
 /*------------------------------------------------------------------------------
