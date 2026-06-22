@@ -80,7 +80,7 @@ static SENSOR_STATUS sensor_get_it_ready
 
 static void sensor_conv_mag
 	(
-	IMU_DATA* imu_data, 
+	IMU_CONVERTED* imu_converted, 
 	IMU_RAW* imu_raw
 	);
 
@@ -256,13 +256,13 @@ baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr-
 /*Compute State Estimations*/
 
 /* Calculated and retrieve converted IMU data */
-sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
+sensor_conv_imu( &(sensor_data_ptr->imu_converted), &imu_raw );
 
 /* Calculated to get body state */
-sensor_body_state( &(sensor_data_ptr->imu_data) );
+sensor_body_state( &(sensor_data_ptr->imu_converted) );
 
 /* Calculated velocity and position */
-sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+sensor_imu_velo( &(sensor_data_ptr->imu_converted) );
 
 /* Calculated velocity from barometer */
 sensor_baro_velo( sensor_data_ptr );
@@ -341,33 +341,33 @@ attitude = quat_acc_attitude(ax, ay, az); /* NA temp: we do sensor dump before c
 *******************************************************************************/
 void sensor_conv_imu
 	(
-	IMU_DATA* imu_data, 
+	IMU_CONVERTED* imu_converted, 
 	IMU_RAW* imu_raw
 	)
 {
 /* Convert raw accel values and remap axes so Z is vertical in the flight configuration */ 
-imu_data->imu_converted.accel_x = sensor_acc_conv(imu_raw->accel_z);
-imu_data->imu_converted.accel_y = sensor_acc_conv(imu_raw->accel_y);
-imu_data->imu_converted.accel_z = mount_orientation * sensor_acc_conv(imu_raw->accel_x); /* Flip so gravity is always down*/
+imu_converted->accel_x = sensor_acc_conv(imu_raw->accel_z);
+imu_converted->accel_y = sensor_acc_conv(imu_raw->accel_y);
+imu_converted->accel_z = mount_orientation * sensor_acc_conv(imu_raw->accel_x); /* Flip so gravity is always down*/
 
 /* Do not use offset compensation for accel to preserve gravity */
 /*
-imu_data->imu_converted.accel_x -= imu_offset.accel_x;
-imu_data->imu_converted.accel_y -= imu_offset.accel_y;
-imu_data->imu_converted.accel_z -= imu_offset.accel_z;
+imu_converted.accel_x -= imu_offset.accel_x;
+imu_converted.accel_y -= imu_offset.accel_y;
+imu_converted.accel_z -= imu_offset.accel_z;
 */
 
 /* Convert raw gyroscope values to deg/s and remap axes */
-imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_raw->gyro_z);
-imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
-imu_data->imu_converted.gyro_z = mount_orientation * sensor_gyro_conv(imu_raw->gyro_x);
+imu_converted->gyro_x = sensor_gyro_conv(imu_raw->gyro_z);
+imu_converted->gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
+imu_converted->gyro_z = mount_orientation * sensor_gyro_conv(imu_raw->gyro_x);
 
 /* Remove gyro bias */
-imu_data->imu_converted.gyro_x -= imu_offset.gyro_x;
-imu_data->imu_converted.gyro_y -= imu_offset.gyro_y;
-imu_data->imu_converted.gyro_z -= imu_offset.gyro_z;
+imu_converted->gyro_x -= imu_offset.gyro_x;
+imu_converted->gyro_y -= imu_offset.gyro_y;
+imu_converted->gyro_z -= imu_offset.gyro_z;
 
-sensor_conv_mag(imu_data, imu_raw);
+sensor_conv_mag(imu_converted, imu_raw);
 }
 
 
@@ -401,38 +401,35 @@ mount_orientation = orientation;
 static uint32_t last_tick = 0;
 void sensor_body_state
 	(
-	IMU_DATA* imu_data
+	const IMU_CONVERTED* imu_converted,
+	STATE_ESTIMATION* state_estimate
 	)
 {
 /* Determine delta T */
 uint32_t now_tick = HAL_GetTick();
 float dt = (now_tick - last_tick) / 1000.0f;
-if (dt <= 0.0f || dt > 1.0f) dt = 0.01f;
+if ( dt <= 0.0f || dt > 1.0f ) 
+	{
+	dt = 0.01f;
+	}
 last_tick = now_tick;
 
 /* Copy IMU data for readability */
-float ax = imu_data->imu_converted.accel_x;
-float ay = imu_data->imu_converted.accel_y;
-float az = imu_data->imu_converted.accel_z;
+float ax = imu_converted->accel_x;
+float ay = imu_converted->accel_y;
+float az = imu_converted->accel_z;
 
-float gx = imu_data->imu_converted.gyro_x;
-float gy = imu_data->imu_converted.gyro_y;
-float gz = imu_data->imu_converted.gyro_z;
-
-/* Compute pitch/roll from accelerometer */
-float acc_roll  = -rad_to_deg(atan2f(ay, ax));
-float acc_pitch = rad_to_deg(atan2f(-az, sqrtf(ax * ax + ay * ay)));
-
-/* --------- WIP Quaternion body state --------- */
+/* Raw gyro data in deg/s */
+float gx = imu_converted->gyro_x;
+float gy = imu_converted->gyro_y;
+float gz = imu_converted->gyro_z;
 
 /* Convert gyro to pure quaternion */
-QUAT q_gyro; /* Radians for the conversion! */
+QUAT q_gyro; /* Must be in radians */
 q_gyro.w = 0.0f;
 q_gyro.y = deg_to_rad(gy);
 q_gyro.x = deg_to_rad(gx);
 q_gyro.z = deg_to_rad(gz);
-
-/* NA temp: consider RK4 methods for integrating rate (if possible and reasonable), or don't if sensor fusion mitigates inaccuracies */
 
 /* q_rate = 0.5 * attitude * q_gyro */
 QUAT q_rate = quat_mult(attitude, q_gyro);
@@ -452,41 +449,9 @@ attitude = quat_add(comp_gyro, comp_acc);
 /* Scale back to unit quaternion to avoid drift */
 attitude = quat_normalize(attitude);
 
-/* --------- End Quaternion body state --------- */
-
-/* Integrate gyro data */
-static float roll = 0.0f;
-static float pitch = 0.0f;
-static float yaw = 0.0f;
-
-roll  += gx * dt;
-pitch += gy * dt;
-yaw   += gz * dt;
-
-/* Wrap yaw to -180..180 degrees */
-if (yaw > 180.0f)  yaw -= 360.0f;
-if (yaw < -180.0f) yaw += 360.0f;
-
-/* Complementary filter fusion */
-roll  = COMP_ALPHA * roll  + (1.0f - COMP_ALPHA) * acc_roll;
-pitch = COMP_ALPHA * pitch + (1.0f - COMP_ALPHA) * acc_pitch;
-// yaw uses gyro data only
-
-/* Compute angular rates (deg/s) */
-float roll_r = deg_to_rad(roll);
-float pitch_r = deg_to_rad(pitch);
-
-float roll_rate  = gx + sinf(roll_r) * tanf(pitch_r) * gy + cosf(roll_r) * tanf(pitch_r) * gz;
-float pitch_rate = cosf(roll_r) * gy - sinf(roll_r) * gz;
-float yaw_rate   = (sinf(roll_r) / cosf(pitch_r)) * gy + (cosf(roll_r) / cosf(pitch_r)) * gz;
-
-/* Store results (angles & rates in degrees / deg/s) */
-imu_data->state_estimate.roll_angle  = roll;
-imu_data->state_estimate.pitch_angle = pitch;
-imu_data->state_estimate.yaw_angle   = yaw;
-imu_data->state_estimate.roll_rate   = roll_rate;
-imu_data->state_estimate.pitch_rate  = pitch_rate;
-imu_data->state_estimate.yaw_rate    = yaw_rate;
+/* Store results */
+state_estimate->attitude = attitude;
+state_estimate->roll_rate = gz; 	    /* Rate in deg/s */
 
 }
 
@@ -566,42 +531,45 @@ return readout / gyro_sens;
 *       Calculate the velocity depending on accel 							   *
 *                                                                              *
 *******************************************************************************/
-void sensor_imu_velo(IMU_DATA* imu_data){
-	float velo_x, velo_y, velo_z, velocity;
+void sensor_imu_velo
+	(
+	const IMU_CONVERTED* imu_converted,
+	STATE_ESTIMATION* state_estimate
+	)
+{
+float velo_x, velo_y, velo_z, velocity;
 
-	float accel_x = imu_data->imu_converted.accel_x;
-	float accel_y = imu_data->imu_converted.accel_y;
-	float accel_z = imu_data->imu_converted.accel_z;
+float accel_x = imu_converted->accel_x;
+float accel_y = imu_converted->accel_y;
+float accel_z = imu_converted->accel_z;
 
-	float ts_delta;
-	
-	uint64_t current_tick = get_us_tick();
-	uint64_t imu_tdelta = current_tick - imu_velo_tick;
-	ts_delta = imu_tdelta / MICROSEC_PER_SEC;
+float ts_delta;
 
-	// Calculate 3 velocity vectors using motion equations
-	velo_x = velo_x_prev + accel_x*ts_delta;
-	velo_y = velo_y_prev + accel_y*ts_delta;
-	velo_z = velo_z_prev + accel_z*ts_delta;
+uint64_t current_tick = get_us_tick();
+uint64_t imu_tdelta = current_tick - imu_velo_tick;
+ts_delta = imu_tdelta / MICROSEC_PER_SEC;
 
-	// Calculate the velocity scalar
-	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
+// Calculate 3 velocity vectors using motion equations
+velo_x = velo_x_prev + accel_x*ts_delta;
+velo_y = velo_y_prev + accel_y*ts_delta;
+velo_z = velo_z_prev + accel_z*ts_delta;
 
-	/* Update state estimations*/
-	imu_data->state_estimate.velo_x = velo_x;
-	imu_data->state_estimate.velo_y = velo_y;
-	imu_data->state_estimate.velo_z = velo_z;
+// Calculate the velocity scalar
+velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
 
-	imu_data->state_estimate.velocity = velocity;
+/* Update state estimations*/
+state_estimate->velo_x = velo_x;
+state_estimate->velo_y = velo_y;
+state_estimate->velo_z = velo_z;
 
-	// Save current velocity for next computation
-	velo_x_prev = velo_x;
-	velo_y_prev = velo_y;
-	velo_z_prev = velo_z;
+state_estimate->velocity = velocity;
 
-	imu_data->state_estimate.position = 0; //TODO: Implement position
+// Save current velocity for next computation
+velo_x_prev = velo_x;
+velo_y_prev = velo_y;
+velo_z_prev = velo_z;
 
-	imu_velo_tick = current_tick;
+imu_velo_tick = current_tick;
 
 }
 
@@ -834,7 +802,7 @@ return SENSOR_IT_TIMEOUT;
 *******************************************************************************/
 static void sensor_conv_mag
 	(
-	IMU_DATA* imu_data, 
+	IMU_CONVERTED* imu_converted, 
 	IMU_RAW* imu_raw
 	)
 {
@@ -885,9 +853,9 @@ mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
 /*------------------------------------------------------------------------------
  Store converted field data
 ------------------------------------------------------------------------------*/
-imu_data->imu_converted.mag_x = mag_x;
-imu_data->imu_converted.mag_y = mag_y;
-imu_data->imu_converted.mag_z = mag_z;
+imu_converted->mag_x = mag_x;
+imu_converted->mag_y = mag_y;
+imu_converted->mag_z = mag_z;
 } /* sensor_conv_mag */
 #endif
 

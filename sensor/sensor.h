@@ -59,7 +59,6 @@ typedef struct _PRESET_DATA PRESET_DATA; /* From main.h */
 
 /* General */
 #define NUM_SENSORS         ( 38   )
-// #define IMU_DATA_SIZE       ( 20   )
 #define SENSOR_DATA_SIZE	( 128   )
 
 /*------------------------------------------------------------------------------
@@ -93,10 +92,21 @@ typedef enum
 	MOUNT_ORIENTATION_Z_UP	 = 1
 	} MOUNT_ORIENTATION;
 
+/* State estimation from processed sensors */
+typedef struct _STATE_ESTIMATION {
+    QUAT attitude;
+	float roll_rate;
+    float velocity;
+    float velo_x;
+    float velo_y;
+    float velo_z;     
+} STATE_ESTIMATION;
+
 /* Sensor Data */
 typedef struct SENSOR_DATA 
 	{
-	IMU_DATA imu_data;
+	IMU_CONVERTED imu_converted;
+    STATE_ESTIMATION state_estimate;
 	float    baro_pressure; 
 	float    baro_temp;	
 	float	 baro_alt;
@@ -159,19 +169,21 @@ void sensor_reset_velo
 /* Perform sensor fusion on imu converted data to get body rate */
 void sensor_body_state
 	(
-	IMU_DATA* imu_data
+	const IMU_CONVERTED* imu_converted,
+	STATE_ESTIMATION* state_estimate
 	);
 
 /* Calculate the velocity depending on accel */
 void sensor_imu_velo
 	(
-	IMU_DATA* imu_data
+	const IMU_CONVERTED* imu_converted,
+	STATE_ESTIMATION* state_estimate
 	);
 
 /* Conversion of IMU raw chip readouts into 9-axis Accelerometer and Gyro. */
 void sensor_conv_imu
 	(
-	IMU_DATA* imu_data,
+	IMU_CONVERTED* imu_converted,
 	IMU_RAW* imu_raw
 	);
 
