@@ -165,29 +165,18 @@ void dashboard_construct_dump
     DASHBOARD_DUMP_TYPE* dump_buffer_ptr /* must be DASHBOARD_DUMP_SIZE */
     )
 {
-
-/* IMU (6 axes) */
-memcpy( dump_buffer_ptr,
-    &(sensor_data.imu_data.imu_converted),
-    sizeof( float ) * 6 );
-
-/* Roll/Pitch + Rates */
-dump_buffer_ptr->pitch_angle = sensor_data.imu_data.state_estimate.pitch_angle;
-dump_buffer_ptr->roll_angle = sensor_data.imu_data.state_estimate.roll_angle;
-dump_buffer_ptr->yaw_angle = sensor_data.imu_data.state_estimate.yaw_angle;
-dump_buffer_ptr->pitch_rate = sensor_data.imu_data.state_estimate.pitch_rate;
-dump_buffer_ptr->roll_rate = sensor_data.imu_data.state_estimate.roll_rate;
-dump_buffer_ptr->yaw_rate = sensor_data.imu_data.state_estimate.yaw_rate;
+/* Quats (TODO) */
 
 /* Baro */
-dump_buffer_ptr->baro_pressure = sensor_data.baro_pressure;
-dump_buffer_ptr->baro_temp = sensor_data.baro_temp;
-dump_buffer_ptr->baro_alt = sensor_data.baro_alt;
-dump_buffer_ptr->baro_velo = sensor_data.baro_velo;
+dump_buffer_ptr->alt = sensor_data.baro_alt;
 
 /* GPS */
-dump_buffer_ptr->gps_dec_longitude = sensor_data.gps_dec_longitude;
-dump_buffer_ptr->gps_dec_latitude = sensor_data.gps_dec_latitude;
+dump_buffer_ptr->longitude = sensor_data.gps_dec_longitude;
+dump_buffer_ptr->latitude = sensor_data.gps_dec_latitude;
+
+/* Controls */
+dump_buffer_ptr->acc_x = sensor_data.imu_data.imu_converted.accel_x;
+dump_buffer_ptr->roll_rate = sensor_data.imu_data.state_estimate.roll_rate;
 
 }
 #endif

@@ -5,6 +5,12 @@
 *
 * DESCRIPTION: 
 * 		Definitions for the telemetry data structures.
+*
+* NOTE:
+*       Every data structure given here is incredibly regression sensitive. All
+*       changes to structs must also change their factory/constructor procedures
+*       and ensure compatibility through the flight computer software stack
+*       (SDEC/API/CLI & Dashboard).
 *                                                                              
 * COPYRIGHT:                                                                   
 *       Copyright (c) 2025 Sun Devil Rocketry.                                 
@@ -49,9 +55,9 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Constants
 ------------------------------------------------------------------------------*/
-#define LORA_INTERNAL_HEADER_SIZE 20U
-#define LORA_PAYLOAD_SIZE 76U
-#define LORA_MESSAGE_SIZE (LORA_INTERNAL_HEADER_SIZE + LORA_PAYLOAD_SIZE)
+#define LORA_INTERNAL_HEADER_SIZE 8U
+#define LORA_PAYLOAD_SIZE 40U
+#define TELEMETRY_MESSAGE_SIZE (LORA_INTERNAL_HEADER_SIZE + LORA_PAYLOAD_SIZE)
 
 /*------------------------------------------------------------------------------
  Typedefs
@@ -66,81 +72,61 @@ typedef uint8_t FLIGHT_COMP_STATE_TYPE;
 typedef uint32_t VERSION_INFO_TYPE; /* hw version : fw version : fw patch : fw prerelease */
 									/* msb									lsb			  */
 
-typedef enum _LORA_MESSAGE_TYPES
+typedef enum _TELEMETRY_MESSAGE_TYPES
     {
-    LORA_MSG_VEHICLE_ID = 0x00000001,
-    LORA_MSG_DASHBOARD_DATA = 0x00000002,
-    LORA_MSG_WARNING_MESSAGE = 0x00000003,
-    LORA_MSG_INFO_MESSAGE = 0x00000004,
-    __LORA_MSG_FORCE_32BIT = 0xFFFFFFFF /* used to force this type size to 32 bits */
-    } LORA_MESSAGE_TYPES;
-    _Static_assert( sizeof(LORA_MESSAGE_TYPES) == 4, "LORA_MESSAGE_TYPES size invalid.");
+    TELEMETRY_MSG_VEHICLE_ID = 0x00000001,
+    TELEMETRY_MSG_DASHBOARD_DATA = 0x00000002,
+    TELEMETRY_MSG_WARNING_MESSAGE = 0x00000003, /* ETS TODO */
+    TELEMETRY_MSG_INFO_MESSAGE = 0x00000004,    /* ETS TODO */
+    __TELEMETRY_MSG_FORCE_32BIT = 0xFFFFFFFF /* used to force this type size to 32 bits */
+    } TELEMETRY_MESSAGE_TYPES;
+    _Static_assert( sizeof(TELEMETRY_MESSAGE_TYPES) == 4, "TELEMETRY_MESSAGE_TYPES size invalid.");
 
 typedef struct __attribute__((packed)) _LORA_INTERNAL_HEADER_TYPE
     {
-    ST_UID_TYPE uid;
-    LORA_MESSAGE_TYPES mid;
-    uint32_t timestamp;
+    TELEMETRY_MESSAGE_TYPES mid; /* message identifier -- currently 32 bits but will reserve command/control bits later*/
+    uint32_t timestamp; /* systick in ms */
     } LORA_INTERNAL_HEADER_TYPE;
     _Static_assert( sizeof(LORA_INTERNAL_HEADER_TYPE) == LORA_INTERNAL_HEADER_SIZE, "LORA_INTERNAL_HEADER size invalid.");
 
-typedef struct __attribute((packed)) _LORA_MSG_VEHICLE_ID_TYPE
+typedef struct __attribute((packed)) _TELEMETRY_MSG_VEHICLE_ID_TYPE
     {
-    uint8_t hw_opcode;
-	uint8_t fw_opcode;
-	VERSION_INFO_TYPE version;
-	char flight_id[16];
-    uint8_t explicit_padding[54];
-    } LORA_MSG_VEHICLE_ID_TYPE;
-    _Static_assert( sizeof(LORA_MSG_VEHICLE_ID_TYPE) == LORA_PAYLOAD_SIZE, "LORA_MSG_VEHICLE_ID_TYPE size invalid.");
+    ST_UID_TYPE uid; /* unique identifier per stm32 MCU */
+    uint8_t hw_opcode; /* hardware identifier as defined by connect command */
+	uint8_t fw_opcode; /* firmware identifier as defined by connect command */
+	VERSION_INFO_TYPE version; /* version string defined above */
+	char flight_id[16]; /* a 16 character c-string for the current flight (future: configurable) */
+    uint8_t explicit_padding[6]; /* pad the end of this struct so the union behaves as expected */
+    } TELEMETRY_MSG_VEHICLE_ID_TYPE;
+    _Static_assert( sizeof(TELEMETRY_MSG_VEHICLE_ID_TYPE) == LORA_PAYLOAD_SIZE, "TELEMETRY_MSG_VEHICLE_ID_TYPE size invalid.");
 
-typedef struct __attribute__((packed)) _LORA_MSG_DASHBOARD_DUMP_TYPE
+typedef struct __attribute__((packed)) _TELEMETRY_MSG_DASHBOARD_DUMP_TYPE
     {
-    FLIGHT_COMP_STATE_TYPE fsm_state;
-    DASHBOARD_DUMP_TYPE data;
-    uint8_t explicit_padding[3];
-    } LORA_MSG_DASHBOARD_DUMP_TYPE;
-    _Static_assert( sizeof(LORA_MSG_DASHBOARD_DUMP_TYPE) == LORA_PAYLOAD_SIZE, "LORA_MSG_DASHBOARD_DUMP_TYPE size invalid.");
+    FLIGHT_COMP_STATE_TYPE fsm_state; /* current state of the flight computer */
+    DASHBOARD_DUMP_TYPE data; /* the data used by the dashboard for location/orientation */
+    uint8_t explicit_padding[3]; /* pad the end of this struct so the union behaves as expected */
+    } TELEMETRY_MSG_DASHBOARD_DUMP_TYPE;
+    _Static_assert( sizeof(TELEMETRY_MSG_DASHBOARD_DUMP_TYPE) == LORA_PAYLOAD_SIZE, "TELEMETRY_MSG_DASHBOARD_DUMP_TYPE size invalid.");
 
 /* maps to warning and info messages */
-typedef struct __attribute__((packed)) _LORA_MSG_TEXT_MESSAGE_TYPE
+typedef struct __attribute__((packed)) _TELEMETRY_MSG_TEXT_MESSAGE_TYPE
     {
-    TEXT_MESSAGE msg;
-    } LORA_MSG_TEXT_MESSAGE_TYPE;
-    _Static_assert( sizeof(LORA_MSG_TEXT_MESSAGE_TYPE) == LORA_PAYLOAD_SIZE, "LORA_MSG_TEXT_MESSAGE_TYPE size invalid.");
+    TEXT_MESSAGE msg; /* encodes the systick where it was generated + a short message */
+    } TELEMETRY_MSG_TEXT_MESSAGE_TYPE;
+    _Static_assert( sizeof(TELEMETRY_MSG_TEXT_MESSAGE_TYPE) == LORA_PAYLOAD_SIZE, "TELEMETRY_MSG_TEXT_MESSAGE_TYPE size invalid.");
 
 /* struct is packed to inhibit padding */
-typedef struct __attribute__((packed)) _LORA_MESSAGE
+typedef struct __attribute__((packed)) _TELEMETRY_MESSAGE
 	{
-	LORA_INTERNAL_HEADER_TYPE header;
+	LORA_INTERNAL_HEADER_TYPE header; /* data common to every message */
     union _payload
         {
-        LORA_MSG_VEHICLE_ID_TYPE vehicle_id;
-        LORA_MSG_DASHBOARD_DUMP_TYPE dashboard_dump;
-        LORA_MSG_TEXT_MESSAGE_TYPE text_message;
+        TELEMETRY_MSG_VEHICLE_ID_TYPE vehicle_id; /* provide information about the transmitting device */
+        TELEMETRY_MSG_DASHBOARD_DUMP_TYPE dashboard_dump; /* gives vehicle state info (location, orientation) */
+        TELEMETRY_MSG_TEXT_MESSAGE_TYPE text_message; /* TODO: a short message generated by the firmware */
         } payload;
-	} LORA_MESSAGE;
-	_Static_assert( sizeof(LORA_MESSAGE) == LORA_MESSAGE_SIZE, "LORA_PAYLOAD size invalid.");
-
-typedef enum TELEMETRY_FSM_STATE {
-    TELEMETRY_STATE_BLOCKING = 0,
-    TELEMETRY_STATE_STATUS_CHECK,
-    TELEMETRY_STATE_GETTING_BUF,
-    TELEMETRY_STATE_SETTING_TX_BASE,
-    TELEMETRY_STATE_WRITING_MSG_LEN,
-    TELEMETRY_STATE_WRITING_MSG,
-    TELEMETRY_STATE_PRE_TX_STATUS_CHECK,
-    TELEMETRY_STATE_STARTING_TRANSMISSION,
-    TELEMETRY_STATE_TRANSMITTING
-} TELEMETRY_FSM_STATE;
-
-typedef enum TELEMETRY_EVENT {
-    TELEMETRY_EVENT_CANCEL = 0,
-    TELEMETRY_EVENT_SYNCHRONOUS_UPDATE,
-    TELEMETRY_EVENT_REG_READ_CPLT,
-    TELEMETRY_EVENT_WRITE_CPLT,
-    TELEMETRY_EVENT_EXTI_RAISED
-} TELEMETRY_EVENT;
+	} TELEMETRY_MESSAGE;
+	_Static_assert( sizeof(TELEMETRY_MESSAGE) == TELEMETRY_MESSAGE_SIZE, "LORA_PAYLOAD size invalid.");
 
 
 /*------------------------------------------------------------------------------
@@ -148,27 +134,16 @@ typedef enum TELEMETRY_EVENT {
 ------------------------------------------------------------------------------*/
 
 /* telemetry.c */
-void telemetry_update
-    (
-    TELEMETRY_EVENT update_cause
-    );
 void telemetry_get_next_message
     (
-    void
-    );
-void telemetry_build_payload
-    (
-    LORA_MESSAGE*       msg_buf,      /* o: buffer passed by caller        */
-    LORA_MESSAGE_TYPES  message_type  /* i: what kind of message           */
+    TELEMETRY_MESSAGE* payload
     );
 
-/* Debug only function for retrieval of telemetry FSM state */
-#ifdef DEBUG
-TELEMETRY_FSM_STATE telemetry_get_fsm_state
+void telemetry_build_payload
     (
-    void
+    TELEMETRY_MESSAGE*       msg_buf,      /* o: buffer passed by caller        */
+    TELEMETRY_MESSAGE_TYPES  message_type  /* i: what kind of message           */
     );
-#endif
 
 #ifdef __cplusplus
 }
