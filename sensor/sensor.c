@@ -259,10 +259,10 @@ baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr-
 sensor_conv_imu( &(sensor_data_ptr->imu_converted), &imu_raw );
 
 /* Calculated to get body state */
-sensor_body_state( &(sensor_data_ptr->imu_converted) );
+sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
 /* Calculated velocity and position */
-sensor_imu_velo( &(sensor_data_ptr->imu_converted) );
+sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
 /* Calculated velocity from barometer */
 sensor_baro_velo( sensor_data_ptr );
