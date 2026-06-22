@@ -141,19 +141,23 @@ default_error_handler.error_callback( error_code );
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		error_log_warning                                                      *
+* 		__sdr_log_warning                                                      *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		Place a warning message in the buffer.                                 *
 *                                                                              *
+* NOTE:                                                                        *
+*       Should be called through the error_log_warning macro for bounds        *
+*       checking.                                                              *
+*                                                                              *
 *******************************************************************************/
-void error_log_warning
+void __sdr_log_warning
     (
-    char* message
+    const char* message
     )
 {
 last_warning.systick = HAL_GetTick();
-memcpy( last_warning.message, message, 72 );
+memcpy( last_warning.message, message, 36 );
 is_pending_warning = true;
 
 } /* error_log_warning */
@@ -162,19 +166,22 @@ is_pending_warning = true;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   * 
-* 		error_log_info                                                      *
+* 		__sdr_log_info                                                         *
 *                                                                              *
 * DESCRIPTION:                                                                 * 
 * 		Place a warning message in the buffer.                                 *
 *                                                                              *
+* NOTE:                                                                        *
+*       Should be called through the error_log_info macro for bounds checking. *
+*                                                                              *
 *******************************************************************************/
-void error_log_info
+void __sdr_log_info
     (
-    char* message
+    const char* message
     )
 {
 last_info.systick = HAL_GetTick();
-memcpy( last_info.message, message, 72 );
+memcpy( last_info.message, message, 36 );
 is_pending_info = true;
 
 } /* error_log_info */
