@@ -1,56 +1,54 @@
-/*******************************************************************************
-*
-* FILE:
-* 		math_sdr.c
-*
-* DESCRIPTION: 
-* 		Contains math functions for SDR code.
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : math_sdr.c
+  * @brief          : Contains math and utility functions for SDR code.
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 /*------------------------------------------------------------------------------
- Standard Includes                                                                     
+ Standard Includes
 ------------------------------------------------------------------------------*/
 
 
 /*------------------------------------------------------------------------------
- Project Includes                                                                     
+ Project Includes
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "math_sdr.h"
 
 /*------------------------------------------------------------------------------
- API Functions 
+ API Functions
 ------------------------------------------------------------------------------*/
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		crc32                                                                  *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Returns a 32bit checksum from the given data.                          *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Computes a CRC-32 checksum over a block of data.
+  *
+  * @param[in] data Pointer to the input data buffer.
+  * @param[in] len Number of bytes in the buffer.
+  *
+  * @return The 32-bit CRC checksum of the input data.
+  */
 uint32_t crc32
     (
-    const uint8_t *data, 
+    const uint8_t *data,
     size_t len
-    ) 
+    )
 {
 uint32_t crc = 0xFFFFFFFF;
-while (len--) 
+while (len--)
     {
     crc ^= *data++;
     for (int i = 0; i < 8; ++i)
@@ -61,9 +59,25 @@ return ~crc;
 } /* crc32 */
 
 
-/* Standard ZYX conversion - maybe not the right order? */
-/* TAKES RADIANS */
-QUAT eul_to_quat(float yaw, float pitch, float roll)
+/**
+  * @brief Converts ZYX Euler angles to a quaternion.
+  *
+  * @note Angles must be provided in radians.
+  * @note The rotation order is ZYX (standard aerospace convention). 
+  * @todo The rotation sequence has not been validated yet.
+  *
+  * @param yaw   Rotation about the Z axis in radians.
+  * @param pitch Rotation about the Y axis in radians.
+  * @param roll  Rotation about the X axis in radians.
+  *
+  * @return The quaternion representing the rotation.
+  */
+QUAT eul_to_quat
+    (
+    float yaw,
+    float pitch,
+    float roll
+    )
 {
 float cos_yaw = cosf(yaw / 2.0f);
 float cos_pitch = cosf(pitch / 2.0f);
@@ -81,9 +95,18 @@ q.z = cos_roll * cos_pitch * sin_yaw - sin_roll * sin_pitch * cos_yaw;
 
 return q;
 
-}
+} /* eul_to_quat */
 
-/* Note: quaternion multiplication is NOT commutative */
+/**
+  * @brief Multiplies two quaternions.
+  *
+  * @note Quaternion multiplication is NOT commutative.
+  *
+  * @param a The left-hand quaternion.
+  * @param b The right-hand quaternion.
+  *
+  * @return The quaternion product a * b.
+  */
 QUAT quat_mult
     (
     QUAT a,
@@ -99,9 +122,17 @@ result.z = (a.w * b.z) + (a.x * b.y) - (a.y * b.x) + (a.z * b.w);
 
 return result;
 
-}
+} /* quat_mult */
 
 
+/**
+  * @brief Adds two quaternions component-wise.
+  *
+  * @param a The first quaternion.
+  * @param b The second quaternion.
+  *
+  * @return The quaternion sum a + b.
+  */
 QUAT quat_add
     (
     QUAT a,
@@ -117,9 +148,17 @@ result.z = a.z + b.z;
 
 return result;
 
-}
+} /* quat_add */
 
 
+/**
+  * @brief Scales a quaternion by a scalar value.
+  *
+  * @param q The quaternion to scale.
+  * @param s The scalar factor.
+  *
+  * @return The quaternion @p q scaled by @p s (q * s).
+  */
 QUAT quat_scale
     (
     QUAT q,
@@ -135,9 +174,22 @@ result.z = q.z * s;
 
 return result;
 
-}
+} /* quat_scale */
 
 
+/**
+  * @brief Normalizes a quaternion to unit length.
+  *
+  * @param q The quaternion to normalize.
+  *
+  * @return The normalized unit quaternion.
+  *
+  * Divides each component by the quaternion's norm. If the norm is
+  * zero (e.g. a zero-initialized quaternion), returns the identity
+  * quaternion (1, 0, 0, 0) to avoid a divide-by-zero. Values near 
+  * but not equal to zero are divided normally and may exhibit 
+  * floating-point roundoff.
+  */
 QUAT quat_normalize
     (
     QUAT q
@@ -147,11 +199,9 @@ QUAT result;
 
 float norm = sqrtf(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
 
-/* Fallback for zero quaternion: initialize to unit quaternion
-   This check is really only for potentially zero initialized quats to avoid divide by zero.
-   Otherwise, values really close to zero could just have bad floating point roundoff */
-if ( norm == 0.0f ) 
-    {               
+/* Fallback for zero quaternion: initialize to identity quaternion */
+if ( norm == 0.0f )
+    {
     result.w = 1.0f;
     result.x = 0.0f;
     result.y = 0.0f;
@@ -167,9 +217,16 @@ else
 
 return result;
 
-}
+} /* quat_normalize */
 
 
+/**
+  * @brief Computes the conjugate of a quaternion.
+  *
+  * @param q The input quaternion.
+  *
+  * @return The conjugate quaternion (w, -x, -y, -z).
+  */
 QUAT quat_conj
     (
     QUAT q
@@ -178,8 +235,8 @@ QUAT quat_conj
 QUAT result = { q.w, -q.x, -q.y, -q.z };
 return result;
 
-}
+} /* quat_conj */
 
 /*******************************************************************************
-* END OF FILE                                                                  * 
+* END OF FILE                                                                  *
 *******************************************************************************/
