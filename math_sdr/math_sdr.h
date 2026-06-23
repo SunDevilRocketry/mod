@@ -49,17 +49,6 @@ extern "C" {
  Typedefs 
 ------------------------------------------------------------------------------*/
 
-/* UID serial number (packed struct inhibits padding) */
-typedef struct __attribute__((packed)) _ST_UID_TYPE 
-    {
-    uint32_t wafer_coords;
-    char lot_num_1[3];
-    uint8_t wafer_num;
-    char lot_num_2[4];
-    } ST_UID_TYPE;
-_Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
-
-
 /* Quaternion */
 typedef struct _QUAT
 	{
@@ -68,7 +57,7 @@ typedef struct _QUAT
 
 
 /*------------------------------------------------------------------------------
- Macros and Inlines
+ Macros
 ------------------------------------------------------------------------------*/
 
 /* Constants */
@@ -117,37 +106,6 @@ typedef struct _QUAT
   * @return Number of elements in @p array.
   */
 #define array_size( array ) ( sizeof( array ) / sizeof( array[0] ) )
-
-
-// NA TODO: preserving the old banner in case this is moved
-/*******************************************************************************
-*                                                                              *
-* INLINE:                                                                      * 
-*       get_uid                                                                *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		Gets the 12 byte UID value for the H7 chip.                            *
-*                                                                              *
-*******************************************************************************/
-/**
- * @brief Gets the 12 byte UID value for the H7 chip.
- * 
- * @param[out] uid_buffer Pointer to the buffer to receive the UID.
- */
-static inline void get_uid
-    (
-    ST_UID_TYPE* uid_buffer
-    )
-{
-uint32_t uid[3];
-uid[0] = HAL_GetUIDw0();
-uid[1] = HAL_GetUIDw1();
-uid[2] = HAL_GetUIDw2();
-
-memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
-
-} /* get_uid */
-
 
 /*------------------------------------------------------------------------------
  Function Prototypes 

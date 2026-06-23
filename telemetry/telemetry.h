@@ -42,7 +42,6 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Project Includes  
 ------------------------------------------------------------------------------*/
-#include "math_sdr.h"
 #include "error_sdr.h"
 #include "commands.h"
 #include "main.h"
@@ -81,6 +80,16 @@ typedef enum _TELEMETRY_MESSAGE_TYPES
     __TELEMETRY_MSG_FORCE_32BIT = 0xFFFFFFFF /* used to force this type size to 32 bits */
     } TELEMETRY_MESSAGE_TYPES;
     _Static_assert( sizeof(TELEMETRY_MESSAGE_TYPES) == 4, "TELEMETRY_MESSAGE_TYPES size invalid.");
+
+/* UID serial number (packed struct inhibits padding) */
+typedef struct __attribute__((packed)) _ST_UID_TYPE 
+    {
+    uint32_t wafer_coords;
+    char lot_num_1[3];
+    uint8_t wafer_num;
+    char lot_num_2[4];
+    } ST_UID_TYPE;
+_Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
 
 typedef struct __attribute__((packed)) _LORA_INTERNAL_HEADER_TYPE
     {
@@ -127,6 +136,33 @@ typedef struct __attribute__((packed)) _TELEMETRY_MESSAGE
         } payload;
 	} TELEMETRY_MESSAGE;
 	_Static_assert( sizeof(TELEMETRY_MESSAGE) == TELEMETRY_MESSAGE_SIZE, "LORA_PAYLOAD size invalid.");
+
+/*------------------------------------------------------------------------------
+ Inlines                                             
+------------------------------------------------------------------------------*/
+
+/*******************************************************************************
+*                                                                              *
+* INLINE:                                                                      * 
+*       get_uid                                                                *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+* 		Gets the 12 byte UID value for the H7 chip.                            *
+*                                                                              *
+*******************************************************************************/
+static inline void get_uid
+    (
+    ST_UID_TYPE* uid_buffer
+    )
+{
+uint32_t uid[3];
+uid[0] = HAL_GetUIDw0();
+uid[1] = HAL_GetUIDw1();
+uid[2] = HAL_GetUIDw2();
+
+memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
+
+} /* get_uid */
 
 
 /*------------------------------------------------------------------------------
