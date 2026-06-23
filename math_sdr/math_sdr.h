@@ -72,7 +72,6 @@ typedef struct _QUAT
 ------------------------------------------------------------------------------*/
 
 /* Constants */
-#define COMP_ALPHA 0.98f /* Used in sensor fusion */
 #define GRAVITY 9.8f
 
 

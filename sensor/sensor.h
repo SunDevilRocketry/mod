@@ -60,6 +60,8 @@ typedef struct _PRESET_DATA PRESET_DATA; /* From main.h */
 /* General */
 #define NUM_SENSORS         ( 38   )
 #define SENSOR_DATA_SIZE	( 128   )
+#define COMP_ALPHA 			( 0.98f ) /* Used in sensor fusion */
+
 
 /*------------------------------------------------------------------------------
  Typdefs 
