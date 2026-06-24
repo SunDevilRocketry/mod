@@ -90,8 +90,8 @@ typedef enum
 /* Mount configuration of FC */
 typedef enum 
 	{
-	MOUNT_ORIENTATION_Z_DOWN = -1,
-	MOUNT_ORIENTATION_Z_UP	 = 1
+	MOUNT_ORIENTATION_IMU_INVERTED = -1,
+	MOUNT_ORIENTATION_IMU_NORMAL   = 1
 	} MOUNT_ORIENTATION;
 
 /* State estimation from processed sensors */

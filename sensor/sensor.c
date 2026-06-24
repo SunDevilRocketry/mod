@@ -61,7 +61,7 @@ float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
 
 /* State estimation */
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
-MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_Z_DOWN; /* Default assumption: antennta pointing up */
+MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
 
 
 /*------------------------------------------------------------------------------
@@ -296,7 +296,7 @@ else
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		sensor_initialize_tick                                                 *
+* 		sensor_init			                                                   *
 *                                                                              *
 * DESCRIPTION:                                                                 *
 *       Initialize sensor ticks, velo, and attitude at calibration             *
@@ -432,6 +432,7 @@ attitude = quat_add(attitude, rate_dt);
 
 /* Complementary filter fusion */
 /* attitude = COMP_ALPHA * attitude + (1 - COMP_ALPHA) * q_acc */
+// TODO: only use gravity during LD
 QUAT q_acc = quat_acc_attitude(ax, ay, az);
 QUAT comp_gyro = quat_scale(attitude, COMP_ALPHA);
 QUAT comp_acc = quat_scale(q_acc, 1.0f - COMP_ALPHA);
