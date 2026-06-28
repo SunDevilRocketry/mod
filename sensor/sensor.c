@@ -485,13 +485,13 @@ return eul_to_quat(0.0f, acc_pitch, acc_roll);
 * 		gravity_comp_filter                                                    *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Fuses gyroscope rotation data with gravity vector to compensate for    *
-*		drift according to the formula                                         *
+*       Fuses integrated gyroscope rotation data with gravity vector to        *
+*		compensate for drift according to the formula                          *
 *		attitude = alpha * gyro_attitude + (1 - alpha) * g_orientation         *
 *                                                                              *
 * NOTE:                                                                        *
 *       This type of sensor fusion is only valid when the vehicle is mostly    *
-*       static (e.g prelaunch). Do not use this during flight when large       *
+*       static (e.g. prelaunch). Do not use this during flight when large       *
 *       accerations come from sources other than gravity.                      *
 *                                                                              *
 *******************************************************************************/
@@ -866,7 +866,6 @@ mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
 /*------------------------------------------------------------------------------
  Store converted field data
 ------------------------------------------------------------------------------*/
-// NA TODO (DONT LET ME FORGET): This probably needs to be remapped
 imu_converted->mag_x = mag_z;
 imu_converted->mag_y = mag_y;
 imu_converted->mag_z = mount_orientation * mag_x;
