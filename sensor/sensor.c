@@ -86,6 +86,12 @@ static QUAT quat_acc_attitude
 	float az
 	);
 
+static void gravity_comp_filter
+	(
+	QUAT* gyro_attitude,
+	QUAT g_orientation
+	);
+
 
 /*------------------------------------------------------------------------------
  API Functions 
@@ -426,17 +432,17 @@ q_gyro.z = deg_to_rad(gz);
 QUAT q_rate = quat_mult(attitude, q_gyro);
 q_rate = quat_scale(q_rate, 0.5f);
 
+/* Dead reckoing orientation by integrating gyro */
 /* attitude += dt * q_rate */
 QUAT rate_dt = quat_scale(q_rate, dt);
 attitude = quat_add(attitude, rate_dt);
 
-/* Complementary filter fusion */
-/* attitude = COMP_ALPHA * attitude + (1 - COMP_ALPHA) * q_acc */
-// TODO: only use gravity during LD
-QUAT q_acc = quat_acc_attitude(ax, ay, az);
-QUAT comp_gyro = quat_scale(attitude, COMP_ALPHA);
-QUAT comp_acc = quat_scale(q_acc, 1.0f - COMP_ALPHA);
-attitude = quat_add(comp_gyro, comp_acc);
+/* Sensor fuson with gravity if not in flight */
+if ( get_fc_state() <= FC_STATE_LAUNCH_DETECT )
+	{
+	QUAT q_acc = quat_acc_attitude(ax, ay, az);
+	gravity_comp_filter(&attitude, q_acc);
+	}
 
 /* Scale back to unit quaternion to avoid drift */
 attitude = quat_normalize(attitude);
@@ -469,6 +475,36 @@ float acc_roll  = -atan2f(ay, ax);
 float acc_pitch = atan2f(-az, sqrtf(ax * ax + ay * ay));
 
 return eul_to_quat(0.0f, acc_pitch, acc_roll);
+
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		gravity_comp_filter                                                    *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Fuses gyroscope rotation data with gravity vector to compensate for    *
+*		drift according to the formula                                         *
+*		attitude = alpha * gyro_attitude + (1 - alpha) * g_orientation         *
+*                                                                              *
+* NOTE:                                                                        *
+*       This type of sensor fusion is only valid when the vehicle is mostly    *
+*       static (e.g prelaunch). Do not use this during flight when large       *
+*       accerations come from sources other than gravity.                      *
+*                                                                              *
+*******************************************************************************/
+static void gravity_comp_filter
+	(
+	QUAT* gyro_attitude,
+	QUAT g_orientation
+	)
+{
+QUAT comp_gyro = quat_scale(*gyro_attitude, COMP_ALPHA);
+QUAT comp_acc = quat_scale(g_orientation, 1.0f - COMP_ALPHA);
+
+*gyro_attitude = quat_add(comp_gyro, comp_acc);
 
 }
 
@@ -830,9 +866,10 @@ mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
 /*------------------------------------------------------------------------------
  Store converted field data
 ------------------------------------------------------------------------------*/
-imu_converted->mag_x = mag_x;
+// NA TODO (DONT LET ME FORGET): This probably needs to be remapped
+imu_converted->mag_x = mag_z;
 imu_converted->mag_y = mag_y;
-imu_converted->mag_z = mag_z;
+imu_converted->mag_z = mount_orientation * mag_x;
 } /* sensor_conv_mag */
 #endif
 
