@@ -321,8 +321,7 @@ float ax = preset_data->imu_offset.accel_x;
 float ay = preset_data->imu_offset.accel_y;
 float az = preset_data->imu_offset.accel_z;
 
-attitude = quat_acc_attitude(ax, ay, az); /* NA temp: we do sensor dump before calib too, so this might be unnecessary */
-
+attitude = quat_acc_attitude(ax, ay, az);
 
 } /* sensor_init */
 
@@ -342,10 +341,12 @@ void sensor_conv_imu
 	IMU_RAW* imu_raw
 	)
 {
-/* Convert raw accel values and remap axes so Z is vertical in the flight configuration */ 
+/* Convert raw accel values */ 
 imu_converted->accel_x = sensor_acc_conv(imu_raw->accel_z);
 imu_converted->accel_y = sensor_acc_conv(imu_raw->accel_y);
-imu_converted->accel_z = mount_orientation * sensor_acc_conv(imu_raw->accel_x); /* Flip so gravity is always down*/
+imu_converted->accel_z = sensor_acc_conv(imu_raw->accel_x);
+
+sensor_axis_remap( &(imu_converted->accel_x), &(imu_converted->accel_y), &(imu_converted->accel_z) );
 
 /* Do not use offset compensation for accel to preserve gravity */
 /*
@@ -357,7 +358,9 @@ imu_converted.accel_z -= imu_offset.accel_z;
 /* Convert raw gyroscope values to deg/s and remap axes */
 imu_converted->gyro_x = sensor_gyro_conv(imu_raw->gyro_z);
 imu_converted->gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
-imu_converted->gyro_z = mount_orientation * sensor_gyro_conv(imu_raw->gyro_x);
+imu_converted->gyro_z = sensor_gyro_conv(imu_raw->gyro_x);
+
+sensor_axis_remap( &(imu_converted->gyro_x), &(imu_converted->gyro_y), &(imu_converted->gyro_z) );
 
 /* Remove gyro bias */
 imu_converted->gyro_x -= imu_offset.gyro_x;
@@ -505,6 +508,31 @@ QUAT comp_gyro = quat_scale(*gyro_attitude, COMP_ALPHA);
 QUAT comp_acc = quat_scale(g_orientation, 1.0f - COMP_ALPHA);
 
 *gyro_attitude = quat_add(comp_gyro, comp_acc);
+
+}
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		sensor_axis_remap                                                      *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Remaps sensor xyz readings so +Z is vertical in the flight             *
+*       configuration or flips X to maintain right-handed coordinates          *
+*                                                                              *
+*******************************************************************************/
+void sensor_axis_remap
+	(
+	float* x,
+	float* y,
+	float* z
+	)
+{
+float temp = *x;
+*x = -mount_orientation * (*z);
+(void)y; /* Unchanged */
+*z = mount_orientation * temp;
 
 }
 
@@ -866,9 +894,11 @@ mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
 /*------------------------------------------------------------------------------
  Store converted field data
 ------------------------------------------------------------------------------*/
-imu_converted->mag_x = mag_z;
+sensor_axis_remap(&mag_x, &mag_y, &mag_z);
+
+imu_converted->mag_x = mag_x;
 imu_converted->mag_y = mag_y;
-imu_converted->mag_z = mount_orientation * mag_x;
+imu_converted->mag_z = mag_z;
 } /* sensor_conv_mag */
 #endif
 

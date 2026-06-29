@@ -174,6 +174,15 @@ void sensor_body_state
 	STATE_ESTIMATION* state_estimate
 	);
 
+/* Remaps sensor xyz readings so +Z is vertical in the flight configuration
+   or flips X to maintain right-handed coordinates */
+void sensor_axis_remap
+	(
+	float* x,
+	float* y,
+	float* z
+	);
+
 /* Calculate the velocity depending on accel */
 void sensor_imu_velo
 	(
