@@ -894,8 +894,6 @@ mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
 /*------------------------------------------------------------------------------
  Store converted field data
 ------------------------------------------------------------------------------*/
-sensor_axis_remap(&mag_x, &mag_y, &mag_z);
-
 imu_converted->mag_x = mag_x;
 imu_converted->mag_y = mag_y;
 imu_converted->mag_z = mag_z;
