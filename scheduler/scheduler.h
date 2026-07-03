@@ -45,38 +45,26 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Typedefs 
 ------------------------------------------------------------------------------*/
-
-typedef enum 
-    {
-    TASK_START_BUZZ,
-    TASK_STOP_BUZZ
-    } TASK_TYPE;
-
 typedef enum
     {
-    TASK_SCHEDULER_OK,
-    TASK_SCHEDULER_PASS,
-    TASK_SCHEDULER_FAIL,
-    TASK_SCHEDULER_INVALID_SYSTICK,
-    TASK_SCHEDULER_NOT_FOUND,
-    TASK_SCHEDULER_OCCUPIED,
-    TASK_SCHEDULER_CALLBACK_ERROR
-    } TASK_STATUS;
+    SCHEDULER_OK,
+    SCHEDULER_PASS,
+    SCHEDULER_FAIL,
+    SCHEDULER_INVALID_SYSTICK,
+    SCHEDULER_TASK_NOT_FOUND,
+    SCHEDULER_CALLBACK_ERROR
+    } SCHEDULER_STATUS;
 
-typedef uint16_t (*task_callback)(void); /* NA TODO: error handling (any negative returns?)*/
+typedef void (*task_callback)(void); /* NA TODO: error handling */
 
-typedef struct 
+
+typedef struct TASK_LIST TASK_LIST;
+struct TASK_LIST    
     {
-    const TASK_TYPE task;
+    TASK_LIST* next;
     uint32_t scheduled_systick;
-    const task_callback callback;
-    } SCHEDULED_TASK;
-
-typedef struct 
-    {
-    SCHEDULED_TASK task;
-    struct TASK_LLIST* next;
-    } TASK_LLIST;
+    task_callback task;
+    };
 
 /*------------------------------------------------------------------------------
  Macros
@@ -88,14 +76,14 @@ typedef struct
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-TASK_STATUS schedule_task
+SCHEDULER_STATUS schedule_task
     (
-    TASK_TYPE task,
+    task_callback task,
     uint32_t scheduled_systick
     );
 
 
-TASK_STATUS task_check_and_execute
+SCHEDULER_STATUS task_check_and_execute
     (
     void
     );

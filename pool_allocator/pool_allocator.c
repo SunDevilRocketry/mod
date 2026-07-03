@@ -32,11 +32,9 @@
 #include "debug_sdr.h"
 
 
-
 /*------------------------------------------------------------------------------
  Global Variables  
 ------------------------------------------------------------------------------*/
-uint8_t pool_test[POOL_SIZE];
 
 
 /*------------------------------------------------------------------------------
@@ -44,19 +42,20 @@ uint8_t pool_test[POOL_SIZE];
 ------------------------------------------------------------------------------*/
 Pool pool_init
     (
-    uint8_t* pool_space,
+    uint8_t* pool_memory,
     size_t size
     )
 {
 Pool pool;
-pool.free_chunk = (Chunk*)pool_space;
+size_t block_count = size / sizeof(Chunk);
+pool.free_chunk = (Chunk*)pool_memory;
 pool.chunk_arr = pool.free_chunk;
 
-for ( size_t i = 0; i < size - 1; i++ )
+for ( size_t i = 0; i < block_count - 1; i++ )
     {
     pool.chunk_arr[i].next = &pool.chunk_arr[i + 1];
     }
-pool.chunk_arr[size - 1].next = NULL;
+pool.chunk_arr[block_count - 1].next = NULL;
 
 return pool;
 }
@@ -67,7 +66,10 @@ void* pool_alloc
     Pool* pool
     )
 {
-if ( pool == NULL || pool->free_chunk == NULL) return NULL;
+if ( pool == NULL || pool->free_chunk == NULL)
+    {
+    return NULL;
+    }
 
 Chunk* next_free = pool->free_chunk;
 pool->free_chunk = pool->free_chunk->next;
@@ -83,7 +85,8 @@ void pool_free
     void* ptr
     )
 {
-debug_assert(pool == NULL || ptr == NULL, ERROR_UNKNOWN_FATAL_ERROR);
+/* ptr can be NULL, but I want to check for now */
+debug_assert(pool != NULL && ptr != NULL, ERROR_UNKNOWN_FATAL_ERROR);
 Chunk* chunk = ptr;
 chunk->next = pool->free_chunk;
 pool->free_chunk = chunk;

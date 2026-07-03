@@ -45,18 +45,18 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Macros
 ------------------------------------------------------------------------------*/
-#define CHUNK_SIZE 12 /* Unofficially the size of SHEDULED_TASK for now */
-#define POOL_SIZE ( CHUNK_SIZE * 16 )
+#define CHUNK_SIZE 16 // TODO variable chunk size
 
 /*------------------------------------------------------------------------------
  Typedefs 
 ------------------------------------------------------------------------------*/
 
-typedef union 
+typedef union Chunk Chunk;
+union Chunk
     {
-    struct Chunk* next;
+    Chunk* next;
     uint8_t arr[CHUNK_SIZE];
-    } Chunk;
+    };
 
 typedef struct
     {
@@ -68,8 +68,23 @@ typedef struct
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
+Pool pool_init
+    (
+    uint8_t* pool_memory,
+    size_t size
+    );
 
-    
+void* pool_alloc
+    (
+    Pool* pool
+    );
+
+void pool_free
+    (
+    Pool* pool, 
+    void* ptr
+    );
+
 #ifdef __cplusplus
 }
 #endif

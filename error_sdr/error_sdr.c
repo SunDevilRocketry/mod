@@ -322,6 +322,7 @@ static void dflt_error_handler
     volatile ERROR_CODE error_code
     )
 {
+__disable_irq();
 led_set_color( LED_RED );
 while(1); /* Control flow trap */
 

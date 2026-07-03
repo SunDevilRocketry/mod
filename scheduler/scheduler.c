@@ -29,74 +29,93 @@
 #include "main.h"
 #include "scheduler.h"
 #include "error_sdr.h"
+#include "debug_sdr.h"
 #include "pool_allocator.h"
 
 /*------------------------------------------------------------------------------
  Global Variables  
 ------------------------------------------------------------------------------*/
-extern SCHEDULED_TASK task_scheduler_table[];
-extern uint8_t task_scheduler_table_size;
+/* Project defined scheduler pool */
+extern Pool scheduler_pool;
+TASK_LIST task_list_head = { 0 };
 
 
 /*------------------------------------------------------------------------------
  API Functions
 ------------------------------------------------------------------------------*/
 
-TASK_STATUS schedule_task
+SCHEDULER_STATUS schedule_task
     (
-    TASK_TYPE task,
+    task_callback task,
     uint32_t scheduled_systick
     )
 {
-
-/* CRITICAL SECTION BEGIN ?*/
-
-for ( uint8_t i = 0; i < task_scheduler_table_size; i++ )
+if ( scheduled_systick < HAL_GetTick() )
     {
-    SCHEDULED_TASK* tabled_task = &task_scheduler_table[i];
-    if ( tabled_task->task == task )
-        {
-            if ( tabled_task->scheduled_systick != 0 )
-            {
-                return TASK_SCHEDULER_OCCUPIED;
-            }
-            
-            tabled_task->scheduled_systick = scheduled_systick;
-            return TASK_SCHEDULER_OK;
-        }
+    return SCHEDULER_INVALID_SYSTICK;
     }
 
-/* CRITICAL SECTION END */
+TASK_LIST* new_task = pool_alloc( &scheduler_pool );
+if ( new_task == NULL )
+    {
+    return SCHEDULER_FAIL;
+    }
+new_task->task = task;
+new_task->scheduled_systick = scheduled_systick;
+new_task->next = NULL;
 
-return TASK_SCHEDULER_NOT_FOUND;
+TASK_LIST* previous = &task_list_head;
+
+// potential race condition
+
+/* Traverse to end of linked list */
+while ( previous->next != NULL )
+    {
+    previous = previous->next;
+    }
+
+previous->next = new_task;
+
+if ( !previous->next )
+    {
+    return SCHEDULER_FAIL;
+    }
+
+
+return SCHEDULER_OK;
 }
 
 
-TASK_STATUS task_check_and_execute
+SCHEDULER_STATUS task_check_and_execute
     (
     void
     )
 {
 uint32_t systick_now = HAL_GetTick();
-uint16_t status = TASK_SCHEDULER_OK;
+uint16_t status = SCHEDULER_OK;
 
-for ( uint8_t i = 0; i < task_scheduler_table_size; i++ )
+TASK_LIST* previous = &task_list_head;
+TASK_LIST* current = task_list_head.next;
+
+while ( current != NULL )
     {
-    SCHEDULED_TASK* tabled_task = &task_scheduler_table[i];
-    if ( tabled_task->scheduled_systick <= systick_now && tabled_task->scheduled_systick != 0 )
+    if ( current->scheduled_systick <= systick_now )
         {
-        /* At or passed scheduled tick, so execute callback */
-        uint16_t callback_return = tabled_task->callback();
-
-        /* Reset systick*/
-        tabled_task->scheduled_systick = 0;
-
-        if ( callback_return )
-            {
-            status = TASK_SCHEDULER_CALLBACK_ERROR;
-            }
+        current->task();
+        
+        previous->next = current->next;
+        TASK_LIST* next = current->next;
+        
+        pool_free(&scheduler_pool, current);
+        current = next;
+        }
+    else
+        {
+        previous = current;
+        current = current->next;
         }
     }
+
 
 return status;
 }
@@ -107,8 +126,8 @@ void task_scheduler_IT_handler
     void
     )
 {
-TASK_STATUS status = task_check_and_execute();
-if ( status == TASK_SCHEDULER_CALLBACK_ERROR )
+SCHEDULER_STATUS status = task_check_and_execute();
+if ( status == SCHEDULER_CALLBACK_ERROR )
     {
     error_fail_fast( ERROR_UNKNOWN_FATAL_ERROR ); // TODO
     }
