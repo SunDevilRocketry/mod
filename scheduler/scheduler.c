@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file           : scheduler.c
-  * @brief          : TODO
+  * @brief          : Asynchronous task scheduler
   ******************************************************************************
   * @copyright
   *
@@ -18,32 +18,45 @@
   ******************************************************************************
   */
 
-/*------------------------------------------------------------------------------
- Standard Includes
-------------------------------------------------------------------------------*/
-
-
-/*------------------------------------------------------------------------------
- Project Includes
-------------------------------------------------------------------------------*/
+/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "scheduler.h"
 #include "error_sdr.h"
 #include "debug_sdr.h"
 #include "pool_allocator.h"
 
-/*------------------------------------------------------------------------------
- Global Variables  
-------------------------------------------------------------------------------*/
-/* Project defined scheduler pool */
-extern Pool scheduler_pool;
-TASK_LIST task_list_head = { 0 };
+/* Static Variables ----------------------------------------------------------*/
+
+/* Memory to be used by scheduler*/
+static uint8_t scheduler_pool_mem[SCHEDULER_POOL_SIZE];
+static POOL scheduler_pool;
+
+/* Dummy head for task list */
+static TASK_LIST task_list_head = { 0 };
 
 
-/*------------------------------------------------------------------------------
- API Functions
-------------------------------------------------------------------------------*/
+/* Procedures ----------------------------------------------------------------*/
 
+/**
+ * @brief Initializes the scheduler's memory pool
+ */
+void scheduler_init
+    (
+    void
+    )
+{
+scheduler_pool = pool_init(scheduler_pool_mem, SCHEDULER_POOL_SIZE);
+}
+
+
+/**
+ * @brief Schedules a task.
+ * 
+ * @param task The task to perform.
+ * @param scheduled_systick The systick at which the task will be run.
+ * 
+ * @return The status of the scheduler. 
+ */
 SCHEDULER_STATUS schedule_task
     (
     task_callback task,
@@ -55,34 +68,29 @@ if ( scheduled_systick < HAL_GetTick() )
     return SCHEDULER_INVALID_SYSTICK;
     }
 
-TASK_LIST* new_task = pool_alloc( &scheduler_pool );
+TASK_LIST* new_task = pool_alloc(&scheduler_pool);
 if ( new_task == NULL )
     {
     return SCHEDULER_FAIL;
     }
 new_task->task = task;
 new_task->scheduled_systick = scheduled_systick;
-new_task->next = NULL;
 
-TASK_LIST* previous = &task_list_head;
-
+/* Insert new task into the front of the list */
 // potential race condition
-
-/* Traverse to end of linked list */
-while ( previous->next != NULL )
+if ( task_list_head.next != NULL )
     {
-    previous = previous->next;
+    new_task->next = task_list_head.next;
     }
-
-previous->next = new_task;
-
-if ( !previous->next )
+else
     {
-    return SCHEDULER_FAIL;
+    new_task->next = NULL;
     }
+task_list_head.next = new_task;
 
 
 return SCHEDULER_OK;
+
 }
 
 
@@ -116,7 +124,6 @@ while ( current != NULL )
         }
     }
 
-
 return status;
 }
 
@@ -127,14 +134,8 @@ void task_scheduler_IT_handler
     )
 {
 SCHEDULER_STATUS status = task_check_and_execute();
-if ( status == SCHEDULER_CALLBACK_ERROR )
-    {
-    error_fail_fast( ERROR_UNKNOWN_FATAL_ERROR ); // TODO
-    }
+// if ( status == SCHEDULER_CALLBACK_ERROR )
+//     {
+//     error_fail_fast( ERROR_UNKNOWN_FATAL_ERROR ); // TODO
+//     }
 }
-
-
-
-/*******************************************************************************
-* END OF FILE                                                                  *
-*******************************************************************************/

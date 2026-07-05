@@ -45,30 +45,30 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Macros
 ------------------------------------------------------------------------------*/
-#define CHUNK_SIZE 16 // TODO variable chunk size
+#define CHUNK_SIZE 16 
 
 /*------------------------------------------------------------------------------
  Typedefs 
 ------------------------------------------------------------------------------*/
 
-typedef union Chunk Chunk;
-union Chunk
+typedef union POOL_CHUNK POOL_CHUNK;
+union POOL_CHUNK
     {
-    Chunk* next;
+    POOL_CHUNK* next;
     uint8_t arr[CHUNK_SIZE];
     };
 
 typedef struct
     {
-    Chunk* free_chunk;
-    Chunk* chunk_arr;
-    } Pool;
+    POOL_CHUNK* free_chunk;
+    POOL_CHUNK* chunk_arr;
+    } POOL;
 
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
-Pool pool_init
+POOL pool_init
     (
     uint8_t* pool_memory,
     size_t size
@@ -76,12 +76,12 @@ Pool pool_init
 
 void* pool_alloc
     (
-    Pool* pool
+    POOL* pool
     );
 
 void pool_free
     (
-    Pool* pool, 
+    POOL* pool, 
     void* ptr
     );
 

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file           : scheduler.h
-  * @brief          : TODO
+  * @brief          : Asynchronous task scheduler
   ******************************************************************************
   * @copyright
   *
@@ -20,7 +20,7 @@
   ==============================================================================
                       ##### Task scheduler features #####
   ==============================================================================
-    TODO
+    - Schedule `task_callback` functions to be run at a specified systick
   ******************************************************************************
   @endverbatim
   */
@@ -34,29 +34,18 @@
 extern "C" {
 #endif
 
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
 
-/*------------------------------------------------------------------------------
- Includes 
-------------------------------------------------------------------------------*/
-#include <string.h>
-#include <stdbool.h>
-
-
-/*------------------------------------------------------------------------------
- Typedefs 
-------------------------------------------------------------------------------*/
+/* Types ---------------------------------------------------------------------*/
 typedef enum
     {
     SCHEDULER_OK,
-    SCHEDULER_PASS,
     SCHEDULER_FAIL,
-    SCHEDULER_INVALID_SYSTICK,
-    SCHEDULER_TASK_NOT_FOUND,
-    SCHEDULER_CALLBACK_ERROR
+    SCHEDULER_INVALID_SYSTICK
     } SCHEDULER_STATUS;
 
 typedef void (*task_callback)(void); /* NA TODO: error handling */
-
 
 typedef struct TASK_LIST TASK_LIST;
 struct TASK_LIST    
@@ -66,15 +55,17 @@ struct TASK_LIST
     task_callback task;
     };
 
-/*------------------------------------------------------------------------------
- Macros
-------------------------------------------------------------------------------*/
+/* Macros --------------------------------------------------------------------*/
 
+/* Size defined as a macro by the project */
+#define SCHEDULER_POOL_SIZE ( SCHEDULER_POOL_MAX_TASKS * sizeof(POOL_CHUNK) )
 
+/* Exported functions prototypes ---------------------------------------------*/
 
-/*------------------------------------------------------------------------------
- Function Prototypes 
-------------------------------------------------------------------------------*/
+void scheduler_init
+    (
+    void
+    );
 
 SCHEDULER_STATUS schedule_task
     (
@@ -97,7 +88,3 @@ void task_scheduler_IT_handler
 }
 #endif
 #endif /* SCHEDULER_H */
-
-/*******************************************************************************
-* END OF FILE                                                                  * 
-*******************************************************************************/

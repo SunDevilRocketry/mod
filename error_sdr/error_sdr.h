@@ -115,6 +115,7 @@ typedef enum _ERROR_CODE
     ERROR_LORA_CMD_ERROR               , /* Error with LoRa command           */
     ERROR_IMU_I2C_ERROR                , /* Error with IMU I2C handle         */
     ERROR_BARO_I2C_ERROR               , /* Error with Baro I2C handle        */
+    ERROR_NULL_PTR_ERROR               , /* Error trying to use NULL pointer  */
     } ERROR_CODE;
 
 /* Error callback table entry */

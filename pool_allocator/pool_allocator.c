@@ -40,15 +40,15 @@
 /*------------------------------------------------------------------------------
  API Functions
 ------------------------------------------------------------------------------*/
-Pool pool_init
+POOL pool_init
     (
     uint8_t* pool_memory,
     size_t size
     )
 {
-Pool pool;
-size_t block_count = size / sizeof(Chunk);
-pool.free_chunk = (Chunk*)pool_memory;
+POOL pool;
+size_t block_count = size / sizeof(POOL_CHUNK);
+pool.free_chunk = (POOL_CHUNK*)pool_memory;
 pool.chunk_arr = pool.free_chunk;
 
 for ( size_t i = 0; i < block_count - 1; i++ )
@@ -63,7 +63,7 @@ return pool;
 
 void* pool_alloc
     (
-    Pool* pool
+    POOL* pool
     )
 {
 if ( pool == NULL || pool->free_chunk == NULL)
@@ -71,7 +71,7 @@ if ( pool == NULL || pool->free_chunk == NULL)
     return NULL;
     }
 
-Chunk* next_free = pool->free_chunk;
+POOL_CHUNK* next_free = pool->free_chunk;
 pool->free_chunk = pool->free_chunk->next;
 
 return next_free;
@@ -81,13 +81,13 @@ return next_free;
 
 void pool_free
     (
-    Pool* pool, 
+    POOL* pool, 
     void* ptr
     )
 {
 /* ptr can be NULL, but I want to check for now */
-debug_assert(pool != NULL && ptr != NULL, ERROR_UNKNOWN_FATAL_ERROR);
-Chunk* chunk = ptr;
+debug_assert(pool != NULL && ptr != NULL, ERROR_NULL_PTR_ERROR);
+POOL_CHUNK* chunk = ptr;
 chunk->next = pool->free_chunk;
 pool->free_chunk = chunk;
 
