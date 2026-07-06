@@ -59,14 +59,6 @@ static void telemetry_build_msg_dashboard_dump
     TELEMETRY_MESSAGE* msg_buf
     );
 
-
-static void telemetry_build_text_message
-    (
-    TELEMETRY_MESSAGE* msg_buf,
-    TELEMETRY_MESSAGE_TYPES message_type
-    );
-
-
 /*------------------------------------------------------------------------------ 
  Public APIs                                                                    
 ------------------------------------------------------------------------------*/
@@ -145,12 +137,6 @@ switch( message_type )
         telemetry_build_msg_dashboard_dump(msg_buf);
         break;
         }
-    case TELEMETRY_MSG_WARNING_MESSAGE: /* intentional fallthrough */
-    case TELEMETRY_MSG_INFO_MESSAGE:
-        {
-        telemetry_build_text_message(msg_buf, message_type);
-        break;
-        }
     default:
         {
         error_fail_fast( ERROR_RECORD_FLIGHT_EVENTS_ERROR );
@@ -227,59 +213,3 @@ msg_buf->payload.dashboard_dump.fsm_state = get_fc_state();
 dashboard_construct_dump( &(msg_buf->payload.dashboard_dump.data) );
 
 } /* telemetry_build_msg_dashboard_dump */
-
-
-/*********************************************************************************
-*                                                                                *
-* FUNCTION:                                                                      * 
-* 		telemetry_build_text_message                                             *
-*                                                                                *
-* DESCRIPTION:                                                                   * 
-* 		Build the payload for warning and info messages. Assume header is filled *
-*       by caller.                                                               *
-*                                                                                *
-*********************************************************************************/
-static void telemetry_build_text_message
-    (
-    TELEMETRY_MESSAGE* msg_buf,
-    TELEMETRY_MESSAGE_TYPES message_type
-    )
-{
-TEXT_MESSAGE text_message; /* extra copy is required due to packed struct */
-switch( message_type )
-    {
-    case TELEMETRY_MSG_WARNING_MESSAGE:
-        {
-        /* return discarded; presence of warning checked earlier */
-        error_get_warning( &text_message );
-        break;
-        }
-    case TELEMETRY_MSG_INFO_MESSAGE:
-        {
-        /* return discarded; presence of warning checked earlier */
-        error_get_info( &text_message );
-        break;
-        }
-    /**
-     * GCOVR_EXCL_START
-     * 
-     * Protective default case to prevent programmer error. Called by one function that will fall into one
-     * of the above two cases.
-     * 
-     * ETS TEMP: Whoever writes this test should evaluate whether this covex works correctly. The default
-     * branch should be excluded from coverage.
-     */
-    default:
-        {
-        /* shouldn't get here */
-        error_fail_fast( ERROR_UNSUPPORTED_OP_ERROR );
-        break;
-        }
-    /**
-     * GCOVR_EXCL_STOP
-     */
-    }
-
-memcpy( &(msg_buf->payload.text_message.msg), &text_message, sizeof( TEXT_MESSAGE ) );
-
-} /* telemetry_build_text_message */
