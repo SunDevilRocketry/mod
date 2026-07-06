@@ -166,7 +166,8 @@ void debug_callback_handler
 #if defined( EMULATOR )
   #define debug_ignore_emulator_warnings_start()        \
     _Pragma("GCC diagnostic push")                      \
-    _Pragma("GCC diagnostic ignored \"-Wformat\"")
+    _Pragma("GCC diagnostic ignored \"-Wformat\"")      \
+    _Pragma("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"")
 #else
   #define debug_ignore_emulator_warnings_start() /* do nothing */
 #endif
