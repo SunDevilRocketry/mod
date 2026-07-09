@@ -77,7 +77,7 @@ new_task->task = task;
 new_task->scheduled_systick = scheduled_systick;
 
 /* Insert new task into the front of the list */
-// potential race condition
+// potential race condition, but I've been having trouble disabling the TIM6 IRQ
 if ( task_list_head.next != NULL )
     {
     new_task->next = task_list_head.next;
@@ -109,7 +109,7 @@ while ( current != NULL )
     {
     if ( current->scheduled_systick <= systick_now )
         {
-        current->task();
+        current->task(); // this needs error handling somehow
         
         previous->next = current->next;
         TASK_LIST* next = current->next;

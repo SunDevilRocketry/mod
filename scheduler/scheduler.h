@@ -57,7 +57,7 @@ struct TASK_LIST
 
 /* Macros --------------------------------------------------------------------*/
 
-/* Size defined as a macro by the project */
+/* SCHEDULER_POOL_MAX_TASKS defined by the project */
 #define SCHEDULER_POOL_SIZE ( SCHEDULER_POOL_MAX_TASKS * sizeof(POOL_CHUNK) )
 
 /* Exported functions prototypes ---------------------------------------------*/
