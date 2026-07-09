@@ -61,7 +61,12 @@ float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
 
 /* State estimation */
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
-MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
+
+
+/*------------------------------------------------------------------------------
+ Static Variables 
+------------------------------------------------------------------------------*/
+static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
 
 
 /*------------------------------------------------------------------------------
@@ -79,17 +84,23 @@ static void sensor_conv_mag
 	IMU_RAW* imu_raw
 	);
 
-static QUAT quat_acc_attitude
+static QUAT quat_grav_attitude
 	(
 	float ax,
 	float ay,
-	float az
+	float az,
+	QUAT attitude
 	);
 
 static void gravity_comp_filter
 	(
 	QUAT* gyro_attitude,
 	QUAT g_orientation
+	);
+
+static float quat_to_yaw
+	(
+	QUAT q
 	);
 
 
@@ -321,7 +332,7 @@ float ax = preset_data->imu_offset.accel_x;
 float ay = preset_data->imu_offset.accel_y;
 float az = preset_data->imu_offset.accel_z;
 
-attitude = quat_acc_attitude(ax, ay, az);
+attitude = quat_grav_attitude(ax, ay, az, attitude);
 
 } /* sensor_init */
 
@@ -392,7 +403,7 @@ mount_orientation = orientation;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		sensor_body_state                                                   *
+* 		sensor_body_state                                                      *
 *                                                                              *
 * DESCRIPTION:                                                                 *
 *       Perform sensor fusion on imu converted data to get body rate           *
@@ -427,8 +438,8 @@ float gz = imu_converted->gyro_z;
 /* Convert gyro to pure quaternion */
 QUAT q_gyro; /* Must be in radians */
 q_gyro.w = 0.0f;
-q_gyro.y = deg_to_rad(gy);
 q_gyro.x = deg_to_rad(gx);
+q_gyro.y = deg_to_rad(gy);
 q_gyro.z = deg_to_rad(gz);
 
 /* q_rate = 0.5 * attitude * q_gyro */
@@ -443,7 +454,7 @@ attitude = quat_add(attitude, rate_dt);
 /* Sensor fuson with gravity if not in flight */
 if ( get_fc_state() <= FC_STATE_LAUNCH_DETECT )
 	{
-	QUAT q_acc = quat_acc_attitude(ax, ay, az);
+	QUAT q_acc = quat_grav_attitude(ax, ay, az, attitude);
 	gravity_comp_filter(&attitude, q_acc);
 	}
 
@@ -452,7 +463,7 @@ attitude = quat_normalize(attitude);
 
 /* Store results */
 state_estimate->attitude = attitude;
-state_estimate->roll_rate = gz; 	    /* Rate in deg/s */
+state_estimate->roll_rate = gx; 	    /* Rate in deg/s */
 
 }
 
@@ -460,25 +471,42 @@ state_estimate->roll_rate = gz; 	    /* Rate in deg/s */
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		quat_acc_attitude                                                      *
+* 		quat_grav_attitude                                                     *
 *                                                                              *
 * DESCRIPTION:                                                                 *
 *       Computes quaternion attitude from static accelerometer data            *
+*       Experiences gimbal lock at pitch = +/- 90 degrees                      *
 *                                                                              *
 *******************************************************************************/
-static QUAT quat_acc_attitude
+static QUAT quat_grav_attitude
 	(
 	float ax,
 	float ay,
-	float az
+	float az,
+	QUAT attitude
 	)
 {
 /* Compute pitch/roll from accelerometer */
-float acc_roll  = -atan2f(ay, ax);
-float acc_pitch = atan2f(-az, sqrtf(ax * ax + ay * ay));
+float grav_pitch = atan2f(ax, sqrtf(ay * ay + az * az));
+float grav_roll  = atan2f(ay, az);
 
-return eul_to_quat(0.0f, acc_pitch, acc_roll);
+float yaw = quat_to_yaw(attitude);
 
+return eul_to_quat(yaw, grav_pitch, grav_roll);
+
+}
+
+/* Comment deferred until mod#132 
+ Formula in https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles */
+static float quat_to_yaw
+	(
+	QUAT q
+	)
+{
+float y = 2.0f * (q.w * q.z + q.x * q.y);
+float x = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
+
+return atan2f(y, x);
 }
 
 
@@ -518,8 +546,8 @@ QUAT comp_acc = quat_scale(g_orientation, 1.0f - COMP_ALPHA);
 * 		sensor_axis_remap                                                      *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Remaps sensor xyz readings so +Z is vertical in the flight             *
-*       configuration or flips X to maintain right-handed coordinates          *
+*       Remaps sensor xyz readings so +X always points towards the nose in     *
+*       the flight configuration                                               *
 *                                                                              *
 *******************************************************************************/
 void sensor_axis_remap
@@ -529,11 +557,9 @@ void sensor_axis_remap
 	float* z
 	)
 {
-float temp = *x;
-*x = -mount_orientation * (*z);
-(void)y; /* Unchanged */
-*z = mount_orientation * temp;
-
+*x *= mount_orientation;
+*y *= mount_orientation; /* flip y too to maintain right-handedness */
+(void)z; /* Points down when FC is horizontal */
 }
 
 
