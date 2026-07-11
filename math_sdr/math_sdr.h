@@ -130,6 +130,12 @@ QUAT quat_mult
     QUAT b
     );
 
+float quat_dot
+    (
+    QUAT a,
+    QUAT b
+    );
+
 QUAT quat_add
     (
     QUAT a,

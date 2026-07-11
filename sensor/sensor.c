@@ -353,9 +353,9 @@ void sensor_conv_imu
 	)
 {
 /* Convert raw accel values */ 
-imu_converted->accel_x = sensor_acc_conv(imu_raw->accel_z);
+imu_converted->accel_x = sensor_acc_conv(imu_raw->accel_x);
 imu_converted->accel_y = sensor_acc_conv(imu_raw->accel_y);
-imu_converted->accel_z = sensor_acc_conv(imu_raw->accel_x);
+imu_converted->accel_z = sensor_acc_conv(imu_raw->accel_z);
 
 sensor_axis_remap( &(imu_converted->accel_x), &(imu_converted->accel_y), &(imu_converted->accel_z) );
 
@@ -367,9 +367,9 @@ imu_converted.accel_z -= imu_offset.accel_z;
 */
 
 /* Convert raw gyroscope values to deg/s and remap axes */
-imu_converted->gyro_x = sensor_gyro_conv(imu_raw->gyro_z);
+imu_converted->gyro_x = sensor_gyro_conv(imu_raw->gyro_x);
 imu_converted->gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
-imu_converted->gyro_z = sensor_gyro_conv(imu_raw->gyro_x);
+imu_converted->gyro_z = sensor_gyro_conv(imu_raw->gyro_z);
 
 sensor_axis_remap( &(imu_converted->gyro_x), &(imu_converted->gyro_y), &(imu_converted->gyro_z) );
 
@@ -454,8 +454,8 @@ attitude = quat_add(attitude, rate_dt);
 /* Sensor fuson with gravity if not in flight */
 if ( get_fc_state() <= FC_STATE_LAUNCH_DETECT )
 	{
-	QUAT q_acc = quat_grav_attitude(ax, ay, az, attitude);
-	gravity_comp_filter(&attitude, q_acc);
+	// QUAT q_acc = quat_grav_attitude(ax, ay, az, attitude);
+	// gravity_comp_filter(&attitude, q_acc);
 	}
 
 /* Scale back to unit quaternion to avoid drift */

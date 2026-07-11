@@ -97,6 +97,7 @@ return q;
 
 } /* eul_to_quat */
 
+
 /**
   * @brief Multiplies two quaternions.
   *
@@ -122,6 +123,30 @@ result.z = (a.w * b.z) + (a.x * b.y) - (a.y * b.x) + (a.z * b.w);
 
 return result;
 
+} /* quat_mult */
+
+
+/**
+  * @brief Provides the dot product of two quaternions.
+  *
+  * @note Quaternion dot products are commutative.
+  *
+  * @param a The left-hand quaternion.
+  * @param b The right-hand quaternion.
+  *
+  * @return The quaternion scalar product a . b
+  */
+float quat_dot
+    (
+    QUAT a,
+    QUAT b
+    )
+{
+return( a.w * b.w +
+        a.x * b.x +
+        a.y * b.y +
+        a.z * b.z );
+        
 } /* quat_mult */
 
 
