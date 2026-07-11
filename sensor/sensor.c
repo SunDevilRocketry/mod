@@ -92,11 +92,12 @@ static QUAT quat_grav_attitude
 	QUAT attitude
 	);
 
-static void gravity_comp_filter
-	(
-	QUAT* gyro_attitude,
-	QUAT g_orientation
-	);
+// ETS: Postponed
+// static void gravity_comp_filter
+// 	(
+// 	QUAT* gyro_attitude,
+// 	QUAT g_orientation
+// 	);
 
 static float quat_to_yaw
 	(
@@ -426,9 +427,9 @@ if ( dt <= 0.0f || dt > 1.0f )
 last_tick = now_tick;
 
 /* Copy IMU data for readability */
-float ax = imu_converted->accel_x;
-float ay = imu_converted->accel_y;
-float az = imu_converted->accel_z;
+// float ax = imu_converted->accel_x;
+// float ay = imu_converted->accel_y;
+// float az = imu_converted->accel_z;
 
 /* Raw gyro data in deg/s */
 float gx = imu_converted->gyro_x;
@@ -725,18 +726,19 @@ HAL_NVIC_EnableIRQ( GPS_UART_IRQn );
 *       accerations come from sources other than gravity.                      *
 *                                                                              *
 *******************************************************************************/
-static void gravity_comp_filter
-	(
-	QUAT* gyro_attitude,
-	QUAT g_orientation
-	)
-{
-QUAT comp_gyro = quat_scale(*gyro_attitude, COMP_ALPHA);
-QUAT comp_acc = quat_scale(g_orientation, 1.0f - COMP_ALPHA);
+// ETS: Postponed
+// static void gravity_comp_filter
+// 	(
+// 	QUAT* gyro_attitude,
+// 	QUAT g_orientation
+// 	)
+// {
+// QUAT comp_gyro = quat_scale(*gyro_attitude, COMP_ALPHA);
+// QUAT comp_acc = quat_scale(g_orientation, 1.0f - COMP_ALPHA);
 
-*gyro_attitude = quat_add(comp_gyro, comp_acc);
+// *gyro_attitude = quat_add(comp_gyro, comp_acc);
 
-}
+// }
 
 
 /*******************************************************************************
