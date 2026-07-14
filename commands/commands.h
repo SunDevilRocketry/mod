@@ -96,7 +96,7 @@ extern "C" {
 #define FIRMWARE_RECEIVER	    ( 0x11 ) /* Reciever Firmware 	 */
 
 /* Other macros */
-#define DASHBOARD_DUMP_SIZE	( 72 )
+#define DASHBOARD_DUMP_SIZE	( 36 )
 
 typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
 	{
@@ -107,7 +107,7 @@ typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
 	float acc_z;
 	float roll_rate;
 	} DASHBOARD_DUMP_TYPE;
-	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == 36, "DASHBOARD_DUMP_TYPE size invalid.");
+	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == DASHBOARD_DUMP_SIZE, "DASHBOARD_DUMP_TYPE size invalid.");
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
