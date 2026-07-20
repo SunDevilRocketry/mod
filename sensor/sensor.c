@@ -52,6 +52,7 @@
 ------------------------------------------------------------------------------*/
 extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
+extern PRESET_DATA preset_data;
 
 /* Timing (sensors) */
 uint64_t imu_velo_tick = 0;
@@ -398,6 +399,7 @@ void set_mount_orientation
 	)
 {
 mount_orientation = orientation;
+preset_data.last_orientation = orientation;
 }
 
 
