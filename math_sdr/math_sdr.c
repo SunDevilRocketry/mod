@@ -290,6 +290,34 @@ QUAT quat_rotate_world_to_body
 
 } /* quat_rotate_world_to_body */
 
+/**
+ * @brief Rotates a vector from the body frame into the world frame.
+ *
+ * The attitude quaternion represents the body-to-world rotation:
+ *
+ *     vector_world = q * vector_body * conjugate(q)
+ *
+ * @param attitude Body-to-world attitude quaternion.
+ * @param vector_body Pure quaternion containing the body-frame vector.
+ *
+ * @return Pure quaternion containing the world-frame vector.
+ */
+QUAT quat_rotate_body_to_world
+    (
+    QUAT attitude,
+    QUAT vector_body
+    )
+{
+    QUAT attitude_conj = quat_conj(attitude);
+
+    return quat_mult
+        (
+        quat_mult(attitude, vector_body),
+        attitude_conj
+        );
+
+} /* quat_rotate_body_to_world */
+
 /*******************************************************************************
 * END OF FILE                                                                  *
 *******************************************************************************/

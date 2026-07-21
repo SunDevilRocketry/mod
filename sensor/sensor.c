@@ -57,7 +57,9 @@ extern IMU_OFFSET imu_offset;
 uint64_t imu_velo_tick = 0;
 
 /* IMU */
-float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
+float velo_x_prev = 0.0f;
+float velo_y_prev = 0.0f;
+float velo_z_prev = 0.0f;
 
 /* State estimation */
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
@@ -550,23 +552,65 @@ void sensor_imu_velo
 {
 float velo_x, velo_y, velo_z, velocity;
 
-float accel_x = imu_converted->accel_x;
-float accel_y = imu_converted->accel_y;
-float accel_z = imu_converted->accel_z;
+/* The world frame defines gravity in the +Z direction. */
+const QUAT gravity_world =
+    {
+    .w = 0.0f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = GRAVITY
+    };
+
+/*
+ * The attitude quaternion is body-to-world, so rotate world gravity
+ * into the body frame before subtracting it from the accelerometer.
+ */
+QUAT gravity_body = quat_rotate_world_to_body
+    (
+    state_estimate->attitude,
+    gravity_world
+    );
+
+QUAT linear_accel_body =
+    {
+    .w = 0.0f,
+    .x = imu_converted->accel_x - gravity_body.x,
+    .y = imu_converted->accel_y - gravity_body.y,
+    .z = imu_converted->accel_z - gravity_body.z
+    };
+
+/*
+ * Rotate gravity-compensated acceleration into the world frame so the
+ * integrated velocity components remain in a fixed coordinate frame.
+ */
+QUAT linear_accel_world = quat_rotate_body_to_world
+    (
+    state_estimate->attitude,
+    linear_accel_body
+    );
+
+float accel_world_x = linear_accel_world.x;
+float accel_world_y = linear_accel_world.y;
+float accel_world_z = linear_accel_world.z;
 
 float ts_delta;
 
 uint64_t current_tick = get_us_tick();
 uint64_t imu_tdelta = current_tick - imu_velo_tick;
-ts_delta = imu_tdelta / MICROSEC_PER_SEC;
+ts_delta = (float) imu_tdelta / (float) MICROSEC_PER_SEC;
 
 // Calculate 3 velocity vectors using motion equations
-velo_x = velo_x_prev + accel_x*ts_delta;
-velo_y = velo_y_prev + accel_y*ts_delta;
-velo_z = velo_z_prev + accel_z*ts_delta;
+velo_x = velo_x_prev + accel_world_x * ts_delta;
+velo_y = velo_y_prev + accel_world_y * ts_delta;
+velo_z = velo_z_prev + accel_world_z * ts_delta;
 
 // Calculate the velocity scalar
-velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
+velocity = sqrtf
+    (
+    velo_x * velo_x +
+    velo_y * velo_y +
+    velo_z * velo_z
+    );
 
 /* Update state estimations*/
 state_estimate->velo_x = velo_x;
