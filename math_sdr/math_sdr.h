@@ -157,7 +157,21 @@ QUAT quat_conj
     (
     QUAT q
     );
-    
+
+/**
+ * @brief Rotates a vector from the world frame into the body frame.
+ *
+ * @param attitude Body-to-world attitude quaternion.
+ * @param vector_world Pure quaternion containing the world-frame vector.
+ *
+ * @return Pure quaternion containing the body-frame vector.
+ */
+QUAT quat_rotate_world_to_body
+    (
+    QUAT attitude,
+    QUAT vector_world
+    );
+
 #ifdef __cplusplus
 }
 #endif
