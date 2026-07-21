@@ -58,6 +58,9 @@ uint64_t imu_velo_tick = 0;
 float velo_x_prev = 0.0f;
 float velo_y_prev = 0.0f;
 float velo_z_prev = 0.0f;
+float velo_x_prev = 0.0f;
+float velo_y_prev = 0.0f;
+float velo_z_prev = 0.0f;
 
 /* State estimation */
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
@@ -570,6 +573,7 @@ float ts_delta;
 
 uint64_t current_tick = get_us_tick();
 uint64_t imu_tdelta = current_tick - imu_velo_tick;
+ts_delta = (float) imu_tdelta / (float) MICROSEC_PER_SEC;
 ts_delta = (float) imu_tdelta / (float) MICROSEC_PER_SEC;
 
 // Calculate 3 velocity vectors using motion equations
