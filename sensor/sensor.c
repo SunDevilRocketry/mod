@@ -52,7 +52,6 @@
 ------------------------------------------------------------------------------*/
 extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
-extern PRESET_DATA preset_data;
 
 /* Timing (sensors) */
 uint64_t imu_velo_tick = 0;
@@ -373,12 +372,12 @@ imu_converted->gyro_x = sensor_gyro_conv(imu_raw->gyro_x);
 imu_converted->gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
 imu_converted->gyro_z = sensor_gyro_conv(imu_raw->gyro_z);
 
-sensor_axis_remap( &(imu_converted->gyro_x), &(imu_converted->gyro_y), &(imu_converted->gyro_z) );
-
-/* Remove gyro bias */
+/* Remove gyro bias BEFORE applying axis conversion */
 imu_converted->gyro_x -= imu_offset.gyro_x;
 imu_converted->gyro_y -= imu_offset.gyro_y;
 imu_converted->gyro_z -= imu_offset.gyro_z;
+
+sensor_axis_remap( &(imu_converted->gyro_x), &(imu_converted->gyro_y), &(imu_converted->gyro_z) );
 
 sensor_conv_mag(imu_converted, imu_raw);
 }
@@ -399,7 +398,6 @@ void set_mount_orientation
 	)
 {
 mount_orientation = orientation;
-preset_data.last_orientation = orientation;
 }
 
 
