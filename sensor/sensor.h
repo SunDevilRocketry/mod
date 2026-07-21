@@ -96,6 +96,15 @@ typedef enum
 
 /* State estimation from processed sensors */
 typedef struct _STATE_ESTIMATION {
+    /*
+     * Body-to-world attitude quaternion.
+     *
+     * Body-frame vector to world frame:
+     *     v_world = q * v_body * conjugate(q)
+     *
+     * World-frame vector to body frame:
+     *     v_body = conjugate(q) * v_world * q
+     */	
     QUAT attitude;
 	float roll_rate;
     float velocity;
