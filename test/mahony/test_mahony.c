@@ -1607,6 +1607,402 @@ TEST_ASSERT_TRUE
 
 } /* test_mahony_print_accelerometer_correction */
 
+/**
+ * @brief Verifies that an accelerometer magnitude below the valid range is
+ *        rejected.
+ *
+ * This test compares ordinary gyro propagation against an IMU update using an
+ * accelerometer vector below the configured minimum magnitude.
+ *
+ * This is important because a weak or invalid accelerometer measurement should
+ * not influence attitude, while gyro propagation must continue normally.
+ */
+void test_mahony_update_imu_rejects_low_accel_magnitude
+    (
+    void
+    )
+{
+int32_t index;
+
+MAHONY_FILTER gyro_filter;
+MAHONY_FILTER imu_filter;
+
+QUAT identity =
+    {
+    .w = 1.0f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F gyro_body_rad_s =
+    {
+    .x = deg_to_rad(20.0f),
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F low_accel =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.50f * GRAVITY
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "Gyro filter initialization succeeds",
+    mahony_init
+        (
+        &gyro_filter,
+        identity,
+        1.0f,
+        0.0f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "IMU filter initialization succeeds",
+    mahony_init
+        (
+        &imu_filter,
+        identity,
+        1.0f,
+        0.0f
+        )
+    );
+
+for ( index = 0; index < 1000; index++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Gyro-only update succeeds",
+        mahony_update_gyro
+            (
+            &gyro_filter,
+            gyro_body_rad_s,
+            0.001f
+            )
+        );
+
+    TEST_ASSERT_TRUE
+        (
+        "Low-acceleration IMU update succeeds",
+        mahony_update_imu
+            (
+            &imu_filter,
+            gyro_body_rad_s,
+            low_accel,
+            0.001f,
+            true
+            )
+        );
+    }
+
+assert_quat_components
+    (
+    "Low acceleration matches gyro-only propagation",
+    imu_filter.attitude,
+    gyro_filter.attitude
+    );
+
+} /* test_mahony_update_imu_rejects_low_accel_magnitude */
+
+/**
+ * @brief Verifies that a non-finite accelerometer sample is rejected.
+ *
+ * This test supplies a NaN accelerometer component and compares the result
+ * against gyro-only propagation.
+ *
+ * This is important because corrupted sensor data must not propagate NaN
+ * values into the attitude quaternion.
+ */
+void test_mahony_update_imu_rejects_nonfinite_accel
+    (
+    void
+    )
+{
+MAHONY_FILTER gyro_filter;
+MAHONY_FILTER imu_filter;
+
+QUAT identity =
+    {
+    .w = 1.0f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F gyro_body_rad_s =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = deg_to_rad(10.0f)
+    };
+
+VECTOR_3F invalid_accel =
+    {
+    .x = NAN,
+    .y = 0.0f,
+    .z = GRAVITY
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "Gyro filter initialization succeeds",
+    mahony_init
+        (
+        &gyro_filter,
+        identity,
+        1.0f,
+        0.0f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "IMU filter initialization succeeds",
+    mahony_init
+        (
+        &imu_filter,
+        identity,
+        1.0f,
+        0.0f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Gyro-only update succeeds",
+    mahony_update_gyro
+        (
+        &gyro_filter,
+        gyro_body_rad_s,
+        0.01f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Invalid-accelerometer IMU update succeeds",
+    mahony_update_imu
+        (
+        &imu_filter,
+        gyro_body_rad_s,
+        invalid_accel,
+        0.01f,
+        true
+        )
+    );
+
+assert_quat_components
+    (
+    "Non-finite acceleration matches gyro-only propagation",
+    imu_filter.attitude,
+    gyro_filter.attitude
+    );
+
+} /* test_mahony_update_imu_rejects_nonfinite_accel */
+
+/**
+ * @brief Verifies that a valid one-g accelerometer sample still corrects tilt.
+ *
+ * This test starts with a roll error and supplies a valid one-g acceleration
+ * vector. The corrected body Z axis should move closer to world Z.
+ *
+ * This is important because validity gating must reject poor samples without
+ * blocking legitimate gravity correction.
+ */
+void test_mahony_update_imu_accepts_valid_accel_magnitude
+    (
+    void
+    )
+{
+int32_t index;
+
+MAHONY_FILTER filter;
+
+QUAT initial_attitude = eul_to_quat
+    (
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
+    );
+
+VECTOR_3F zero_gyro =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F valid_accel =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = GRAVITY
+    };
+
+QUAT body_z =
+    {
+    .w = 0.0f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 1.0f
+    };
+
+QUAT initial_world_z = quat_rotate_body_to_world
+    (
+    initial_attitude,
+    body_z
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Mahony initialization succeeds",
+    mahony_init
+        (
+        &filter,
+        initial_attitude,
+        1.0f,
+        0.0f
+        )
+    );
+
+for ( index = 0; index < 1000; index++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Valid-acceleration IMU update succeeds",
+        mahony_update_imu
+            (
+            &filter,
+            zero_gyro,
+            valid_accel,
+            0.001f,
+            true
+            )
+        );
+    }
+
+QUAT corrected_world_z = quat_rotate_body_to_world
+    (
+    filter.attitude,
+    body_z
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Valid acceleration improves body Z alignment",
+    corrected_world_z.z > initial_world_z.z
+    );
+
+} /* test_mahony_update_imu_accepts_valid_accel_magnitude */
+
+/**
+ * @brief Verifies that an accelerometer magnitude above the valid range is
+ *        rejected.
+ *
+ * This test simulates a high-acceleration condition such as powered ascent.
+ * The IMU update should ignore the accelerometer and match gyro-only
+ * propagation.
+ *
+ * This is important because thrust acceleration must not be mistaken for the
+ * gravity direction.
+ */
+void test_mahony_update_imu_rejects_high_accel_magnitude
+    (
+    void
+    )
+{
+int32_t index;
+
+MAHONY_FILTER gyro_filter;
+MAHONY_FILTER imu_filter;
+
+QUAT identity =
+    {
+    .w = 1.0f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F gyro_body_rad_s =
+    {
+    .x = 0.0f,
+    .y = deg_to_rad(15.0f),
+    .z = 0.0f
+    };
+
+VECTOR_3F high_accel =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 2.0f * GRAVITY
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "Gyro filter initialization succeeds",
+    mahony_init
+        (
+        &gyro_filter,
+        identity,
+        1.0f,
+        0.0f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "IMU filter initialization succeeds",
+    mahony_init
+        (
+        &imu_filter,
+        identity,
+        1.0f,
+        0.0f
+        )
+    );
+
+for ( index = 0; index < 1000; index++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Gyro-only update succeeds",
+        mahony_update_gyro
+            (
+            &gyro_filter,
+            gyro_body_rad_s,
+            0.001f
+            )
+        );
+
+    TEST_ASSERT_TRUE
+        (
+        "High-acceleration IMU update succeeds",
+        mahony_update_imu
+            (
+            &imu_filter,
+            gyro_body_rad_s,
+            high_accel,
+            0.001f,
+            true
+            )
+        );
+    }
+
+assert_quat_components
+    (
+    "High acceleration matches gyro-only propagation",
+    imu_filter.attitude,
+    gyro_filter.attitude
+    );
+
+} /* test_mahony_update_imu_rejects_high_accel_magnitude */
+
 /*------------------------------------------------------------------------------
  Main
  ------------------------------------------------------------------------------*/
@@ -1685,6 +2081,22 @@ unit_test tests[] =
     {
     "mahony_print_accelerometer_correction",
     test_mahony_print_accelerometer_correction
+    },
+    {
+    "mahony_update_imu_rejects_low_accel_magnitude",
+    test_mahony_update_imu_rejects_low_accel_magnitude
+    },
+    {
+    "mahony_update_imu_rejects_high_accel_magnitude",
+    test_mahony_update_imu_rejects_high_accel_magnitude
+    },
+    {
+    "mahony_update_imu_rejects_nonfinite_accel",
+    test_mahony_update_imu_rejects_nonfinite_accel
+    },
+    {
+    "mahony_update_imu_accepts_valid_accel_magnitude",
+    test_mahony_update_imu_accepts_valid_accel_magnitude
     },
     };
 

@@ -20,6 +20,18 @@
 #include "mahony.h"
 
 /*------------------------------------------------------------------------------
+ Private Macros
+ ------------------------------------------------------------------------------*/
+
+/*
+ * Accelerometer feedback is only used when the measured magnitude is reasonably
+ * close to one g. These are initial software validation thresholds and should
+ * be tuned later using stationary, vibration, and flight data.
+ */
+#define MAHONY_ACCEL_MIN_MAGNITUDE    (0.85f * GRAVITY)
+#define MAHONY_ACCEL_MAX_MAGNITUDE    (1.15f * GRAVITY)
+
+/*------------------------------------------------------------------------------
  Private Functions
  ------------------------------------------------------------------------------*/
 
@@ -303,6 +315,11 @@ VECTOR_3F attitude_error;
 VECTOR_3F proportional_correction;
 VECTOR_3F gyro_corrected;
 
+float accel_magnitude;
+
+bool accel_valid;
+bool apply_accel;
+
 if ( filter == NULL )
     {
     return false;
@@ -319,13 +336,25 @@ if ( !isfinite(delta_time_s) ||
     return false;
     }
 
+accel_magnitude = vector_magnitude(accel_body);
+
+accel_valid =
+    mahony_vector_is_finite(accel_body) &&
+    isfinite(accel_magnitude) &&
+    accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE &&
+    accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
+
+apply_accel =
+    use_accel &&
+    accel_valid;
+
 gyro_corrected = gyro_body_rad_s;
 
 /*
  * Accelerometer feedback is optional. If the measurement is invalid or has
  * zero magnitude, continue with gyroscope-only propagation.
  */
-if ( use_accel )
+if ( apply_accel )
     {
     if ( vector_normalize(&accel_body) )
         {

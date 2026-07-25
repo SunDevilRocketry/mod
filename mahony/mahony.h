@@ -109,6 +109,10 @@ bool mahony_update_gyro
  * The accelerometer must be expressed in the body frame. Its magnitude is
  * removed internally because the filter uses only its measured direction.
  *
+ * Accelerometer feedback is applied only when the caller enables it and the
+ * measured acceleration magnitude falls within the configured validity range.
+ * Invalid accelerometer samples are ignored while gyro propagation continues.
+ *
  * @param filter Initialized filter instance.
  * @param gyro_body_rad_s Body-frame angular velocity in radians per second.
  * @param accel_body Body-frame accelerometer measurement.
@@ -117,6 +121,7 @@ bool mahony_update_gyro
  *
  * @return true when the attitude was updated; otherwise false.
  */
+
 bool mahony_update_imu
     (
     MAHONY_FILTER *filter,
