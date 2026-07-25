@@ -55,6 +55,13 @@
  */
 #define MAHONY_INTEGRAL_LIMIT_RAD_S    0.25f
 
+/*
+ * Limits each integral correction component to prevent windup. The value is
+ * expressed as an angular-rate correction in radians per second and should be
+ * tuned using sensor characterization and flight data.
+ */
+#define MAHONY_INTEGRAL_LIMIT_RAD_S    0.25f
+
 /* Public Functions ----------------------------------------------------------*/
 
 /**
