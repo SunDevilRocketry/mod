@@ -31,6 +31,13 @@
 #define MAHONY_ACCEL_MIN_MAGNITUDE    (0.85f * GRAVITY)
 #define MAHONY_ACCEL_MAX_MAGNITUDE    (1.15f * GRAVITY)
 
+/*
+ * Limits each integral correction component to prevent windup. The value is
+ * expressed as an angular-rate correction in radians per second and should be
+ * tuned using sensor characterization and flight data.
+ */
+#define MAHONY_INTEGRAL_LIMIT_RAD_S    0.25f
+
 /*------------------------------------------------------------------------------
  Private Functions
  ------------------------------------------------------------------------------*/
@@ -52,7 +59,6 @@ return
     );
 
 } /* mahony_quat_is_finite */
-
 
 /**
  * @brief Determines whether every vector component is finite.
@@ -84,7 +90,6 @@ return sqrtf
     );
 
 } /* vector_magnitude */
-
 
 static bool vector_normalize
     (
@@ -118,6 +123,26 @@ return true;
 
 } /* vector_normalize */
 
+static float clamp_float
+    (
+    float value,
+    float minimum,
+    float maximum
+    )
+{
+if ( value < minimum )
+    {
+    return minimum;
+    }
+
+if ( value > maximum )
+    {
+    return maximum;
+    }
+
+return value;
+
+} /* clamp_float */
 
 static VECTOR_3F vector_cross
     (
@@ -383,22 +408,73 @@ if ( apply_accel )
          * estimated gravity direction toward the measured direction.
          */
         attitude_error = vector_cross
+        (
+        accel_body,
+        gravity_estimated_body
+        );
+
+    /*
+    * Accumulate persistent attitude error as a gyro-rate correction. Integral
+    * feedback is updated only while accelerometer feedback is both permitted and
+    * valid, preventing high-dynamic or corrupted measurements from winding up
+    * the correction state.
+    */
+    if ( filter->integral_gain > 0.0f )
+        {
+        filter->integral_error.x +=
+            filter->integral_gain *
+            attitude_error.x *
+            delta_time_s;
+
+        filter->integral_error.y +=
+            filter->integral_gain *
+            attitude_error.y *
+            delta_time_s;
+
+        filter->integral_error.z +=
+            filter->integral_gain *
+            attitude_error.z *
+            delta_time_s;
+
+        filter->integral_error.x = clamp_float
             (
-            accel_body,
-            gravity_estimated_body
+            filter->integral_error.x,
+            -MAHONY_INTEGRAL_LIMIT_RAD_S,
+            MAHONY_INTEGRAL_LIMIT_RAD_S
             );
 
-        proportional_correction = vector_scale
+        filter->integral_error.y = clamp_float
             (
-            attitude_error,
-            filter->proportional_gain
+            filter->integral_error.y,
+            -MAHONY_INTEGRAL_LIMIT_RAD_S,
+            MAHONY_INTEGRAL_LIMIT_RAD_S
             );
 
-        gyro_corrected = vector_add
+        filter->integral_error.z = clamp_float
             (
-            gyro_corrected,
-            proportional_correction
+            filter->integral_error.z,
+            -MAHONY_INTEGRAL_LIMIT_RAD_S,
+            MAHONY_INTEGRAL_LIMIT_RAD_S
             );
+        }
+
+    proportional_correction = vector_scale
+        (
+        attitude_error,
+        filter->proportional_gain
+        );
+
+    gyro_corrected = vector_add
+        (
+        gyro_corrected,
+        proportional_correction
+        );
+
+    gyro_corrected = vector_add
+        (
+        gyro_corrected,
+        filter->integral_error
+        );
         }
     }
 
