@@ -552,7 +552,10 @@ void sensor_imu_velo
 {
 float velo_x, velo_y, velo_z, velocity;
 
-/* The world frame defines gravity in the +Z direction. */
+/*
+ * The world frame uses North-East-Down (NED) coordinates,
+ * so gravity points in the world-frame +Z direction.
+ */
 const QUAT gravity_world =
     {
     .w = 0.0f,
