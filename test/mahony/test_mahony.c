@@ -46,6 +46,177 @@ TEST_end_nested_case();
 
 } /* assert_quat_components */
 
+/**
+ * @brief Limits a floating-point value to a specified range.
+ */
+static float clamp_float
+    (
+    float value,
+    float minimum,
+    float maximum
+    )
+{
+if ( value < minimum )
+    {
+    return minimum;
+    }
+
+if ( value > maximum )
+    {
+    return maximum;
+    }
+
+return value;
+
+} /* clamp_float */
+
+
+/**
+ * @brief Converts a body-to-world quaternion into ZYX Euler angles.
+ *
+ * The returned values represent roll about X, pitch about Y, and yaw about Z.
+ * Angles are returned in degrees for readable diagnostic output.
+ */
+static VECTOR_3F quat_to_euler_deg
+    (
+    QUAT attitude
+    )
+{
+VECTOR_3F angles_deg;
+
+float sin_roll_cos_pitch;
+float cos_roll_cos_pitch;
+float sin_pitch;
+float sin_yaw_cos_pitch;
+float cos_yaw_cos_pitch;
+
+attitude = quat_normalize(attitude);
+
+sin_roll_cos_pitch =
+    2.0f *
+    (
+    attitude.w * attitude.x +
+    attitude.y * attitude.z
+    );
+
+cos_roll_cos_pitch =
+    1.0f -
+    2.0f *
+    (
+    attitude.x * attitude.x +
+    attitude.y * attitude.y
+    );
+
+sin_pitch =
+    2.0f *
+    (
+    attitude.w * attitude.y -
+    attitude.z * attitude.x
+    );
+
+sin_pitch = clamp_float
+    (
+    sin_pitch,
+    -1.0f,
+    1.0f
+    );
+
+sin_yaw_cos_pitch =
+    2.0f *
+    (
+    attitude.w * attitude.z +
+    attitude.x * attitude.y
+    );
+
+cos_yaw_cos_pitch =
+    1.0f -
+    2.0f *
+    (
+    attitude.y * attitude.y +
+    attitude.z * attitude.z
+    );
+
+angles_deg.x = rad_to_deg
+    (
+    atan2f
+        (
+        sin_roll_cos_pitch,
+        cos_roll_cos_pitch
+        )
+    );
+
+angles_deg.y = rad_to_deg
+    (
+    asinf(sin_pitch)
+    );
+
+angles_deg.z = rad_to_deg
+    (
+    atan2f
+        (
+        sin_yaw_cos_pitch,
+        cos_yaw_cos_pitch
+        )
+    );
+
+return angles_deg;
+
+} /* quat_to_euler_deg */
+
+
+/**
+ * @brief Prints one attitude sample as Euler angles and quaternion components.
+ */
+static void print_attitude_sample
+    (
+    int32_t interval,
+    float time_s,
+    QUAT attitude
+    )
+{
+VECTOR_3F angles_deg = quat_to_euler_deg(attitude);
+
+printf
+    (
+    "%3ld | %6.2f | %9.3f %9.3f %9.3f | "
+    "%9.5f %9.5f %9.5f %9.5f\n",
+    (long)interval,
+    time_s,
+    angles_deg.x,
+    angles_deg.y,
+    angles_deg.z,
+    attitude.w,
+    attitude.x,
+    attitude.y,
+    attitude.z
+    );
+
+} /* print_attitude_sample */
+
+
+/**
+ * @brief Prints the diagnostic attitude-table heading.
+ */
+static void print_attitude_heading
+    (
+    const char *title
+    )
+{
+printf("\n%s\n", title);
+printf
+    (
+    "Int | Time s |  Roll deg Pitch deg   Yaw deg | "
+    "        w         x         y         z\n"
+    );
+
+printf
+    (
+    "----+--------+-------------------------------+"
+    "----------------------------------------\n"
+    );
+
+} /* print_attitude_heading */
+
 
 /*------------------------------------------------------------------------------
  Initialization Tests
@@ -1199,6 +1370,243 @@ assert_quat_components
 
 } /* test_mahony_update_imu_disabled_accel_uses_gyro_only */
 
+/**
+ * @brief Prints attitude propagation over ten gyro-only update intervals.
+ *
+ * This test simulates a rocket rotating simultaneously about all three body
+ * axes. It prints the estimated roll, pitch, yaw, and body-to-world quaternion
+ * after each update.
+ *
+ * This is useful for visually confirming that angular velocity accumulates
+ * smoothly, quaternion components change continuously, and normalization keeps
+ * the quaternion valid throughout propagation.
+ */
+void test_mahony_print_gyro_propagation
+    (
+    void
+    )
+{
+int32_t interval;
+
+const int32_t interval_count = 10;
+const float delta_time_s = 0.1f;
+
+MAHONY_FILTER filter;
+
+QUAT identity =
+    {
+    .w = 1.0f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+/*
+ * Simulated body-frame rocket rotation:
+ *
+ * Roll rate  = 10 degrees per second
+ * Pitch rate =  5 degrees per second
+ * Yaw rate   = 20 degrees per second
+ */
+VECTOR_3F gyro_body_rad_s =
+    {
+    .x = deg_to_rad(10.0f),
+    .y = deg_to_rad(5.0f),
+    .z = deg_to_rad(20.0f)
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "Gyro diagnostic filter initialization succeeds",
+    mahony_init
+        (
+        &filter,
+        identity,
+        0.0f,
+        0.0f
+        )
+    );
+
+print_attitude_heading
+    (
+    "GYROSCOPE-ONLY ATTITUDE PROPAGATION"
+    );
+
+print_attitude_sample
+    (
+    0,
+    0.0f,
+    filter.attitude
+    );
+
+for ( interval = 1; interval <= interval_count; interval++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Gyro diagnostic propagation succeeds",
+        mahony_update_gyro
+            (
+            &filter,
+            gyro_body_rad_s,
+            delta_time_s
+            )
+        );
+
+    print_attitude_sample
+        (
+        interval,
+        interval * delta_time_s,
+        filter.attitude
+        );
+    }
+
+/*
+ * A propagated attitude must remain a unit quaternion.
+ */
+float quaternion_norm = sqrtf
+    (
+    filter.attitude.w * filter.attitude.w +
+    filter.attitude.x * filter.attitude.x +
+    filter.attitude.y * filter.attitude.y +
+    filter.attitude.z * filter.attitude.z
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Gyro-propagated quaternion remains normalized",
+    fabsf(quaternion_norm - 1.0f) < 0.001f
+    );
+
+} /* test_mahony_print_gyro_propagation */
+
+/**
+ * @brief Prints proportional accelerometer correction over ten intervals.
+ *
+ * This test simulates a low-dynamic or coasting flight period. The estimated
+ * attitude begins with roll and pitch errors, the gyro reports no rotation,
+ * and the accelerometer supplies a stable gravity direction.
+ *
+ * The printed output should show roll and pitch moving toward zero while yaw
+ * remains approximately unchanged. This is useful for visualizing how Mahony
+ * proportional feedback corrects observable tilt error without pretending
+ * that gravity provides heading information.
+ */
+void test_mahony_print_accelerometer_correction
+    (
+    void
+    )
+{
+int32_t interval;
+
+const int32_t interval_count = 10;
+const float delta_time_s = 0.1f;
+
+MAHONY_FILTER filter;
+
+QUAT initial_attitude = eul_to_quat
+    (
+    deg_to_rad(20.0f),
+    deg_to_rad(-10.0f),
+    deg_to_rad(15.0f)
+    );
+
+VECTOR_3F zero_gyro =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+/*
+ * This represents a low-dynamic condition where the measured acceleration
+ * direction is a usable gravity reference.
+ */
+VECTOR_3F accel_body =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = GRAVITY
+    };
+
+QUAT body_z =
+    {
+    .w = 0.0f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 1.0f
+    };
+
+QUAT initial_world_z = quat_rotate_body_to_world
+    (
+    initial_attitude,
+    body_z
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Accelerometer diagnostic filter initialization succeeds",
+    mahony_init
+        (
+        &filter,
+        initial_attitude,
+        1.5f,
+        0.0f
+        )
+    );
+
+print_attitude_heading
+    (
+    "MAHONY PROPORTIONAL ACCELEROMETER CORRECTION"
+    );
+
+print_attitude_sample
+    (
+    0,
+    0.0f,
+    filter.attitude
+    );
+
+for ( interval = 1; interval <= interval_count; interval++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Accelerometer diagnostic update succeeds",
+        mahony_update_imu
+            (
+            &filter,
+            zero_gyro,
+            accel_body,
+            delta_time_s,
+            true
+            )
+        );
+
+    print_attitude_sample
+        (
+        interval,
+        interval * delta_time_s,
+        filter.attitude
+        );
+    }
+
+QUAT final_world_z = quat_rotate_body_to_world
+    (
+    filter.attitude,
+    body_z
+    );
+
+/*
+ * A level attitude has the body Z axis aligned with world Z. Therefore, its
+ * world Z component should increase as the tilt error is corrected.
+ */
+TEST_ASSERT_TRUE
+    (
+    "Accelerometer correction improves body Z alignment",
+    final_world_z.z > initial_world_z.z
+    );
+
+} /* test_mahony_print_accelerometer_correction */
+
 /*------------------------------------------------------------------------------
  Main
  ------------------------------------------------------------------------------*/
@@ -1269,6 +1677,14 @@ unit_test tests[] =
     {
     "mahony_update_imu_disabled_accel_uses_gyro_only",
     test_mahony_update_imu_disabled_accel_uses_gyro_only
+    },
+    {
+    "mahony_print_gyro_propagation",
+    test_mahony_print_gyro_propagation
+    },
+    {
+    "mahony_print_accelerometer_correction",
+    test_mahony_print_accelerometer_correction
     },
     };
 
