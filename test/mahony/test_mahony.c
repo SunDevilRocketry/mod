@@ -2003,6 +2003,540 @@ assert_quat_components
 
 } /* test_mahony_update_imu_rejects_high_accel_magnitude */
 
+/**
+ * @brief Verifies that zero integral gain prevents integral accumulation.
+ *
+ * A valid tilt error is supplied repeatedly, but Ki is zero. The stored
+ * integral correction must remain zero.
+ */
+void test_mahony_integral_zero_gain_does_not_accumulate
+    (
+    void
+    )
+{
+int32_t index;
+
+MAHONY_FILTER filter;
+
+QUAT initial_attitude = eul_to_quat
+    (
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
+    );
+
+VECTOR_3F zero_gyro =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F valid_accel =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = GRAVITY
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "Mahony initialization succeeds",
+    mahony_init
+        (
+        &filter,
+        initial_attitude,
+        1.0f,
+        0.0f
+        )
+    );
+
+for ( index = 0; index < 1000; index++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Zero-Ki update succeeds",
+        mahony_update_imu
+            (
+            &filter,
+            zero_gyro,
+            valid_accel,
+            0.001f,
+            true
+            )
+        );
+    }
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Zero Ki preserves integral X",
+    filter.integral_error.x,
+    0.0f
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Zero Ki preserves integral Y",
+    filter.integral_error.y,
+    0.0f
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Zero Ki preserves integral Z",
+    filter.integral_error.z,
+    0.0f
+    );
+
+} /* test_mahony_integral_zero_gain_does_not_accumulate */
+
+/**
+ * @brief Verifies that valid accelerometer feedback accumulates integral error.
+ *
+ * The filter begins with a roll error, zero gyro rate, and valid gravity.
+ * A nonzero Ki should accumulate a correction about the roll axis.
+ */
+void test_mahony_integral_valid_error_accumulates
+    (
+    void
+    )
+{
+MAHONY_FILTER filter;
+
+QUAT initial_attitude = eul_to_quat
+    (
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
+    );
+
+VECTOR_3F zero_gyro =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F valid_accel =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = GRAVITY
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "Mahony initialization succeeds",
+    mahony_init
+        (
+        &filter,
+        initial_attitude,
+        0.0f,
+        0.5f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Integral update succeeds",
+    mahony_update_imu
+        (
+        &filter,
+        zero_gyro,
+        valid_accel,
+        0.1f,
+        true
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Roll error accumulates integral correction",
+    fabsf(filter.integral_error.x) > 0.0f
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Pure roll error produces negligible integral Y",
+    fabsf(filter.integral_error.y) < TEST_TOLERANCE
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Pure roll error produces negligible integral Z",
+    fabsf(filter.integral_error.z) < TEST_TOLERANCE
+    );
+
+} /* test_mahony_integral_valid_error_accumulates */
+
+/**
+ * @brief Verifies that disabling accelerometer feedback prevents windup.
+ *
+ * Even with valid gravity and a tilt error, use_accel=false must prevent the
+ * integral state from accumulating.
+ */
+void test_mahony_integral_disabled_accel_does_not_accumulate
+    (
+    void
+    )
+{
+int32_t index;
+
+MAHONY_FILTER filter;
+
+QUAT initial_attitude = eul_to_quat
+    (
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
+    );
+
+VECTOR_3F zero_gyro =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F valid_accel =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = GRAVITY
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "Mahony initialization succeeds",
+    mahony_init
+        (
+        &filter,
+        initial_attitude,
+        1.0f,
+        0.5f
+        )
+    );
+
+for ( index = 0; index < 1000; index++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Disabled-accelerometer update succeeds",
+        mahony_update_imu
+            (
+            &filter,
+            zero_gyro,
+            valid_accel,
+            0.001f,
+            false
+            )
+        );
+    }
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Disabled accelerometer preserves integral X",
+    filter.integral_error.x,
+    0.0f
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Disabled accelerometer preserves integral Y",
+    filter.integral_error.y,
+    0.0f
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Disabled accelerometer preserves integral Z",
+    filter.integral_error.z,
+    0.0f
+    );
+
+} /* test_mahony_integral_disabled_accel_does_not_accumulate */
+
+/**
+ * @brief Verifies that invalid acceleration does not accumulate integral error.
+ *
+ * A two-g acceleration exceeds the configured validity range and must therefore
+ * be excluded from integral feedback.
+ */
+void test_mahony_integral_invalid_accel_does_not_accumulate
+    (
+    void
+    )
+{
+int32_t index;
+
+MAHONY_FILTER filter;
+
+QUAT initial_attitude = eul_to_quat
+    (
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
+    );
+
+VECTOR_3F zero_gyro =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F invalid_accel =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 2.0f * GRAVITY
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "Mahony initialization succeeds",
+    mahony_init
+        (
+        &filter,
+        initial_attitude,
+        1.0f,
+        0.5f
+        )
+    );
+
+for ( index = 0; index < 1000; index++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Invalid-accelerometer update succeeds",
+        mahony_update_imu
+            (
+            &filter,
+            zero_gyro,
+            invalid_accel,
+            0.001f,
+            true
+            )
+        );
+    }
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Invalid acceleration preserves integral X",
+    filter.integral_error.x,
+    0.0f
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Invalid acceleration preserves integral Y",
+    filter.integral_error.y,
+    0.0f
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Invalid acceleration preserves integral Z",
+    filter.integral_error.z,
+    0.0f
+    );
+
+} /* test_mahony_integral_invalid_accel_does_not_accumulate */
+
+/**
+ * @brief Verifies that integral correction is limited by anti-windup.
+ *
+ * A large integral gain and large roll error would otherwise produce an
+ * excessive stored angular-rate correction.
+ */
+void test_mahony_integral_is_limited
+    (
+    void
+    )
+{
+const float expected_limit_rad_s = 0.25f;
+
+MAHONY_FILTER filter;
+
+QUAT initial_attitude = eul_to_quat
+    (
+    0.0f,
+    0.0f,
+    deg_to_rad(90.0f)
+    );
+
+VECTOR_3F zero_gyro =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F valid_accel =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = GRAVITY
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "Mahony initialization succeeds",
+    mahony_init
+        (
+        &filter,
+        initial_attitude,
+        0.0f,
+        100.0f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "High-integral-gain update succeeds",
+    mahony_update_imu
+        (
+        &filter,
+        zero_gyro,
+        valid_accel,
+        1.0f,
+        true
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Integral X does not exceed anti-windup limit",
+    fabsf(filter.integral_error.x) <=
+        expected_limit_rad_s + TEST_TOLERANCE
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Integral Y does not exceed anti-windup limit",
+    fabsf(filter.integral_error.y) <=
+        expected_limit_rad_s + TEST_TOLERANCE
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Integral Z does not exceed anti-windup limit",
+    fabsf(filter.integral_error.z) <=
+        expected_limit_rad_s + TEST_TOLERANCE
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Large roll error reaches integral limit",
+    fabsf
+        (
+        fabsf(filter.integral_error.x) -
+        expected_limit_rad_s
+        ) <
+        TEST_TOLERANCE
+    );
+
+} /* test_mahony_integral_is_limited */
+
+/**
+ * @brief Verifies that accumulated integral error affects attitude propagation.
+ *
+ * Two filters begin with the same roll error. One has Ki=0 and one has Ki>0.
+ * With Kp=0 and zero measured gyro, only the filter with integral feedback
+ * should change its attitude.
+ */
+void test_mahony_integral_correction_affects_attitude
+    (
+    void
+    )
+{
+MAHONY_FILTER no_integral_filter;
+MAHONY_FILTER integral_filter;
+
+QUAT initial_attitude = eul_to_quat
+    (
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
+    );
+
+VECTOR_3F zero_gyro =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
+
+VECTOR_3F valid_accel =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = GRAVITY
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "No-integral filter initialization succeeds",
+    mahony_init
+        (
+        &no_integral_filter,
+        initial_attitude,
+        0.0f,
+        0.0f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Integral filter initialization succeeds",
+    mahony_init
+        (
+        &integral_filter,
+        initial_attitude,
+        0.0f,
+        1.0f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "No-integral update succeeds",
+    mahony_update_imu
+        (
+        &no_integral_filter,
+        zero_gyro,
+        valid_accel,
+        0.1f,
+        true
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Integral update succeeds",
+    mahony_update_imu
+        (
+        &integral_filter,
+        zero_gyro,
+        valid_accel,
+        0.1f,
+        true
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Integral correction changes propagated attitude",
+    fabsf
+        (
+        integral_filter.attitude.x -
+        no_integral_filter.attitude.x
+        ) >
+        0.000001f
+    );
+
+} /* test_mahony_integral_correction_affects_attitude */
+
 /*------------------------------------------------------------------------------
  Main
  ------------------------------------------------------------------------------*/
@@ -2097,6 +2631,30 @@ unit_test tests[] =
     {
     "mahony_update_imu_accepts_valid_accel_magnitude",
     test_mahony_update_imu_accepts_valid_accel_magnitude
+    },
+    {
+    "mahony_integral_zero_gain_does_not_accumulate",
+    test_mahony_integral_zero_gain_does_not_accumulate
+    },
+    {
+    "mahony_integral_valid_error_accumulates",
+    test_mahony_integral_valid_error_accumulates
+    },
+    {
+    "mahony_integral_disabled_accel_does_not_accumulate",
+    test_mahony_integral_disabled_accel_does_not_accumulate
+    },
+    {
+    "mahony_integral_invalid_accel_does_not_accumulate",
+    test_mahony_integral_invalid_accel_does_not_accumulate
+    },
+    {
+    "mahony_integral_is_limited",
+    test_mahony_integral_is_limited
+    },
+    {
+    "mahony_integral_correction_affects_attitude",
+    test_mahony_integral_correction_affects_attitude
     },
     };
 
