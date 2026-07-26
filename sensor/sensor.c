@@ -45,6 +45,20 @@
 #include "usb.h"
 #include "sensor.h"
 #include "math_sdr.h"
+#include "mahony.h"
+
+/*------------------------------------------------------------------------------
+ Private Macros
+------------------------------------------------------------------------------*/
+
+/*
+ * Initial Mahony gains for firmware integration.
+ *
+ * Proportional correction is enabled conservatively. Integral correction
+ * remains disabled until the gains are tuned using stationary and flight data.
+ */
+#define SENSOR_MAHONY_KP    1.0f
+#define SENSOR_MAHONY_KI    0.0f
 
 
 /*------------------------------------------------------------------------------
@@ -61,15 +75,20 @@ float velo_x_prev = 0.0f;
 float velo_y_prev = 0.0f;
 float velo_z_prev = 0.0f;
 
-/* State estimation */
-QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
-
 
 /*------------------------------------------------------------------------------
  Static Variables 
 ------------------------------------------------------------------------------*/
 static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
 
+/*
+ * Persistent attitude-filter state. This instance retains the quaternion and
+ * integral correction between consecutive IMU updates.
+ */
+static MAHONY_FILTER mahony_filter;
+
+/* Timestamp of the previous Mahony update in microseconds. */
+static uint64_t mahony_tick = 0;
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -323,19 +342,42 @@ else
 *                                                                              *
 *******************************************************************************/
 void sensor_init
-	(
-	PRESET_DATA* preset_data
-	)
+    (
+    PRESET_DATA* preset_data
+    )
 {
-imu_velo_tick = get_us_tick();
-
-sensor_reset_velo();
+QUAT identity =
+    {
+    .w = 1.0f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.0f
+    };
 
 float ax = preset_data->imu_offset.accel_x;
 float ay = preset_data->imu_offset.accel_y;
 float az = preset_data->imu_offset.accel_z;
 
-attitude = quat_grav_attitude(ax, ay, az, attitude);
+QUAT initial_attitude = quat_grav_attitude
+    (
+    ax,
+    ay,
+    az,
+    identity
+    );
+
+imu_velo_tick = get_us_tick();
+mahony_tick = imu_velo_tick;
+
+sensor_reset_velo();
+
+(void)mahony_init
+    (
+    &mahony_filter,
+    initial_attitude,
+    SENSOR_MAHONY_KP,
+    SENSOR_MAHONY_KI
+    );
 
 } /* sensor_init */
 
@@ -412,63 +454,84 @@ mount_orientation = orientation;
 *       Perform sensor fusion on imu converted data to get body rate           *
 *                                                                              *
 *******************************************************************************/
-static uint32_t last_tick = 0;
+
 void sensor_body_state
-	(
-	const IMU_CONVERTED* imu_converted,
-	STATE_ESTIMATION* state_estimate
-	)
+    (
+    const IMU_CONVERTED* imu_converted,
+    STATE_ESTIMATION* state_estimate
+    )
 {
-/* Determine delta T */
-uint32_t now_tick = HAL_GetTick();
-float dt = (now_tick - last_tick) / 1000.0f;
-if ( dt <= 0.0f || dt > 1.0f ) 
-	{
-	dt = 0.01f;
-	}
-last_tick = now_tick;
+uint64_t current_tick;
+uint64_t imu_tdelta;
 
-/* Copy IMU data for readability */
-// float ax = imu_converted->accel_x;
-// float ay = imu_converted->accel_y;
-// float az = imu_converted->accel_z;
+float delta_time_s;
 
-/* Raw gyro data in deg/s */
-float gx = imu_converted->gyro_x;
-float gy = imu_converted->gyro_y;
-float gz = imu_converted->gyro_z;
+bool use_accel;
 
-/* Convert gyro to pure quaternion */
-QUAT q_gyro; /* Must be in radians */
-q_gyro.w = 0.0f;
-q_gyro.x = deg_to_rad(gx);
-q_gyro.y = deg_to_rad(gy);
-q_gyro.z = deg_to_rad(gz);
+VECTOR_3F gyro_body_rad_s;
+VECTOR_3F accel_body_m_s2;
 
-/* q_rate = 0.5 * attitude * q_gyro */
-QUAT q_rate = quat_mult(attitude, q_gyro);
-q_rate = quat_scale(q_rate, 0.5f);
+/*
+ * Calculate elapsed time between attitude updates using the microsecond timer.
+ */
+current_tick = get_us_tick();
+imu_tdelta = current_tick - mahony_tick;
 
-/* Dead reckoing orientation by integrating gyro */
-/* attitude += dt * q_rate */
-QUAT rate_dt = quat_scale(q_rate, dt);
-attitude = quat_add(attitude, rate_dt);
+delta_time_s =
+    (float)imu_tdelta /
+    (float)MICROSEC_PER_SEC;
 
-/* Sensor fuson with gravity if not in flight */
-if ( get_fc_state() <= FC_STATE_LAUNCH_DETECT )
-	{
-	// QUAT q_acc = quat_grav_attitude(ax, ay, az, attitude);
-	// gravity_comp_filter(&attitude, q_acc);
-	}
+if ( mahony_tick == 0 ||
+     delta_time_s <= 0.0f ||
+     delta_time_s > 1.0f )
+    {
+    delta_time_s = 0.01f;
+    }
 
-/* Scale back to unit quaternion to avoid drift */
-attitude = quat_normalize(attitude);
+mahony_tick = current_tick;
 
-/* Store results */
-state_estimate->attitude = attitude;
-state_estimate->roll_rate = gx; 	    /* Rate in deg/s */
+/*
+ * Converted gyro data is in degrees per second. Mahony requires radians per
+ * second.
+ */
+gyro_body_rad_s.x = deg_to_rad(imu_converted->gyro_x);
+gyro_body_rad_s.y = deg_to_rad(imu_converted->gyro_y);
+gyro_body_rad_s.z = deg_to_rad(imu_converted->gyro_z);
 
-}
+/*
+ * Converted accelerometer data is already in meters per second squared.
+ */
+accel_body_m_s2.x = imu_converted->accel_x;
+accel_body_m_s2.y = imu_converted->accel_y;
+accel_body_m_s2.z = imu_converted->accel_z;
+
+/*
+ * Permit accelerometer correction only before powered flight. The Mahony
+ * filter still performs its own magnitude and finite-value checks.
+ */
+use_accel =
+    get_fc_state() <= FC_STATE_LAUNCH_DETECT;
+
+(void)mahony_update_imu
+    (
+    &mahony_filter,
+    gyro_body_rad_s,
+    accel_body_m_s2,
+    delta_time_s,
+    use_accel
+    );
+
+/*
+ * Store the filter's body-to-world quaternion as the system attitude estimate.
+ */
+state_estimate->attitude = mahony_filter.attitude;
+
+/*
+ * Preserve the existing public roll-rate units of degrees per second.
+ */
+state_estimate->roll_rate = imu_converted->gyro_x;
+
+} /* sensor_body_state */
 
 
 /*******************************************************************************
