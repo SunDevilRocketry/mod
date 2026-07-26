@@ -235,7 +235,7 @@ sensor_data_ptr->gps_rmc_status		= gps_data.rmc_status;
 imu_status = get_imu_it( &imu_raw );
 
 /* Baro Read */
-baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
+baro_status = baro_get_IT( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr->baro_temp) );
 
 /*Compute State Estimations*/
 
@@ -588,7 +588,7 @@ if( start_imu_read_IT() != IMU_OK )
 	{
 	return SENSOR_IMU_FAIL;
 	}
-if( start_baro_read_IT() != BARO_OK )
+if( baro_start_read_IT() != BARO_OK )
 	{
 	return SENSOR_BARO_ERROR;
 	}
