@@ -98,7 +98,7 @@ QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
 static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
 
 /*
- * Persistent attitude-filter state. This instance retains the quaternion and
+ * Persistent attitude filter state. This instance retains the quaternion and
  * integral correction between consecutive IMU updates.
  */
 static MAHONY_FILTER mahony_filter;
