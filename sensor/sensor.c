@@ -56,6 +56,15 @@
  *
  * Proportional correction is enabled conservatively. Integral correction
  * remains disabled until the gains are tuned using stationary and flight data.
+ *
+ *
+ * Proportional gain (KP) corrects gyro drift using the accelerometer. It is
+ * deliberately low to reduce overcorrection during flight.
+ *
+ * Integral gain (KI) learns persistent gyro bias over time. It remains
+ * disabled because an untuned integral term can accumulate incorrect
+ * corrections during vibration, launch acceleration, or invalid accelerometer
+ * data.
  */
 #define SENSOR_MAHONY_KP    1.0f
 #define SENSOR_MAHONY_KI    0.0f
@@ -82,7 +91,7 @@ float velo_z_prev = 0.0f;
 static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
 
 /*
- * Persistent attitude-filter state. This instance retains the quaternion and
+ * Persistent attitude filter state. This instance retains the quaternion and
  * integral correction between consecutive IMU updates.
  */
 static MAHONY_FILTER mahony_filter;
