@@ -764,6 +764,662 @@ TEST_ASSERT_EQ_FLOAT
 } /* test_mekf_init_failure_preserves_filter */
 
 /*------------------------------------------------------------------------------
+ Gyro Prediction Tests
+ ------------------------------------------------------------------------------*/
+
+/**
+ * @brief Verifies that zero angular rate preserves nominal attitude.
+ */
+void test_mekf_predict_zero_rate
+    (
+    void
+    )
+{
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+VECTOR_3F zero_vector = { 0.0f, 0.0f, 0.0f };
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_vector,
+        &config
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Zero-rate prediction succeeds",
+    mekf_predict
+        (
+        &filter,
+        zero_vector,
+        0.01f
+        )
+    );
+
+assert_quat_components
+    (
+    "Zero angular rate preserves attitude",
+    filter.attitude,
+    identity
+    );
+
+assert_vector_components
+    (
+    "Prediction preserves gyro-bias estimate",
+    filter.gyro_bias_rad_s,
+    zero_vector
+    );
+
+} /* test_mekf_predict_zero_rate */
+
+/**
+ * @brief Verifies positive rotation about body Z for one second.
+ *
+ * A positive 90-degree-per-second body-Z rate should rotate body +X toward
+ * world +Y after one second.
+ */
+void test_mekf_predict_positive_yaw
+    (
+    void
+    )
+{
+unsigned int step;
+
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+QUAT expected =
+    {
+    .w = 0.70710678f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 0.70710678f
+    };
+
+VECTOR_3F zero_bias = { 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F gyro_body_rad_s =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = deg_to_rad(90.0f)
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_bias,
+        &config
+        )
+    );
+
+for ( step = 0U; step < 100U; step++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Positive-yaw prediction succeeds",
+        mekf_predict
+            (
+            &filter,
+            gyro_body_rad_s,
+            0.01f
+            )
+        );
+    }
+
+assert_quat_components
+    (
+    "Positive body-Z rate produces positive yaw",
+    filter.attitude,
+    expected
+    );
+
+} /* test_mekf_predict_positive_yaw */
+
+/**
+ * @brief Verifies that the nominal gyro bias is subtracted.
+ */
+void test_mekf_predict_subtracts_gyro_bias
+    (
+    void
+    )
+{
+unsigned int step;
+
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F initial_bias =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = deg_to_rad(10.0f)
+    };
+
+/*
+ * The measured rate exactly equals the estimated bias, so corrected angular
+ * velocity should be zero.
+ */
+VECTOR_3F gyro_measurement = initial_bias;
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        initial_bias,
+        &config
+        )
+    );
+
+for ( step = 0U; step < 100U; step++ )
+    {
+    TEST_ASSERT_TRUE
+        (
+        "Bias-corrected prediction succeeds",
+        mekf_predict
+            (
+            &filter,
+            gyro_measurement,
+            0.01f
+            )
+        );
+    }
+
+assert_quat_components
+    (
+    "Measured rate equal to bias produces no rotation",
+    filter.attitude,
+    identity
+    );
+
+assert_vector_components
+    (
+    "Prediction does not alter nominal bias",
+    filter.gyro_bias_rad_s,
+    initial_bias
+    );
+
+} /* test_mekf_predict_subtracts_gyro_bias */
+
+/*------------------------------------------------------------------------------
+ Covariance Prediction Tests
+ ------------------------------------------------------------------------------*/
+
+/**
+ * @brief Verifies that gyro-bias uncertainty propagates into attitude
+ *        uncertainty.
+ *
+ * With zero angular rate and zero process noise:
+ *
+ *     Phi =
+ *         [
+ *         I   -I * dt
+ *         0      I
+ *         ]
+ *
+ * An initial bias variance of 4.0 and timestep of 0.1 seconds should produce:
+ *
+ *     attitude variance = 1.0 + 4.0 * 0.1^2 = 1.04
+ *     attitude-bias covariance = -4.0 * 0.1 = -0.4
+ *     bias variance = 4.0
+ */
+void test_mekf_predict_couples_bias_uncertainty
+    (
+    void
+    )
+{
+unsigned int axis;
+unsigned int row;
+unsigned int column;
+
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+float expected[MEKF_ERROR_STATE_DIM][MEKF_ERROR_STATE_DIM] =
+    {
+    { 0.0f }
+    };
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+VECTOR_3F zero_vector = { 0.0f, 0.0f, 0.0f };
+
+config.initial_attitude_std_rad.x = 1.0f;
+config.initial_attitude_std_rad.y = 1.0f;
+config.initial_attitude_std_rad.z = 1.0f;
+
+config.initial_gyro_bias_std_rad_s.x = 2.0f;
+config.initial_gyro_bias_std_rad_s.y = 2.0f;
+config.initial_gyro_bias_std_rad_s.z = 2.0f;
+
+config.gyro_noise_density_rad_s_sqrt_hz = 0.0f;
+config.gyro_bias_random_walk_rad_s2_sqrt_hz = 0.0f;
+config.maximum_delta_time_s = 0.10f;
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_vector,
+        &config
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Zero-rate covariance prediction succeeds",
+    mekf_predict
+        (
+        &filter,
+        zero_vector,
+        0.10f
+        )
+    );
+
+for ( axis = 0U; axis < 3U; axis++ )
+    {
+    expected[axis][axis] = 1.04f;
+    expected[axis + 3U][axis + 3U] = 4.0f;
+
+    expected[axis][axis + 3U] = -0.40f;
+    expected[axis + 3U][axis] = -0.40f;
+    }
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U; column < MEKF_ERROR_STATE_DIM; column++ )
+        {
+        TEST_ASSERT_EQ_FLOAT
+            (
+            "Predicted covariance entry",
+            filter.covariance[row][column],
+            expected[row][column]
+            );
+        }
+    }
+
+} /* test_mekf_predict_couples_bias_uncertainty */
+
+/**
+ * @brief Verifies discrete gyro and gyro-bias process-noise propagation.
+ *
+ * This test starts with zero covariance so the predicted covariance consists
+ * entirely of the discrete process-noise matrix Q_d.
+ */
+void test_mekf_predict_adds_process_noise
+    (
+    void
+    )
+{
+unsigned int axis;
+unsigned int row;
+unsigned int column;
+
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+float expected[MEKF_ERROR_STATE_DIM][MEKF_ERROR_STATE_DIM] =
+    {
+    { 0.0f }
+    };
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+VECTOR_3F zero_vector = { 0.0f, 0.0f, 0.0f };
+
+float expected_attitude_variance;
+float expected_attitude_bias_covariance;
+float expected_bias_variance;
+
+/*
+ * Start with zero covariance so only Q_d contributes to the result.
+ */
+config.initial_attitude_std_rad = zero_vector;
+config.initial_gyro_bias_std_rad_s = zero_vector;
+
+/*
+ * Use intentionally large synthetic noise values so every expected process
+ * noise term is easily distinguishable from zero in the unit test.
+ */
+config.gyro_noise_density_rad_s_sqrt_hz = 2.0f;
+config.gyro_bias_random_walk_rad_s2_sqrt_hz = 1.0f;
+config.maximum_delta_time_s = 0.10f;
+
+/*
+ * For dt = 0.1 seconds:
+ *
+ *     sigma_g^2 = 4
+ *     sigma_b^2 = 1
+ *
+ *     Q_theta_theta =
+ *         sigma_g^2 * dt + sigma_b^2 * dt^3 / 3
+ *
+ *     Q_theta_bias =
+ *         -sigma_b^2 * dt^2 / 2
+ *
+ *     Q_bias_bias =
+ *         sigma_b^2 * dt
+ */
+expected_attitude_variance =
+    4.0f * 0.10f +
+    1.0f * 0.001f / 3.0f;
+
+expected_attitude_bias_covariance =
+    -1.0f * 0.01f / 2.0f;
+
+expected_bias_variance =
+    1.0f * 0.10f;
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_vector,
+        &config
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Process-noise prediction succeeds",
+    mekf_predict
+        (
+        &filter,
+        zero_vector,
+        0.10f
+        )
+    );
+
+for ( axis = 0U; axis < 3U; axis++ )
+    {
+    expected[axis][axis] =
+        expected_attitude_variance;
+
+    expected[axis][axis + 3U] =
+        expected_attitude_bias_covariance;
+
+    expected[axis + 3U][axis] =
+        expected_attitude_bias_covariance;
+
+    expected[axis + 3U][axis + 3U] =
+        expected_bias_variance;
+    }
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U; column < MEKF_ERROR_STATE_DIM; column++ )
+        {
+        TEST_ASSERT_EQ_FLOAT
+            (
+            "Discrete process-noise entry",
+            filter.covariance[row][column],
+            expected[row][column]
+            );
+        }
+    }
+
+} /* test_mekf_predict_adds_process_noise */
+
+/**
+ * @brief Verifies that invalid prediction timesteps are rejected without
+ * modifying the attitude or covariance.
+ */
+void test_mekf_predict_rejects_invalid_timestep
+    (
+    void
+    )
+{
+unsigned int row;
+unsigned int column;
+
+MEKF_FILTER filter;
+MEKF_FILTER original_filter;
+
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+VECTOR_3F zero_bias = { 0.0f, 0.0f, 0.0f };
+VECTOR_3F gyro_body_rad_s = { 0.1f, -0.2f, 0.3f };
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_bias,
+        &config
+        )
+    );
+
+original_filter = filter;
+
+TEST_ASSERT_FALSE
+    (
+    "Zero timestep is rejected",
+    mekf_predict
+        (
+        &filter,
+        gyro_body_rad_s,
+        0.0f
+        )
+    );
+
+TEST_ASSERT_FALSE
+    (
+    "Negative timestep is rejected",
+    mekf_predict
+        (
+        &filter,
+        gyro_body_rad_s,
+        -0.01f
+        )
+    );
+
+TEST_ASSERT_FALSE
+    (
+    "Timestep above configured maximum is rejected",
+    mekf_predict
+        (
+        &filter,
+        gyro_body_rad_s,
+        config.maximum_delta_time_s + 0.01f
+        )
+    );
+
+TEST_ASSERT_FALSE
+    (
+    "Nonfinite timestep is rejected",
+    mekf_predict
+        (
+        &filter,
+        gyro_body_rad_s,
+        NAN
+        )
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Attitude W remains unchanged",
+    filter.attitude.w,
+    original_filter.attitude.w
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Attitude X remains unchanged",
+    filter.attitude.x,
+    original_filter.attitude.x
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Attitude Y remains unchanged",
+    filter.attitude.y,
+    original_filter.attitude.y
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Attitude Z remains unchanged",
+    filter.attitude.z,
+    original_filter.attitude.z
+    );
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U; column < MEKF_ERROR_STATE_DIM; column++ )
+        {
+        TEST_ASSERT_EQ_FLOAT
+            (
+            "Covariance remains unchanged",
+            filter.covariance[row][column],
+            original_filter.covariance[row][column]
+            );
+        }
+    }
+
+} /* test_mekf_predict_rejects_invalid_timestep */
+
+/**
+ * @brief Verifies attitude-covariance propagation during nonzero rotation.
+ *
+ * For a corrected Z-axis rate of 1 rad/s and dt = 0.1 s, the attitude
+ * transition block is:
+ *
+ *     Phi_theta =
+ *         [
+ *          1.0    0.1    0.0
+ *         -0.1    1.0    0.0
+ *          0.0    0.0    1.0
+ *         ]
+ *
+ * Starting with attitude covariance diag(1, 4, 9), the propagated attitude
+ * covariance should be:
+ *
+ *     [
+ *      1.04    0.30    0.00
+ *      0.30    4.01    0.00
+ *      0.00    0.00    9.00
+ *     ]
+ */
+void test_mekf_predict_rotates_attitude_covariance
+    (
+    void
+    )
+{
+unsigned int row;
+unsigned int column;
+
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+float expected[MEKF_ERROR_STATE_DIM][MEKF_ERROR_STATE_DIM] =
+    {
+    { 0.0f }
+    };
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F zero_vector =
+    {
+    0.0f,
+    0.0f,
+    0.0f
+    };
+
+VECTOR_3F gyro_body_rad_s =
+    {
+    0.0f,
+    0.0f,
+    1.0f
+    };
+
+/*
+ * Use unequal initial attitude variances so an incorrect skew-matrix sign or
+ * axis placement cannot accidentally produce the expected result.
+ */
+config.initial_attitude_std_rad.x = 1.0f;
+config.initial_attitude_std_rad.y = 2.0f;
+config.initial_attitude_std_rad.z = 3.0f;
+
+config.initial_gyro_bias_std_rad_s = zero_vector;
+
+config.gyro_noise_density_rad_s_sqrt_hz = 0.0f;
+config.gyro_bias_random_walk_rad_s2_sqrt_hz = 0.0f;
+config.maximum_delta_time_s = 0.10f;
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_vector,
+        &config
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Rotating covariance prediction succeeds",
+    mekf_predict
+        (
+        &filter,
+        gyro_body_rad_s,
+        0.10f
+        )
+    );
+
+expected[MEKF_ATTITUDE_ERROR_X][MEKF_ATTITUDE_ERROR_X] = 1.04f;
+expected[MEKF_ATTITUDE_ERROR_X][MEKF_ATTITUDE_ERROR_Y] = 0.30f;
+
+expected[MEKF_ATTITUDE_ERROR_Y][MEKF_ATTITUDE_ERROR_X] = 0.30f;
+expected[MEKF_ATTITUDE_ERROR_Y][MEKF_ATTITUDE_ERROR_Y] = 4.01f;
+
+expected[MEKF_ATTITUDE_ERROR_Z][MEKF_ATTITUDE_ERROR_Z] = 9.00f;
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U; column < MEKF_ERROR_STATE_DIM; column++ )
+        {
+        TEST_ASSERT_EQ_FLOAT
+            (
+            "Rotating attitude covariance entry",
+            filter.covariance[row][column],
+            expected[row][column]
+            );
+        }
+    }
+
+} /* test_mekf_predict_rotates_attitude_covariance */
+
+/*------------------------------------------------------------------------------
  Main
  ------------------------------------------------------------------------------*/
 
@@ -822,6 +1478,34 @@ unit_test tests[] =
     "mekf_init_failure_preserves_filter",
     test_mekf_init_failure_preserves_filter
     },
+    {
+    "mekf_predict_zero_rate",
+    test_mekf_predict_zero_rate
+    },
+    {
+    "mekf_predict_positive_yaw",
+    test_mekf_predict_positive_yaw
+    },
+    {
+    "mekf_predict_subtracts_gyro_bias",
+    test_mekf_predict_subtracts_gyro_bias
+    },
+    {
+    "mekf_predict_couples_bias_uncertainty",
+    test_mekf_predict_couples_bias_uncertainty
+    },
+    {
+    "mekf_predict_adds_process_noise",
+    test_mekf_predict_adds_process_noise
+    },
+    {
+    "mekf_predict_rejects_invalid_timestep",
+    test_mekf_predict_rejects_invalid_timestep
+    },
+    {
+    "mekf_predict_rotates_attitude_covariance",
+    test_mekf_predict_rotates_attitude_covariance
+    }
     };
 
 TEST_INITIALIZE_TEST("mekf.c", tests);

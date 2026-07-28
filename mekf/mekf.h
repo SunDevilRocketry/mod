@@ -73,29 +73,59 @@ typedef enum _MEKF_ERROR_STATE_INDEX
 typedef struct _MEKF_CONFIG
     {
     /**
-     * Initial one-sigma local attitude uncertainty in radians.
-     */
+    * Initial one-sigma uncertainty of the local attitude-error estimate, in radians.
+    *
+    * Each component specifies the standard deviation of the unknown small-angle
+    * rotation between the nominal attitude estimate and the true attitude about
+    * the body X, Y, and Z axes.
+    *
+    * These values describe uncertainty in the attitude-error estimate; they are
+    * not estimates of the attitude error itself. The expected initial attitude
+    * error is zero. mekf_init() squares these standard deviations to initialize
+    * the corresponding attitude-error covariance diagonal entries.
+    *
+    * A larger value tells the filter that the initial attitude estimate is less
+    * trustworthy, while a smaller value indicates greater confidence in it.
+    */
     VECTOR_3F initial_attitude_std_rad;
 
     /**
-     * Initial one-sigma gyro-bias uncertainty in radians per second.
+    * Initial one-sigma uncertainty of the gyro-bias estimate, in radians per second.
+    *
+    * Each component specifies the standard deviation of the unknown difference
+    * between the estimated gyro bias and the true gyro bias about the body X, Y, and Z axes.
+    *
+    * These values describe uncertainty in the bias estimate; they are not the
+    * estimated gyro-bias values themselves. The expected initial gyro-bias error
+    * is zero. mekf_init() squares these standard deviations to initialize the
+    * corresponding gyro-bias covariance diagonal entries.
+    *
+    * A larger value tells the filter that the initial gyro-bias estimate is less
+    * trustworthy, while a smaller value indicates greater confidence in it.
      */
     VECTOR_3F initial_gyro_bias_std_rad_s;
 
     /**
      * Continuous gyroscope white-noise density in radians per second per
-     * square-root hertz.
+     * square-root hertz. This represents short term random noise in the gyro measurement.
+     * A noisier gyro will produce a larger attitude covariance growth during prediction.
      */
     float gyro_noise_density_rad_s_sqrt_hz;
 
     /**
      * Continuous gyro-bias random-walk density in radians per second squared
      * per square-root hertz.
+     * This represents how quickly the gyro bias is expected to drift over time.
+     * A larger random-walk density will produce a larger gyro-bias covariance growth during prediction.
+     * Bias can change due to temperature, sensor warmup, mechanical stress, etc..
      */
     float gyro_bias_random_walk_rad_s2_sqrt_hz;
 
     /**
      * Maximum valid gyro prediction timestep in seconds.
+     * This represents the largest allowable time interval for one prediction.
+     * This protects the estimator from propagating across unreasonable timing gaps
+     * caused by missed data, timestamp corruption, or task delays.
      */
     float maximum_delta_time_s;
 
