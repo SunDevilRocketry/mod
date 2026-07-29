@@ -49,6 +49,10 @@ MEKF_CONFIG config =
         },
     .gyro_noise_density_rad_s_sqrt_hz = 0.005f,
     .gyro_bias_random_walk_rad_s2_sqrt_hz = 0.0001f,
+    .accelerometer_direction_std = 0.05f,
+    .gravity_magnitude_m_s2 = 9.80665f,
+    .accelerometer_magnitude_tolerance_m_s2 = 1.50f,
+    .accelerometer_innovation_gate = 11.344867f,
     .maximum_delta_time_s = 0.10f
     };
 
@@ -331,7 +335,7 @@ for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
 } /* test_mekf_init_sets_diagonal_covariance */
 
 /**
- * @brief Verifies that prediction configuration is copied into the filter.
+ * @brief Verifies that MEKF configuration is copied into the filter.
  */
 void test_mekf_init_copies_config
     (
@@ -368,6 +372,34 @@ TEST_ASSERT_EQ_FLOAT
     "Bias random walk is copied",
     filter.config.gyro_bias_random_walk_rad_s2_sqrt_hz,
     config.gyro_bias_random_walk_rad_s2_sqrt_hz
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Accelerometer direction uncertainty is copied",
+    filter.config.accelerometer_direction_std,
+    config.accelerometer_direction_std
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Gravity magnitude is copied",
+    filter.config.gravity_magnitude_m_s2,
+    config.gravity_magnitude_m_s2
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Accelerometer magnitude tolerance is copied",
+    filter.config.accelerometer_magnitude_tolerance_m_s2,
+    config.accelerometer_magnitude_tolerance_m_s2
+    );
+
+TEST_ASSERT_EQ_FLOAT
+    (
+    "Accelerometer innovation gate is copied",
+    filter.config.accelerometer_innovation_gate,
+    config.accelerometer_innovation_gate
     );
 
 TEST_ASSERT_EQ_FLOAT
@@ -583,6 +615,143 @@ TEST_ASSERT_TRUE
     );
 
 } /* test_mekf_init_rejects_invalid_process_noise */
+
+/**
+ * @brief Verifies that invalid accelerometer-update configuration values are
+ * rejected.
+ */
+void test_mekf_init_rejects_invalid_accelerometer_config
+    (
+    void
+    )
+{
+MEKF_FILTER filter;
+MEKF_CONFIG config;
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+VECTOR_3F zero_bias = { 0.0f, 0.0f, 0.0f };
+
+/*
+ * Accelerometer direction uncertainty must be finite and greater than zero.
+ */
+config = make_valid_config();
+config.accelerometer_direction_std = 0.0f;
+
+TEST_ASSERT_FALSE
+    (
+    "Zero accelerometer direction uncertainty is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+config = make_valid_config();
+config.accelerometer_direction_std = -0.01f;
+
+TEST_ASSERT_FALSE
+    (
+    "Negative accelerometer direction uncertainty is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+config = make_valid_config();
+config.accelerometer_direction_std = NAN;
+
+TEST_ASSERT_FALSE
+    (
+    "Nonfinite accelerometer direction uncertainty is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+/*
+ * Expected gravity magnitude must be finite and greater than zero.
+ */
+config = make_valid_config();
+config.gravity_magnitude_m_s2 = 0.0f;
+
+TEST_ASSERT_FALSE
+    (
+    "Zero gravity magnitude is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+config = make_valid_config();
+config.gravity_magnitude_m_s2 = -9.80665f;
+
+TEST_ASSERT_FALSE
+    (
+    "Negative gravity magnitude is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+config = make_valid_config();
+config.gravity_magnitude_m_s2 = NAN;
+
+TEST_ASSERT_FALSE
+    (
+    "Nonfinite gravity magnitude is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+/*
+ * The accelerometer magnitude tolerance must also be finite and positive.
+ */
+config = make_valid_config();
+config.accelerometer_magnitude_tolerance_m_s2 = 0.0f;
+
+TEST_ASSERT_FALSE
+    (
+    "Zero accelerometer magnitude tolerance is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+config = make_valid_config();
+config.accelerometer_magnitude_tolerance_m_s2 = -1.0f;
+
+TEST_ASSERT_FALSE
+    (
+    "Negative accelerometer magnitude tolerance is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+config = make_valid_config();
+config.accelerometer_magnitude_tolerance_m_s2 = NAN;
+
+TEST_ASSERT_FALSE
+    (
+    "Nonfinite accelerometer magnitude tolerance is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+/*
+ * The accelerometer innovation gate must be finite and greater than zero.
+ */
+config = make_valid_config();
+config.accelerometer_innovation_gate = 0.0f;
+
+TEST_ASSERT_FALSE
+    (
+    "Zero accelerometer innovation gate is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+config = make_valid_config();
+config.accelerometer_innovation_gate = -1.0f;
+
+TEST_ASSERT_FALSE
+    (
+    "Negative accelerometer innovation gate is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+config = make_valid_config();
+config.accelerometer_innovation_gate = NAN;
+
+TEST_ASSERT_FALSE
+    (
+    "Nonfinite accelerometer innovation gate is rejected",
+    mekf_init(&filter, identity, zero_bias, &config)
+    );
+
+} /* test_mekf_init_rejects_invalid_accelerometer_config */
 
 /**
  * @brief Verifies rejection of invalid maximum timestep values.
@@ -1420,6 +1589,664 @@ for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
 } /* test_mekf_predict_rotates_attitude_covariance */
 
 /*------------------------------------------------------------------------------
+ Accelerometer Update Tests
+ ------------------------------------------------------------------------------*/
+
+/**
+ * @brief Verifies that a gravity measurement aligned with the predicted
+ * direction does not change the nominal attitude or gyro-bias estimate.
+ */
+void test_mekf_update_accelerometer_aligned_measurement
+    (
+    void
+    )
+{
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+VECTOR_3F zero_bias = { 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F aligned_gravity =
+    {
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = 9.80665f
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_bias,
+        &config
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Aligned accelerometer measurement is accepted",
+    mekf_update_accelerometer
+        (
+        &filter,
+        aligned_gravity
+        )
+    );
+
+assert_quat_components
+    (
+    "Aligned measurement leaves attitude unchanged",
+    filter.attitude,
+    identity
+    );
+
+assert_vector_components
+    (
+    "Aligned measurement leaves gyro bias unchanged",
+    filter.gyro_bias_rad_s,
+    zero_bias
+    );
+
+} /* test_mekf_update_accelerometer_aligned_measurement */
+
+/**
+ * @brief Verifies that a tilted gravity measurement moves the attitude estimate
+ * toward the measured gravity direction without introducing yaw correction.
+ */
+void test_mekf_update_accelerometer_corrects_tilt
+    (
+    void
+    )
+{
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+QUAT gravity_world = { 0.0f, 0.0f, 0.0f, 1.0f };
+QUAT predicted_gravity_after;
+
+VECTOR_3F zero_bias = { 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F tilted_gravity;
+
+float tilt_angle_rad = 0.174532925f;
+float direction_error_before;
+float direction_error_after;
+float quaternion_norm_squared;
+
+/*
+ * Give the filter meaningful tilt uncertainty so the accelerometer measurement
+ * produces a visible correction.
+ */
+config.initial_attitude_std_rad.x = 0.20f;
+config.initial_attitude_std_rad.y = 0.20f;
+config.initial_attitude_std_rad.z = 0.20f;
+
+/*
+ * Construct a gravity measurement tilted ten degrees toward positive body Y.
+ * Its magnitude remains exactly equal to the configured gravity magnitude.
+ */
+tilted_gravity.x = 0.0f;
+
+tilted_gravity.y =
+    config.gravity_magnitude_m_s2 *
+    sinf(tilt_angle_rad);
+
+tilted_gravity.z =
+    config.gravity_magnitude_m_s2 *
+    cosf(tilt_angle_rad);
+
+direction_error_before = sinf(tilt_angle_rad);
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_bias,
+        &config
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Tilted accelerometer measurement is accepted",
+    mekf_update_accelerometer
+        (
+        &filter,
+        tilted_gravity
+        )
+    );
+
+predicted_gravity_after = quat_rotate_world_to_body
+    (
+    filter.attitude,
+    gravity_world
+    );
+
+direction_error_after = fabsf
+    (
+    sinf(tilt_angle_rad) -
+    predicted_gravity_after.y
+    );
+
+quaternion_norm_squared =
+    filter.attitude.w * filter.attitude.w +
+    filter.attitude.x * filter.attitude.x +
+    filter.attitude.y * filter.attitude.y +
+    filter.attitude.z * filter.attitude.z;
+
+TEST_ASSERT_TRUE
+    (
+    "Tilt correction rotates about positive body X",
+    filter.attitude.x > 0.0f
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Tilt correction reduces gravity-direction error",
+    direction_error_after < direction_error_before
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Accelerometer does not introduce yaw correction",
+    fabsf(filter.attitude.z) < 1.0e-6f
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Corrected quaternion remains normalized",
+    fabsf(quaternion_norm_squared - 1.0f) < 1.0e-5f
+    );
+
+assert_vector_components
+    (
+    "Tilt correction leaves uncoupled gyro bias unchanged",
+    filter.gyro_bias_rad_s,
+    zero_bias
+    );
+
+} /* test_mekf_update_accelerometer_corrects_tilt */
+
+/**
+ * @brief Verifies that acceleration outside the configured gravity-magnitude
+ * gate is rejected without modifying the filter.
+ */
+void test_mekf_update_accelerometer_rejects_dynamic_acceleration
+    (
+    void
+    )
+{
+unsigned int row;
+unsigned int column;
+
+MEKF_FILTER filter;
+MEKF_FILTER original_filter;
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+VECTOR_3F zero_bias = { 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F dynamic_acceleration =
+    {
+    0.0f,
+    0.0f,
+    0.0f
+    };
+
+dynamic_acceleration.z =
+    config.gravity_magnitude_m_s2 +
+    config.accelerometer_magnitude_tolerance_m_s2 +
+    0.10f;
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_bias,
+        &config
+        )
+    );
+
+original_filter = filter;
+
+TEST_ASSERT_FALSE
+    (
+    "Dynamic acceleration is rejected",
+    mekf_update_accelerometer
+        (
+        &filter,
+        dynamic_acceleration
+        )
+    );
+
+assert_quat_components
+    (
+    "Rejected measurement leaves attitude unchanged",
+    filter.attitude,
+    original_filter.attitude
+    );
+
+assert_vector_components
+    (
+    "Rejected measurement leaves gyro bias unchanged",
+    filter.gyro_bias_rad_s,
+    original_filter.gyro_bias_rad_s
+    );
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        TEST_ASSERT_EQ_FLOAT
+            (
+            "Rejected measurement leaves covariance unchanged",
+            filter.covariance[row][column],
+            original_filter.covariance[row][column]
+            );
+        }
+    }
+
+} /* test_mekf_update_accelerometer_rejects_dynamic_acceleration */
+
+/**
+ * @brief Verifies that an aligned accelerometer update reduces observable tilt
+ * uncertainty without reducing unobservable yaw uncertainty.
+ */
+void test_mekf_update_accelerometer_updates_covariance
+    (
+    void
+    )
+{
+unsigned int row;
+unsigned int column;
+
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+float expected[MEKF_ERROR_STATE_DIM][MEKF_ERROR_STATE_DIM] =
+    {
+    { 0.0f }
+    };
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+VECTOR_3F zero_vector = { 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F aligned_gravity =
+    {
+    0.0f,
+    0.0f,
+    9.80665f
+    };
+
+/*
+ * Initial attitude variance:
+ *
+ *     p = 0.2^2 = 0.04
+ *
+ * Direction-measurement variance:
+ *
+ *     r = 0.1^2 = 0.01
+ *
+ * For each observable tilt axis:
+ *
+ *     p_new = p * r / (p + r) = 0.008
+ */
+config.initial_attitude_std_rad.x = 0.20f;
+config.initial_attitude_std_rad.y = 0.20f;
+config.initial_attitude_std_rad.z = 0.20f;
+
+config.initial_gyro_bias_std_rad_s = zero_vector;
+config.accelerometer_direction_std = 0.10f;
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_vector,
+        &config
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Aligned covariance update succeeds",
+    mekf_update_accelerometer
+        (
+        &filter,
+        aligned_gravity
+        )
+    );
+
+expected[MEKF_ATTITUDE_ERROR_X][MEKF_ATTITUDE_ERROR_X] = 0.008f;
+expected[MEKF_ATTITUDE_ERROR_Y][MEKF_ATTITUDE_ERROR_Y] = 0.008f;
+
+/*
+ * Gravity cannot observe rotation about the gravity vector, so the Z-axis
+ * attitude variance remains at its initial value.
+ */
+expected[MEKF_ATTITUDE_ERROR_Z][MEKF_ATTITUDE_ERROR_Z] = 0.040f;
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        TEST_ASSERT_EQ_FLOAT
+            (
+            "Accelerometer-updated covariance entry",
+            filter.covariance[row][column],
+            expected[row][column]
+            );
+        }
+    }
+
+} /* test_mekf_update_accelerometer_updates_covariance */
+
+/**
+ * @brief Verifies that accelerometer correction can update gyro bias through
+ * attitude-to-bias cross-covariance created during prediction.
+ */
+void test_mekf_update_accelerometer_corrects_coupled_gyro_bias
+    (
+    void
+    )
+{
+MEKF_FILTER filter;
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F zero_vector = { 0.0f, 0.0f, 0.0f };
+VECTOR_3F tilted_gravity;
+
+float tilt_angle_rad = 0.087266463f;
+
+/*
+ * Begin with both attitude and gyro-bias uncertainty. Prediction will create
+ * negative attitude-to-bias cross-covariance.
+ */
+config.initial_attitude_std_rad.x = 0.20f;
+config.initial_attitude_std_rad.y = 0.20f;
+config.initial_attitude_std_rad.z = 0.20f;
+
+config.initial_gyro_bias_std_rad_s.x = 0.10f;
+config.initial_gyro_bias_std_rad_s.y = 0.10f;
+config.initial_gyro_bias_std_rad_s.z = 0.10f;
+
+config.gyro_noise_density_rad_s_sqrt_hz = 0.0f;
+config.gyro_bias_random_walk_rad_s2_sqrt_hz = 0.0f;
+config.accelerometer_direction_std = 0.10f;
+config.maximum_delta_time_s = 0.10f;
+
+tilted_gravity.x = 0.0f;
+
+tilted_gravity.y =
+    config.gravity_magnitude_m_s2 *
+    sinf(tilt_angle_rad);
+
+tilted_gravity.z =
+    config.gravity_magnitude_m_s2 *
+    cosf(tilt_angle_rad);
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_vector,
+        &config
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Zero-rate prediction creates bias coupling",
+    mekf_predict
+        (
+        &filter,
+        zero_vector,
+        0.10f
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Coupled accelerometer update succeeds",
+    mekf_update_accelerometer
+        (
+        &filter,
+        tilted_gravity
+        )
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Accelerometer applies positive X tilt correction",
+    filter.attitude.x > 0.0f
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Coupled X gyro-bias estimate is corrected",
+    filter.gyro_bias_rad_s.x < 0.0f
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Uncoupled Y gyro-bias remains zero",
+    fabsf(filter.gyro_bias_rad_s.y) < 1.0e-6f
+    );
+
+TEST_ASSERT_TRUE
+    (
+    "Unobservable Z gyro-bias remains zero",
+    fabsf(filter.gyro_bias_rad_s.z) < 1.0e-6f
+    );
+
+} /* test_mekf_update_accelerometer_corrects_coupled_gyro_bias */
+
+/**
+ * @brief Verifies that null, zero-magnitude, and nonfinite accelerometer inputs
+ * are rejected without modifying the filter.
+ */
+void test_mekf_update_accelerometer_rejects_invalid_input
+    (
+    void
+    )
+{
+unsigned int row;
+unsigned int column;
+
+MEKF_FILTER filter;
+MEKF_FILTER original_filter;
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F zero_vector = { 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F nonfinite_acceleration =
+    {
+    NAN,
+    0.0f,
+    9.80665f
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_vector,
+        &config
+        )
+    );
+
+original_filter = filter;
+
+TEST_ASSERT_FALSE
+    (
+    "Null filter is rejected",
+    mekf_update_accelerometer
+        (
+        NULL,
+        zero_vector
+        )
+    );
+
+TEST_ASSERT_FALSE
+    (
+    "Zero-magnitude acceleration is rejected",
+    mekf_update_accelerometer
+        (
+        &filter,
+        zero_vector
+        )
+    );
+
+TEST_ASSERT_FALSE
+    (
+    "Nonfinite acceleration is rejected",
+    mekf_update_accelerometer
+        (
+        &filter,
+        nonfinite_acceleration
+        )
+    );
+
+assert_quat_components
+    (
+    "Invalid input leaves attitude unchanged",
+    filter.attitude,
+    original_filter.attitude
+    );
+
+assert_vector_components
+    (
+    "Invalid input leaves gyro bias unchanged",
+    filter.gyro_bias_rad_s,
+    original_filter.gyro_bias_rad_s
+    );
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        TEST_ASSERT_EQ_FLOAT
+            (
+            "Invalid input leaves covariance unchanged",
+            filter.covariance[row][column],
+            original_filter.covariance[row][column]
+            );
+        }
+    }
+
+} /* test_mekf_update_accelerometer_rejects_invalid_input */
+
+/**
+ * @brief Verifies that a gravity measurement pointing opposite the predicted
+ * direction is rejected without modifying the filter.
+ */
+void test_mekf_update_accelerometer_rejects_large_direction_error
+    (
+    void
+    )
+{
+unsigned int row;
+unsigned int column;
+
+MEKF_FILTER filter;
+MEKF_FILTER original_filter;
+MEKF_CONFIG config = make_valid_config();
+
+QUAT identity = { 1.0f, 0.0f, 0.0f, 0.0f };
+VECTOR_3F zero_vector = { 0.0f, 0.0f, 0.0f };
+
+VECTOR_3F opposite_gravity =
+    {
+    0.0f,
+    0.0f,
+    -9.80665f
+    };
+
+TEST_ASSERT_TRUE
+    (
+    "MEKF initialization succeeds",
+    mekf_init
+        (
+        &filter,
+        identity,
+        zero_vector,
+        &config
+        )
+    );
+
+original_filter = filter;
+
+TEST_ASSERT_FALSE
+    (
+    "Opposite gravity direction is rejected",
+    mekf_update_accelerometer
+        (
+        &filter,
+        opposite_gravity
+        )
+    );
+
+assert_quat_components
+    (
+    "Rejected direction leaves attitude unchanged",
+    filter.attitude,
+    original_filter.attitude
+    );
+
+assert_vector_components
+    (
+    "Rejected direction leaves gyro bias unchanged",
+    filter.gyro_bias_rad_s,
+    original_filter.gyro_bias_rad_s
+    );
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        TEST_ASSERT_EQ_FLOAT
+            (
+            "Rejected direction leaves covariance unchanged",
+            filter.covariance[row][column],
+            original_filter.covariance[row][column]
+            );
+        }
+    }
+
+} /* test_mekf_update_accelerometer_rejects_large_direction_error */
+
+/*------------------------------------------------------------------------------
  Main
  ------------------------------------------------------------------------------*/
 
@@ -1467,6 +2294,10 @@ unit_test tests[] =
     test_mekf_init_rejects_invalid_process_noise
     },
     {
+    "mekf_init_rejects_invalid_accelerometer_config",
+    test_mekf_init_rejects_invalid_accelerometer_config
+    },
+    {
     "mekf_init_rejects_invalid_maximum_timestep",
     test_mekf_init_rejects_invalid_maximum_timestep
     },
@@ -1505,7 +2336,35 @@ unit_test tests[] =
     {
     "mekf_predict_rotates_attitude_covariance",
     test_mekf_predict_rotates_attitude_covariance
-    }
+    },
+    {
+    "mekf_update_accelerometer_corrects_tilt",
+    test_mekf_update_accelerometer_corrects_tilt
+    },
+    {
+    "mekf_update_accelerometer_aligned_measurement",
+    test_mekf_update_accelerometer_aligned_measurement
+    },
+    {
+    "mekf_update_accelerometer_rejects_dynamic_acceleration",
+    test_mekf_update_accelerometer_rejects_dynamic_acceleration
+    },
+    {
+    "mekf_update_accelerometer_updates_covariance",
+    test_mekf_update_accelerometer_updates_covariance
+    },
+    {
+    "mekf_update_accelerometer_corrects_coupled_gyro_bias",
+    test_mekf_update_accelerometer_corrects_coupled_gyro_bias
+    },
+    {
+    "mekf_update_accelerometer_rejects_invalid_input",
+    test_mekf_update_accelerometer_rejects_invalid_input
+    },
+    {
+    "mekf_update_accelerometer_rejects_large_direction_error",
+    test_mekf_update_accelerometer_rejects_large_direction_error
+    },
     };
 
 TEST_INITIALIZE_TEST("mekf.c", tests);

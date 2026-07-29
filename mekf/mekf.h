@@ -68,7 +68,7 @@ typedef enum _MEKF_ERROR_STATE_INDEX
     } MEKF_ERROR_STATE_INDEX;
 
 /**
- * @brief Initial uncertainty and gyro prediction configuration.
+ * @brief MEKF initialization, prediction, and measurement-update configuration.
  */
 typedef struct _MEKF_CONFIG
     {
@@ -120,6 +120,46 @@ typedef struct _MEKF_CONFIG
      * Bias can change due to temperature, sensor warmup, mechanical stress, etc..
      */
     float gyro_bias_random_walk_rad_s2_sqrt_hz;
+
+        /**
+     * One-sigma uncertainty of each component of the normalized accelerometer
+     * direction measurement.
+     *
+     * The accelerometer update compares normalized measured and predicted gravity
+     * directions, so this value is dimensionless. A larger value makes the filter
+     * trust accelerometer direction less strongly.
+     */
+    float accelerometer_direction_std;
+
+    /**
+     * Expected local gravitational acceleration magnitude in meters per second
+     * squared.
+     *
+     * This value is used to determine whether the measured acceleration magnitude
+     * is sufficiently close to gravity for attitude correction.
+     */
+    float gravity_magnitude_m_s2;
+
+    /**
+     * Maximum permitted absolute difference between measured acceleration
+     * magnitude and gravity magnitude, in meters per second squared.
+     *
+     * Measurements outside this range are rejected because vehicle acceleration,
+     * vibration, or free fall makes the accelerometer unreliable as a gravity
+     * reference.
+     */
+    float accelerometer_magnitude_tolerance_m_s2;
+
+    /**
+     * Maximum permitted normalized innovation squared for an accelerometer
+     * measurement.
+     *
+     * This rejects gravity-direction residuals that are inconsistent with the
+     * predicted covariance and configured accelerometer uncertainty. A value of
+     * approximately 11.345 corresponds to a 99 percent chi-square threshold for
+     * a three-component residual.
+     */
+    float accelerometer_innovation_gate;
 
     /**
      * Maximum valid gyro prediction timestep in seconds.
@@ -223,6 +263,30 @@ bool mekf_predict
     MEKF_FILTER *filter,
     VECTOR_3F gyro_body_rad_s,
     float delta_time_s
+    );
+
+/**
+ * @brief Corrects attitude and gyro bias using a body-frame accelerometer
+ * measurement.
+ *
+ * The acceleration measurement is normalized and compared with the predicted
+ * body-frame gravity direction. Correction is applied only when its magnitude
+ * is sufficiently close to the configured gravity magnitude.
+ *
+ * Accelerometer correction constrains tilt relative to gravity but cannot
+ * independently observe rotation about the gravity vector.
+ *
+ * @param filter Initialized filter instance.
+ * @param acceleration_body_m_s2 Body-frame accelerometer measurement in meters
+ *        per second squared.
+ *
+ * @return true when the measurement is accepted and the update succeeds;
+ *         otherwise false.
+ */
+bool mekf_update_accelerometer
+    (
+    MEKF_FILTER *filter,
+    VECTOR_3F acceleration_body_m_s2
     );
 
 #ifdef __cplusplus

@@ -29,6 +29,11 @@
  */
 #define MEKF_SMALL_ANGLE_RAD    1.0e-6f
 
+/**
+ * @brief Smallest usable absolute determinant for a three-by-three matrix.
+ */
+#define MEKF_MATRIX_INVERSE_MIN_DETERMINANT    1.0e-20f
+
 /*------------------------------------------------------------------------------
  Private Functions
  ------------------------------------------------------------------------------*/
@@ -152,6 +157,30 @@ if ( !mekf_standard_deviation_is_valid
     return false;
     }
 
+if ( !isfinite(config->accelerometer_direction_std) ||
+     config->accelerometer_direction_std <= 0.0f )
+    {
+    return false;
+    }
+
+if ( !isfinite(config->gravity_magnitude_m_s2) ||
+     config->gravity_magnitude_m_s2 <= 0.0f )
+    {
+    return false;
+    }
+
+if ( !isfinite(config->accelerometer_magnitude_tolerance_m_s2) ||
+     config->accelerometer_magnitude_tolerance_m_s2 <= 0.0f )
+    {
+    return false;
+    }
+
+if ( !isfinite(config->accelerometer_innovation_gate) ||
+     config->accelerometer_innovation_gate <= 0.0f )
+    {
+    return false;
+    }
+
 if ( !isfinite(config->maximum_delta_time_s) ||
      config->maximum_delta_time_s <= 0.0f )
     {
@@ -189,6 +218,112 @@ for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
 return true;
 
 } /* mekf_covariance_is_finite */
+
+/**
+ * @brief Inverts a finite nonsingular three-by-three matrix.
+ */
+static bool mekf_matrix_3x3_inverse
+    (
+    const float matrix[3][3],
+    float inverse[3][3]
+    )
+{
+unsigned int row;
+unsigned int column;
+
+float determinant;
+
+determinant =
+    matrix[0][0] *
+        (
+        matrix[1][1] * matrix[2][2] -
+        matrix[1][2] * matrix[2][1]
+        ) -
+    matrix[0][1] *
+        (
+        matrix[1][0] * matrix[2][2] -
+        matrix[1][2] * matrix[2][0]
+        ) +
+    matrix[0][2] *
+        (
+        matrix[1][0] * matrix[2][1] -
+        matrix[1][1] * matrix[2][0]
+        );
+
+if ( !isfinite(determinant) ||
+     fabsf(determinant) <= MEKF_MATRIX_INVERSE_MIN_DETERMINANT )
+    {
+    return false;
+    }
+
+inverse[0][0] =
+    (
+    matrix[1][1] * matrix[2][2] -
+    matrix[1][2] * matrix[2][1]
+    ) / determinant;
+
+inverse[0][1] =
+    (
+    matrix[0][2] * matrix[2][1] -
+    matrix[0][1] * matrix[2][2]
+    ) / determinant;
+
+inverse[0][2] =
+    (
+    matrix[0][1] * matrix[1][2] -
+    matrix[0][2] * matrix[1][1]
+    ) / determinant;
+
+inverse[1][0] =
+    (
+    matrix[1][2] * matrix[2][0] -
+    matrix[1][0] * matrix[2][2]
+    ) / determinant;
+
+inverse[1][1] =
+    (
+    matrix[0][0] * matrix[2][2] -
+    matrix[0][2] * matrix[2][0]
+    ) / determinant;
+
+inverse[1][2] =
+    (
+    matrix[0][2] * matrix[1][0] -
+    matrix[0][0] * matrix[1][2]
+    ) / determinant;
+
+inverse[2][0] =
+    (
+    matrix[1][0] * matrix[2][1] -
+    matrix[1][1] * matrix[2][0]
+    ) / determinant;
+
+inverse[2][1] =
+    (
+    matrix[0][1] * matrix[2][0] -
+    matrix[0][0] * matrix[2][1]
+    ) / determinant;
+
+inverse[2][2] =
+    (
+    matrix[0][0] * matrix[1][1] -
+    matrix[0][1] * matrix[1][0]
+    ) / determinant;
+
+for ( row = 0U; row < 3U; row++ )
+    {
+    for ( column = 0U; column < 3U; column++ )
+        {
+        if ( !isfinite(inverse[row][column]) )
+            {
+            return false;
+            }
+        }
+    }
+
+return true;
+
+} /* mekf_matrix_3x3_inverse */
 
 /*------------------------------------------------------------------------------
  Public Functions
@@ -720,6 +855,617 @@ for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
 return true;
 
 } /* mekf_predict */
+
+bool mekf_update_accelerometer
+    (
+    MEKF_FILTER *filter,
+    VECTOR_3F acceleration_body_m_s2
+    )
+{
+unsigned int row;
+unsigned int column;
+unsigned int inner;
+unsigned int measurement;
+
+VECTOR_3F measured_direction;
+VECTOR_3F predicted_direction;
+VECTOR_3F corrected_bias;
+
+QUAT gravity_world = { 0.0f, 0.0f, 0.0f, 1.0f };
+QUAT gravity_body;
+QUAT correction_quaternion;
+QUAT corrected_attitude;
+
+float measurement_jacobian[3][MEKF_ERROR_STATE_DIM] =
+    {
+    { 0.0f }
+    };
+
+float covariance_measurement_cross[MEKF_ERROR_STATE_DIM][3];
+float innovation_covariance[3][3];
+float inverse_innovation_covariance[3][3];
+float kalman_gain[MEKF_ERROR_STATE_DIM][3];
+
+float identity_minus_gain_jacobian
+    [MEKF_ERROR_STATE_DIM]
+    [MEKF_ERROR_STATE_DIM] =
+    {
+    { 0.0f }
+    };
+
+float intermediate_covariance
+    [MEKF_ERROR_STATE_DIM]
+    [MEKF_ERROR_STATE_DIM];
+
+float joseph_covariance
+    [MEKF_ERROR_STATE_DIM]
+    [MEKF_ERROR_STATE_DIM];
+
+float reset_jacobian
+    [MEKF_ERROR_STATE_DIM]
+    [MEKF_ERROR_STATE_DIM] =
+    {
+    { 0.0f }
+    };
+
+float reset_intermediate_covariance
+    [MEKF_ERROR_STATE_DIM]
+    [MEKF_ERROR_STATE_DIM];
+
+float corrected_covariance
+    [MEKF_ERROR_STATE_DIM]
+    [MEKF_ERROR_STATE_DIM];
+
+float residual[3];
+float error_state[MEKF_ERROR_STATE_DIM] = { 0.0f };
+
+float acceleration_magnitude;
+float predicted_direction_magnitude;
+float measurement_variance;
+float normalized_innovation_squared;
+float correction_magnitude;
+float half_correction;
+float quaternion_vector_scale;
+float matrix_sum;
+float symmetric_value;
+
+if ( filter == NULL )
+    {
+    return false;
+    }
+
+if ( !mekf_quat_is_finite(filter->attitude) ||
+     !mekf_vector_is_finite(filter->gyro_bias_rad_s) ||
+     !mekf_vector_is_finite(acceleration_body_m_s2) )
+    {
+    return false;
+    }
+
+if ( !mekf_config_is_valid(&filter->config) ||
+     !mekf_covariance_is_finite(filter->covariance) )
+    {
+    return false;
+    }
+
+/*
+ * The accelerometer can be treated as a gravity reference only when its
+ * magnitude is sufficiently close to the expected gravity magnitude.
+ */
+acceleration_magnitude = sqrtf
+    (
+    acceleration_body_m_s2.x * acceleration_body_m_s2.x +
+    acceleration_body_m_s2.y * acceleration_body_m_s2.y +
+    acceleration_body_m_s2.z * acceleration_body_m_s2.z
+    );
+
+if ( !isfinite(acceleration_magnitude) ||
+     acceleration_magnitude <= 0.0f )
+    {
+    return false;
+    }
+
+if ( fabsf
+        (
+        acceleration_magnitude -
+        filter->config.gravity_magnitude_m_s2
+        ) >
+     filter->config.accelerometer_magnitude_tolerance_m_s2 )
+    {
+    return false;
+    }
+
+measured_direction.x =
+    acceleration_body_m_s2.x / acceleration_magnitude;
+
+measured_direction.y =
+    acceleration_body_m_s2.y / acceleration_magnitude;
+
+measured_direction.z =
+    acceleration_body_m_s2.z / acceleration_magnitude;
+
+/*
+ * The stored attitude maps body coordinates into world coordinates. Rotate the
+ * world-frame unit gravity vector into the body frame to predict what the
+ * accelerometer direction should be.
+ */
+gravity_body = quat_rotate_world_to_body
+    (
+    filter->attitude,
+    gravity_world
+    );
+
+predicted_direction_magnitude = sqrtf
+    (
+    gravity_body.x * gravity_body.x +
+    gravity_body.y * gravity_body.y +
+    gravity_body.z * gravity_body.z
+    );
+
+if ( !isfinite(predicted_direction_magnitude) ||
+     predicted_direction_magnitude <= 0.0f )
+    {
+    return false;
+    }
+
+predicted_direction.x =
+    gravity_body.x / predicted_direction_magnitude;
+
+predicted_direction.y =
+    gravity_body.y / predicted_direction_magnitude;
+
+predicted_direction.z =
+    gravity_body.z / predicted_direction_magnitude;
+
+/*
+ * Measurement residual:
+ *
+ *     residual =
+ *         measured_gravity_direction -
+ *         predicted_gravity_direction
+ */
+residual[0] = measured_direction.x - predicted_direction.x;
+residual[1] = measured_direction.y - predicted_direction.y;
+residual[2] = measured_direction.z - predicted_direction.z;
+
+/*
+ * For a right-multiplicative local attitude error, the linearized gravity
+ * measurement Jacobian is:
+ *
+ *     H = [ skew(predicted_gravity_direction)   0 ]
+ */
+measurement_jacobian[0][MEKF_ATTITUDE_ERROR_Y] =
+    -predicted_direction.z;
+
+measurement_jacobian[0][MEKF_ATTITUDE_ERROR_Z] =
+    predicted_direction.y;
+
+measurement_jacobian[1][MEKF_ATTITUDE_ERROR_X] =
+    predicted_direction.z;
+
+measurement_jacobian[1][MEKF_ATTITUDE_ERROR_Z] =
+    -predicted_direction.x;
+
+measurement_jacobian[2][MEKF_ATTITUDE_ERROR_X] =
+    -predicted_direction.y;
+
+measurement_jacobian[2][MEKF_ATTITUDE_ERROR_Y] =
+    predicted_direction.x;
+
+/*
+ * Compute the state-to-measurement cross covariance:
+ *
+ *     PHT = P * transpose(H)
+ */
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( measurement = 0U; measurement < 3U; measurement++ )
+        {
+        matrix_sum = 0.0f;
+
+        for ( inner = 0U; inner < MEKF_ERROR_STATE_DIM; inner++ )
+            {
+            matrix_sum +=
+                filter->covariance[row][inner] *
+                measurement_jacobian[measurement][inner];
+            }
+
+        covariance_measurement_cross[row][measurement] =
+            matrix_sum;
+        }
+    }
+
+/*
+ * Innovation covariance:
+ *
+ *     S = H * P * transpose(H) + R
+ */
+measurement_variance =
+    filter->config.accelerometer_direction_std *
+    filter->config.accelerometer_direction_std;
+
+for ( row = 0U; row < 3U; row++ )
+    {
+    for ( column = 0U; column < 3U; column++ )
+        {
+        matrix_sum = 0.0f;
+
+        for ( inner = 0U; inner < MEKF_ERROR_STATE_DIM; inner++ )
+            {
+            matrix_sum +=
+                measurement_jacobian[row][inner] *
+                covariance_measurement_cross[inner][column];
+            }
+
+        innovation_covariance[row][column] = matrix_sum;
+
+        if ( row == column )
+            {
+            innovation_covariance[row][column] +=
+                measurement_variance;
+            }
+        }
+    }
+
+if ( !mekf_matrix_3x3_inverse
+        (
+        innovation_covariance,
+        inverse_innovation_covariance
+        ) )
+    {
+    return false;
+    }
+
+/*
+ * Normalized innovation squared:
+ *
+ *     NIS = transpose(residual) * inverse(S) * residual
+ *
+ * Reject a direction measurement that is inconsistent with the estimator's
+ * predicted uncertainty. This also protects the small-error MEKF linearization
+ * from very large attitude disagreements.
+ */
+normalized_innovation_squared = 0.0f;
+
+for ( row = 0U; row < 3U; row++ )
+    {
+    for ( column = 0U; column < 3U; column++ )
+        {
+        normalized_innovation_squared +=
+            residual[row] *
+            inverse_innovation_covariance[row][column] *
+            residual[column];
+        }
+    }
+
+if ( !isfinite(normalized_innovation_squared) ||
+     normalized_innovation_squared >
+        filter->config.accelerometer_innovation_gate )
+    {
+    return false;
+    }
+
+/*
+ * Kalman gain:
+ *
+ *     K = P * transpose(H) * inverse(S)
+ */
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U; column < 3U; column++ )
+        {
+        matrix_sum = 0.0f;
+
+        for ( inner = 0U; inner < 3U; inner++ )
+            {
+            matrix_sum +=
+                covariance_measurement_cross[row][inner] *
+                inverse_innovation_covariance[inner][column];
+            }
+
+        kalman_gain[row][column] = matrix_sum;
+        }
+    }
+
+/*
+ * Estimate the six-state correction:
+ *
+ *     delta_x = K * residual
+ */
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( measurement = 0U; measurement < 3U; measurement++ )
+        {
+        error_state[row] +=
+            kalman_gain[row][measurement] *
+            residual[measurement];
+        }
+
+    if ( !isfinite(error_state[row]) )
+        {
+        return false;
+        }
+    }
+
+/*
+ * Convert the local attitude-error correction into a quaternion and inject it
+ * through right multiplication.
+ */
+correction_magnitude = sqrtf
+    (
+    error_state[MEKF_ATTITUDE_ERROR_X] *
+        error_state[MEKF_ATTITUDE_ERROR_X] +
+    error_state[MEKF_ATTITUDE_ERROR_Y] *
+        error_state[MEKF_ATTITUDE_ERROR_Y] +
+    error_state[MEKF_ATTITUDE_ERROR_Z] *
+        error_state[MEKF_ATTITUDE_ERROR_Z]
+    );
+
+if ( !isfinite(correction_magnitude) )
+    {
+    return false;
+    }
+
+if ( correction_magnitude <= MEKF_SMALL_ANGLE_RAD )
+    {
+    correction_quaternion.w = 1.0f;
+    quaternion_vector_scale = 0.5f;
+    }
+else
+    {
+    half_correction = 0.5f * correction_magnitude;
+
+    correction_quaternion.w = cosf(half_correction);
+
+    quaternion_vector_scale =
+        sinf(half_correction) /
+        correction_magnitude;
+    }
+
+correction_quaternion.x =
+    error_state[MEKF_ATTITUDE_ERROR_X] *
+    quaternion_vector_scale;
+
+correction_quaternion.y =
+    error_state[MEKF_ATTITUDE_ERROR_Y] *
+    quaternion_vector_scale;
+
+correction_quaternion.z =
+    error_state[MEKF_ATTITUDE_ERROR_Z] *
+    quaternion_vector_scale;
+
+corrected_attitude = quat_mult
+    (
+    filter->attitude,
+    correction_quaternion
+    );
+
+corrected_attitude = quat_normalize(corrected_attitude);
+
+corrected_bias.x =
+    filter->gyro_bias_rad_s.x +
+    error_state[MEKF_GYRO_BIAS_ERROR_X];
+
+corrected_bias.y =
+    filter->gyro_bias_rad_s.y +
+    error_state[MEKF_GYRO_BIAS_ERROR_Y];
+
+corrected_bias.z =
+    filter->gyro_bias_rad_s.z +
+    error_state[MEKF_GYRO_BIAS_ERROR_Z];
+
+if ( !mekf_quat_is_finite(corrected_attitude) ||
+     !mekf_vector_is_finite(corrected_bias) )
+    {
+    return false;
+    }
+
+/*
+ * Use the Joseph covariance update:
+ *
+ *     A = I - K * H
+ *
+ *     P_corrected =
+ *         A * P * transpose(A) +
+ *         K * R * transpose(K)
+ */
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U; column < MEKF_ERROR_STATE_DIM; column++ )
+        {
+        if ( row == column )
+            {
+            identity_minus_gain_jacobian[row][column] = 1.0f;
+            }
+
+        for ( measurement = 0U; measurement < 3U; measurement++ )
+            {
+            identity_minus_gain_jacobian[row][column] -=
+                kalman_gain[row][measurement] *
+                measurement_jacobian[measurement][column];
+            }
+        }
+    }
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        matrix_sum = 0.0f;
+
+        for ( inner = 0U;
+              inner < MEKF_ERROR_STATE_DIM;
+              inner++ )
+            {
+            matrix_sum +=
+                identity_minus_gain_jacobian[row][inner] *
+                filter->covariance[inner][column];
+            }
+
+        intermediate_covariance[row][column] = matrix_sum;
+        }
+    }
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        matrix_sum = 0.0f;
+
+        for ( inner = 0U;
+              inner < MEKF_ERROR_STATE_DIM;
+              inner++ )
+            {
+            matrix_sum +=
+                intermediate_covariance[row][inner] *
+                identity_minus_gain_jacobian[column][inner];
+            }
+
+        joseph_covariance[row][column] = matrix_sum;
+
+        for ( measurement = 0U; measurement < 3U; measurement++ )
+            {
+            joseph_covariance[row][column] +=
+                measurement_variance *
+                kalman_gain[row][measurement] *
+                kalman_gain[column][measurement];
+            }
+        }
+    }
+
+/*
+ * Reset the attitude-error state after injecting its correction into the
+ * nominal quaternion:
+ *
+ *     G_theta = I - 0.5 * skew(delta_theta)
+ *
+ *     P_reset = G * P_corrected * transpose(G)
+ */
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    reset_jacobian[row][row] = 1.0f;
+    }
+
+reset_jacobian
+    [MEKF_ATTITUDE_ERROR_X]
+    [MEKF_ATTITUDE_ERROR_Y] =
+        0.5f * error_state[MEKF_ATTITUDE_ERROR_Z];
+
+reset_jacobian
+    [MEKF_ATTITUDE_ERROR_X]
+    [MEKF_ATTITUDE_ERROR_Z] =
+        -0.5f * error_state[MEKF_ATTITUDE_ERROR_Y];
+
+reset_jacobian
+    [MEKF_ATTITUDE_ERROR_Y]
+    [MEKF_ATTITUDE_ERROR_X] =
+        -0.5f * error_state[MEKF_ATTITUDE_ERROR_Z];
+
+reset_jacobian
+    [MEKF_ATTITUDE_ERROR_Y]
+    [MEKF_ATTITUDE_ERROR_Z] =
+        0.5f * error_state[MEKF_ATTITUDE_ERROR_X];
+
+reset_jacobian
+    [MEKF_ATTITUDE_ERROR_Z]
+    [MEKF_ATTITUDE_ERROR_X] =
+        0.5f * error_state[MEKF_ATTITUDE_ERROR_Y];
+
+reset_jacobian
+    [MEKF_ATTITUDE_ERROR_Z]
+    [MEKF_ATTITUDE_ERROR_Y] =
+        -0.5f * error_state[MEKF_ATTITUDE_ERROR_X];
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        matrix_sum = 0.0f;
+
+        for ( inner = 0U;
+              inner < MEKF_ERROR_STATE_DIM;
+              inner++ )
+            {
+            matrix_sum +=
+                reset_jacobian[row][inner] *
+                joseph_covariance[inner][column];
+            }
+
+        reset_intermediate_covariance[row][column] =
+            matrix_sum;
+        }
+    }
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        matrix_sum = 0.0f;
+
+        for ( inner = 0U;
+              inner < MEKF_ERROR_STATE_DIM;
+              inner++ )
+            {
+            matrix_sum +=
+                reset_intermediate_covariance[row][inner] *
+                reset_jacobian[column][inner];
+            }
+
+        corrected_covariance[row][column] = matrix_sum;
+        }
+    }
+
+/*
+ * Remove small floating-point asymmetry and verify the complete result before
+ * committing any part of the correction.
+ */
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = row + 1U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        symmetric_value =
+            0.5f *
+            (
+            corrected_covariance[row][column] +
+            corrected_covariance[column][row]
+            );
+
+        corrected_covariance[row][column] = symmetric_value;
+        corrected_covariance[column][row] = symmetric_value;
+        }
+    }
+
+if ( !mekf_covariance_is_finite(corrected_covariance) )
+    {
+    return false;
+    }
+
+filter->attitude = corrected_attitude;
+filter->gyro_bias_rad_s = corrected_bias;
+
+for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
+    {
+    for ( column = 0U;
+          column < MEKF_ERROR_STATE_DIM;
+          column++ )
+        {
+        filter->covariance[row][column] =
+            corrected_covariance[row][column];
+        }
+    }
+
+return true;
+
+} /* mekf_update_accelerometer */
 
 /*******************************************************************************
  * END OF FILE
