@@ -32,8 +32,8 @@ $(ROOT_DIR)/mahony/mahony.c \
 $(ROOT_DIR)/math_sdr/math_sdr.c
 
 FRAMEWORK_SOURCES = \
-$(ROOT_DIR)/test/framework/src/test_assert.c \
-$(ROOT_DIR)/test/framework/src/test_runner.c
+$(ROOT_DIR)/_test/framework/src/test_assert.c \
+$(ROOT_DIR)/_test/framework/src/test_runner.c
 
 C_SOURCES = $(TEST_SOURCES) $(COV_C_SOURCES) $(FRAMEWORK_SOURCES)
 
@@ -49,7 +49,7 @@ C_INCLUDES = \
 -I. \
 -I$(ROOT_DIR)/mahony \
 -I$(ROOT_DIR)/math_sdr \
--I$(ROOT_DIR)/test/framework/src
+-I$(ROOT_DIR)/_test/framework/src
 
 C_DEFS = \
 -DUNIT_TEST
