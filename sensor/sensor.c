@@ -543,7 +543,7 @@ if ( mahony_status != MAHONY_OK )
     }
 
 /*
- * Store the filter's body-to-world quaternion as the system attitude estimate.
+ * Store the filter's world-to-body quaternion as the system attitude estimate.
  */
 state_estimate->attitude = mahony_filter.attitude;
 
@@ -639,8 +639,8 @@ const QUAT gravity_world =
     };
 
 /*
- * The attitude quaternion is body-to-world, so rotate world gravity
- * into the body frame before subtracting it from the accelerometer.
+ * The attitude quaternion is world-to-body, so rotate world gravity directly
+ * into the body frame before subtracting it from measured acceleration.
  */
 QUAT gravity_body = quat_rotate_world_to_body
     (
