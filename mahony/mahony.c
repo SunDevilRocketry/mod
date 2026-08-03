@@ -246,7 +246,7 @@ return true;
  * Verify the filter, gyro, and timestep are valid.
  * Convert the body-frame angular velocity into a pure quaternion.
  * Use the quaternion differential equation to calculate how quickly the
- * body-to-world attitude is changing. Multiply that derivative by the
+ * world-to-body attitude is changing. Multiply that derivative by the
  * timestep, add it to the current attitude, and normalize the result.
  */
 
@@ -283,10 +283,10 @@ if ( !isfinite(delta_time_s) ||
     }
 
 /*
- * The attitude quaternion is a body-to-world rotation and angular velocity is
- * expressed in the body frame:
+ * The attitude quaternion represents the world-to-body rotation, while angular
+ * velocity is expressed in the body frame:
  *
- *     q_dot = 0.5 * q * omega_body
+ *     q_dot = -0.5 * omega_body * q
  */
 angular_velocity.w = 0.0f;
 angular_velocity.x = gyro_body_rad_s.x;
@@ -295,14 +295,14 @@ angular_velocity.z = gyro_body_rad_s.z;
 
 attitude_derivative = quat_mult
     (
-    filter->attitude,
-    angular_velocity
+    angular_velocity,
+    filter->attitude
     );
 
 attitude_derivative = quat_scale
     (
     attitude_derivative,
-    0.5f
+    -0.5f
     );
 
 attitude_delta = quat_scale
@@ -384,10 +384,10 @@ if ( apply_accel )
     if ( vector_normalize(&accel_body) )
         {
         /*
-         * The attitude quaternion represents the body-to-world rotation.
-         * Rotate the fixed world gravity direction into the body frame to
-         * predict where gravity should appear according to the estimate.
-         */
+        * The attitude quaternion represents the world-to-body rotation. Rotate the
+        * fixed world gravity direction directly into the body frame to predict where
+        * gravity should appear according to the current attitude estimate.
+        */
         gravity_world.w = 0.0f;
         gravity_world.x = 0.0f;
         gravity_world.y = 0.0f;
