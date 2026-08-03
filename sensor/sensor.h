@@ -114,7 +114,7 @@ typedef struct _IMU_CONVERTED
 /* State estimation from processed sensors */
 typedef struct _STATE_ESTIMATION {
     /*
-     * Body-to-world attitude quaternion.
+     * World-to-body attitude quaternion.
      *
      * Body-frame vector to world frame:
      *     v_world = q * v_body * conjugate(q)

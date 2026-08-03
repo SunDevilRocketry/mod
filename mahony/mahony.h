@@ -46,8 +46,8 @@ typedef struct _VECTOR_3F
 typedef struct _MAHONY_FILTER
     {
     /**
-     * Body-to-world attitude quaternion.
-     */
+    * World-to-body attitude quaternion.
+    */
     QUAT attitude;
 
     /**
@@ -68,7 +68,7 @@ typedef struct _MAHONY_FILTER
  * @brief Initializes a Mahony attitude filter.
  *
  * @param filter Filter instance to initialize.
- * @param initial_attitude Initial body-to-world attitude quaternion.
+ * @param initial_attitude Initial world-to-body attitude quaternion.
  * @param proportional_gain Proportional correction gain.
  * @param integral_gain Integral correction gain.
  *
@@ -83,9 +83,10 @@ bool mahony_init
     );
 
 /**
- * @brief Propagates attitude using body-frame gyroscope measurements.
+ * @brief Propagates a world-to-body attitude using body-frame gyroscope
+ *        measurements.
  *
- * The attitude quaternion represents the body-to-world rotation. The angular
+ * The attitude quaternion represents the world-to-body rotation. The angular
  * velocity vector must be expressed in the body frame in radians per second.
  *
  * @param filter Initialized filter instance.
