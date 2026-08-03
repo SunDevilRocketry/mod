@@ -265,11 +265,11 @@ return result;
 /**
   * @brief Rotates a vector from the world frame into the body frame.
   *
-  * The attitude quaternion represents the body-to-world rotation:
+  * The attitude quaternion represents the world-to-body rotation:
   *
-  *     vector_body = conjugate(q) * vector_world * q
+  *     vector_body = q * vector_world * conjugate(q)
   *
-  * @param attitude Body-to-world attitude quaternion.
+  * @param attitude World-to-body attitude quaternion.
   * @param vector_world Pure quaternion containing the world-frame vector.
   *
   * @return Pure quaternion containing the body-frame vector.
@@ -284,8 +284,8 @@ QUAT attitude_conj = quat_conj(attitude);
 
 return quat_mult
     (
-    quat_mult(attitude_conj, vector_world),
-    attitude
+    quat_mult(attitude, vector_world),
+    attitude_conj
     );
 
 } /* quat_rotate_world_to_body */
@@ -294,11 +294,11 @@ return quat_mult
 /**
   * @brief Rotates a vector from the body frame into the world frame.
   *
-  * The attitude quaternion represents the body-to-world rotation:
+  * The attitude quaternion represents the world-to-body rotation:
   *
-  *     vector_world = q * vector_body * conjugate(q)
+  *     vector_world = conjugate(q) * vector_body * q
   *
-  * @param attitude Body-to-world attitude quaternion.
+  * @param attitude World-to-body attitude quaternion.
   * @param vector_body Pure quaternion containing the body-frame vector.
   *
   * @return Pure quaternion containing the world-frame vector.
@@ -313,8 +313,8 @@ QUAT attitude_conj = quat_conj(attitude);
 
 return quat_mult
     (
-    quat_mult(attitude, vector_body),
-    attitude_conj
+    quat_mult(attitude_conj, vector_body),
+    attitude
     );
 
 } /* quat_rotate_body_to_world */
