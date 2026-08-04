@@ -373,8 +373,9 @@ imu_converted->gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
 imu_converted->gyro_z = sensor_gyro_conv(imu_raw->gyro_z);
 
 /* Remove gyro bias BEFORE applying axis conversion */
-imu_converted->gyro_x -= imu_offset.gyro_x;
-imu_converted->gyro_y -= imu_offset.gyro_y;
+/* Temporary hacky way to correctly apply offsets */
+imu_converted->gyro_x += imu_offset.gyro_x;
+imu_converted->gyro_y += imu_offset.gyro_y;
 imu_converted->gyro_z -= imu_offset.gyro_z;
 
 sensor_axis_remap( &(imu_converted->gyro_x), &(imu_converted->gyro_y), &(imu_converted->gyro_z) );
