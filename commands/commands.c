@@ -176,7 +176,7 @@ dump_buffer_ptr->longitude = sensor_data.gps_dec_longitude;
 dump_buffer_ptr->latitude = sensor_data.gps_dec_latitude;
 
 /* Controls */
-dump_buffer_ptr->acc_z = sensor_data.imu_converted.accel_z;
+dump_buffer_ptr->acc_x = sensor_data.imu_converted.accel_x;
 dump_buffer_ptr->roll_rate = sensor_data.state_estimate.roll_rate;
 
 }
