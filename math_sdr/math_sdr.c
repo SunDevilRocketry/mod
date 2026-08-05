@@ -99,7 +99,7 @@ return q;
 
 
 /**
-  * @brief Multiplies two quaternions.
+  * @brief Hamilton product of two quaternions.
   *
   * @note Quaternion multiplication is NOT commutative.
   *
