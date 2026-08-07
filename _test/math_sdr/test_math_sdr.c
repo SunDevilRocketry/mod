@@ -124,7 +124,7 @@ QUAT attitude =
     {
     .w = cosf(half_angle),
     .x = 0.0f,
-    .y = -sinf(half_angle),
+    .y = sinf(half_angle),
     .z = 0.0f
     };
 
@@ -169,7 +169,7 @@ QUAT attitude =
     .w = cosf(half_angle),
     .x = 0.0f,
     .y = 0.0f,
-    .z = -sinf(half_angle)
+    .z = sinf(half_angle)
     };
 
 QUAT vector_body =
