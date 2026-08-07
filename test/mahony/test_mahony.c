@@ -72,10 +72,10 @@ return value;
 
 
 /**
- * @brief Converts a world-to-body quaternion into ZYX Euler angles.
+ * @brief Converts a body-to-world quaternion into ZYX Euler angles.
  *
- * The world-to-body attitude is conjugated into its equivalent body-to-world
- * quaternion before extracting roll, pitch, and yaw for diagnostic display.
+ * The returned values represent roll about X, pitch about Y, and yaw about Z.
+ * Angles are returned in degrees for readable diagnostic output.
  */
 static VECTOR_3F quat_to_euler_deg
     (
@@ -83,14 +83,6 @@ static VECTOR_3F quat_to_euler_deg
     )
 {
 VECTOR_3F angles_deg;
-
-/*
- * The Euler extraction formulas below operate on a body-to-world quaternion.
- */
-attitude = quat_conj
-    (
-    quat_normalize(attitude)
-    );
 
 float sin_roll_cos_pitch;
 float cos_roll_cos_pitch;
@@ -609,7 +601,7 @@ assert_quat_components
  * it points toward world positive Y.
  *
  * This is important because it confirms the quaternion multiplication order,
- * rotation sign, gyro units, and world-to-body attitude convention.
+ * rotation sign, gyro units, and body-to-world attitude convention.
  */
 void test_mahony_update_gyro_positive_yaw
     (
@@ -678,9 +670,9 @@ TEST_ASSERT_EQ_FLOAT
 
 TEST_ASSERT_EQ_FLOAT
     (
-    "Positive 90-degree yaw world-to-body quaternion z component",
+    "Positive 90-degree yaw quaternion z component",
     filter.attitude.z,
-    -sinf(0.25f * TEST_PI)
+    sinf(0.25f * TEST_PI)
     );
 
 QUAT world_vector = quat_rotate_body_to_world
@@ -857,7 +849,7 @@ assert_quat_components
  *
  * This is important because it verifies that proportional accelerometer
  * feedback corrects roll drift and that the cross-product sign is consistent
- * with the world-to-body quaternion convention.
+ * with the body-to-world quaternion convention.
  */
 void test_mahony_update_imu_roll_error_converges
     (
@@ -870,14 +862,11 @@ MAHONY_FILTER filter;
 
 const float initial_roll_rad = deg_to_rad(10.0f);
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        0.0f,
-        0.0f,
-        initial_roll_rad
-        )
+    0.0f,
+    0.0f,
+    initial_roll_rad
     );
 
 VECTOR_3F zero_gyro =
@@ -978,14 +967,11 @@ MAHONY_FILTER filter;
 
 const float initial_pitch_rad = deg_to_rad(10.0f);
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        0.0f,
-        initial_pitch_rad,
-        0.0f
-        )
+    0.0f,
+    initial_pitch_rad,
+    0.0f
     );
 
 VECTOR_3F zero_gyro =
@@ -1086,14 +1072,11 @@ MAHONY_FILTER filter;
 
 const float initial_yaw_rad = deg_to_rad(20.0f);
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        initial_yaw_rad,
-        0.0f,
-        0.0f
-        )
+    initial_yaw_rad,
+    0.0f,
+    0.0f
     );
 
 VECTOR_3F zero_gyro =
@@ -1391,7 +1374,7 @@ assert_quat_components
  * @brief Prints attitude propagation over ten gyro-only update intervals.
  *
  * This test simulates a rocket rotating simultaneously about all three body
- * axes. It prints the estimated roll, pitch, yaw, and world-to-body quaternion
+ * axes. It prints the estimated roll, pitch, yaw, and body-to-world quaternion
  * after each update.
  *
  * This is useful for visually confirming that angular velocity accumulates
@@ -1520,14 +1503,11 @@ const float delta_time_s = 0.1f;
 
 MAHONY_FILTER filter;
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        deg_to_rad(20.0f),
-        deg_to_rad(-10.0f),
-        deg_to_rad(15.0f)
-        )
+    deg_to_rad(20.0f),
+    deg_to_rad(-10.0f),
+    deg_to_rad(15.0f)
     );
 
 VECTOR_3F zero_gyro =
@@ -1843,14 +1823,11 @@ int32_t index;
 
 MAHONY_FILTER filter;
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        0.0f,
-        0.0f,
-        deg_to_rad(10.0f)
-        )
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
     );
 
 VECTOR_3F zero_gyro =
@@ -2041,14 +2018,11 @@ int32_t index;
 
 MAHONY_FILTER filter;
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        0.0f,
-        0.0f,
-        deg_to_rad(10.0f)
-        )
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
     );
 
 VECTOR_3F zero_gyro =
@@ -2129,14 +2103,11 @@ void test_mahony_integral_valid_error_accumulates
 {
 MAHONY_FILTER filter;
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        0.0f,
-        0.0f,
-        deg_to_rad(10.0f)
-        )
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
     );
 
 VECTOR_3F zero_gyro =
@@ -2213,14 +2184,11 @@ int32_t index;
 
 MAHONY_FILTER filter;
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        0.0f,
-        0.0f,
-        deg_to_rad(10.0f)
-        )
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
     );
 
 VECTOR_3F zero_gyro =
@@ -2303,14 +2271,11 @@ int32_t index;
 
 MAHONY_FILTER filter;
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        0.0f,
-        0.0f,
-        deg_to_rad(10.0f)
-        )
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
     );
 
 VECTOR_3F zero_gyro =
@@ -2393,14 +2358,11 @@ const float expected_limit_rad_s = 0.25f;
 
 MAHONY_FILTER filter;
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        0.0f,
-        0.0f,
-        deg_to_rad(90.0f)
-        )
+    0.0f,
+    0.0f,
+    deg_to_rad(90.0f)
     );
 
 VECTOR_3F zero_gyro =
@@ -2491,14 +2453,11 @@ void test_mahony_integral_correction_affects_attitude
 MAHONY_FILTER no_integral_filter;
 MAHONY_FILTER integral_filter;
 
-QUAT initial_attitude = quat_conj
+QUAT initial_attitude = eul_to_quat
     (
-    eul_to_quat
-        (
-        0.0f,
-        0.0f,
-        deg_to_rad(10.0f)
-        )
+    0.0f,
+    0.0f,
+    deg_to_rad(10.0f)
     );
 
 VECTOR_3F zero_gyro =
