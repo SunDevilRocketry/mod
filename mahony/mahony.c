@@ -122,7 +122,7 @@ return MAHONY_OK;
  * Verify the filter, gyro, and timestep are valid.
  * Convert the body-frame angular velocity into a pure quaternion.
  * Use the quaternion differential equation to calculate how quickly the
- * world-to-body attitude is changing. Multiply that derivative by the
+ * body-to-world attitude is changing. Multiply that derivative by the
  * timestep, add it to the current attitude, and normalize the result.
  *
  * @param filter Initialized filter instance.
