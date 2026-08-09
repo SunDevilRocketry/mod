@@ -110,10 +110,11 @@ MAHONY_STATUS mahony_update_gyro
  * @param delta_time_s Elapsed time in seconds.
  * @param use_accel Whether accelerometer feedback should be applied.
  *
- * @return true when the attitude was updated; otherwise false.
+ * @return MAHONY_OK when the attitude was updated; otherwise a Mahony status
+        code describing the failure.
  */
 
-bool mahony_update_imu
+MAHONY_STATUS mahony_update_imu
     (
     MAHONY_FILTER *filter,
     VECTOR_3F gyro_body_rad_s,
