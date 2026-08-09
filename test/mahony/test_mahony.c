@@ -247,7 +247,7 @@ QUAT identity =
     .z = 0.0f
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -256,7 +256,8 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 assert_quat_components
@@ -301,7 +302,7 @@ QUAT expected =
     .z = 0.0f
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -310,7 +311,8 @@ TEST_ASSERT_TRUE
         initial_attitude,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 assert_quat_components
@@ -355,7 +357,7 @@ QUAT expected =
     .z = 0.0f
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -364,7 +366,8 @@ TEST_ASSERT_TRUE
         zero_quaternion,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 assert_quat_components
@@ -400,7 +403,7 @@ QUAT identity =
     .z = 0.0f
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -409,7 +412,8 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.1f
-        )
+        ),
+    MAHONY_OK
     );
 
 TEST_ASSERT_EQ_FLOAT
@@ -457,7 +461,7 @@ QUAT identity =
     .z = 0.0f
     };
 
-TEST_ASSERT_FALSE
+TEST_ASSERT_EQ_UINT
     (
     "Null filter is rejected",
     mahony_init
@@ -466,7 +470,8 @@ TEST_ASSERT_FALSE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_NULL_POINTER
     );
 
 } /* test_mahony_init_rejects_null_filter */
@@ -496,7 +501,7 @@ QUAT identity =
     .z = 0.0f
     };
 
-TEST_ASSERT_FALSE
+TEST_ASSERT_EQ_UINT
     (
     "Negative proportional gain is rejected",
     mahony_init
@@ -505,10 +510,11 @@ TEST_ASSERT_FALSE
         identity,
         -1.0f,
         0.0f
-        )
+        ),
+    MAHONY_NEGATIVE_GAIN
     );
 
-TEST_ASSERT_FALSE
+TEST_ASSERT_EQ_UINT
     (
     "Negative integral gain is rejected",
     mahony_init
@@ -517,7 +523,8 @@ TEST_ASSERT_FALSE
         identity,
         1.0f,
         -0.1f
-        )
+        ),
+    MAHONY_NEGATIVE_GAIN
     );
 
 } /* test_mahony_init_rejects_negative_gain */
@@ -558,7 +565,7 @@ VECTOR_3F zero_rate =
     .z = 0.0f
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -567,10 +574,11 @@ TEST_ASSERT_TRUE
         identity,
         0.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Zero-rate update succeeds",
     mahony_update_gyro
@@ -578,7 +586,8 @@ TEST_ASSERT_TRUE
         &filter,
         zero_rate,
         0.01f
-        )
+        ),
+    MAHONY_OK
     );
 
 assert_quat_components
@@ -610,6 +619,8 @@ void test_mahony_update_gyro_positive_yaw
 {
 int32_t index;
 
+MAHONY_STATUS status = MAHONY_OK;
+
 MAHONY_FILTER filter;
 
 QUAT identity =
@@ -635,7 +646,7 @@ QUAT body_x =
     .z = 0.0f
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -644,22 +655,26 @@ TEST_ASSERT_TRUE
         identity,
         0.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_gyro
         (
-        "Positive-yaw propagation succeeds",
-        mahony_update_gyro
-            (
-            &filter,
-            gyro_body_rad_s,
-            0.001f
-            )
+        &filter,
+        gyro_body_rad_s,
+        0.001f
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Positive-yaw propagation succeeds",
+    status,
+    MAHONY_OK
+    );
 
 TEST_ASSERT_EQ_FLOAT
     (
@@ -722,7 +737,7 @@ VECTOR_3F zero_rate =
     .z = 0.0f
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -731,10 +746,11 @@ TEST_ASSERT_TRUE
         identity,
         0.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_FALSE
+TEST_ASSERT_EQ_UINT
     (
     "Zero delta time is rejected",
     mahony_update_gyro
@@ -742,10 +758,11 @@ TEST_ASSERT_FALSE
         &filter,
         zero_rate,
         0.0f
-        )
+        ),
+    MAHONY_INVALID_DELTA_TIME
     );
 
-TEST_ASSERT_FALSE
+TEST_ASSERT_EQ_UINT
     (
     "Negative delta time is rejected",
     mahony_update_gyro
@@ -753,7 +770,8 @@ TEST_ASSERT_FALSE
         &filter,
         zero_rate,
         -0.01f
-        )
+        ),
+    MAHONY_INVALID_DELTA_TIME
     );
 
 } /* test_mahony_update_gyro_rejects_invalid_delta_time */
@@ -777,6 +795,8 @@ void test_mahony_update_imu_aligned_gravity
     )
 {
 int32_t index;
+
+MAHONY_STATUS status = MAHONY_OK;
 
 MAHONY_FILTER filter;
 
@@ -802,7 +822,7 @@ VECTOR_3F accel_body =
     .z = GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -811,24 +831,28 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_imu
         (
-        "Aligned IMU update succeeds",
-        mahony_update_imu
-            (
-            &filter,
-            zero_gyro,
-            accel_body,
-            0.001f,
-            true
-            )
+        &filter,
+        zero_gyro,
+        accel_body,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Aligned IMU updates succeed",
+    status,
+    MAHONY_OK
+    );
 
 assert_quat_components
     (
@@ -857,6 +881,8 @@ void test_mahony_update_imu_roll_error_converges
     )
 {
 int32_t index;
+
+MAHONY_STATUS status = MAHONY_OK;
 
 MAHONY_FILTER filter;
 
@@ -897,7 +923,7 @@ QUAT initial_world_z = quat_rotate_body_to_world
     body_z
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -906,24 +932,28 @@ TEST_ASSERT_TRUE
         initial_attitude,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 2000; index++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_imu
         (
-        "Roll-error correction update succeeds",
-        mahony_update_imu
-            (
-            &filter,
-            zero_gyro,
-            accel_body,
-            0.001f,
-            true
-            )
+        &filter,
+        zero_gyro,
+        accel_body,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Roll-error correction updates succeed",
+    status,
+    MAHONY_OK
+    );
 
 QUAT corrected_world_z = quat_rotate_body_to_world
     (
@@ -962,6 +992,8 @@ void test_mahony_update_imu_pitch_error_converges
     )
 {
 int32_t index;
+
+MAHONY_STATUS status = MAHONY_OK;
 
 MAHONY_FILTER filter;
 
@@ -1002,7 +1034,7 @@ QUAT initial_world_z = quat_rotate_body_to_world
     body_z
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -1011,24 +1043,28 @@ TEST_ASSERT_TRUE
         initial_attitude,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 2000; index++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_imu
         (
-        "Pitch-error correction update succeeds",
-        mahony_update_imu
-            (
-            &filter,
-            zero_gyro,
-            accel_body,
-            0.001f,
-            true
-            )
+        &filter,
+        zero_gyro,
+        accel_body,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Pitch-error correction updates succeed",
+    status,
+    MAHONY_OK
+    );
 
 QUAT corrected_world_z = quat_rotate_body_to_world
     (
@@ -1067,6 +1103,8 @@ void test_mahony_update_imu_yaw_error_does_not_converge
     )
 {
 int32_t index;
+
+MAHONY_STATUS status = MAHONY_OK;
 
 MAHONY_FILTER filter;
 
@@ -1107,7 +1145,7 @@ QUAT initial_world_x = quat_rotate_body_to_world
     body_x
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -1116,24 +1154,28 @@ TEST_ASSERT_TRUE
         initial_attitude,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 2000; index++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_imu
         (
-        "Yaw-only correction update succeeds",
-        mahony_update_imu
-            (
-            &filter,
-            zero_gyro,
-            accel_body,
-            0.001f,
-            true
-            )
+        &filter,
+        zero_gyro,
+        accel_body,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Yaw-only correction updates succeed",
+    status,
+    MAHONY_OK
+    );
 
 QUAT final_world_x = quat_rotate_body_to_world
     (
@@ -1178,6 +1220,9 @@ void test_mahony_update_imu_zero_accel_uses_gyro_only
 {
 int32_t index;
 
+MAHONY_STATUS gyro_status = MAHONY_OK;
+MAHONY_STATUS imu_status = MAHONY_OK;
+
 MAHONY_FILTER gyro_filter;
 MAHONY_FILTER imu_filter;
 
@@ -1203,7 +1248,7 @@ VECTOR_3F zero_accel =
     .z = 0.0f
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Gyro filter initialization succeeds",
     mahony_init
@@ -1212,10 +1257,11 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "IMU filter initialization succeeds",
     mahony_init
@@ -1224,35 +1270,42 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    gyro_status |= mahony_update_gyro
         (
-        "Gyro-only update succeeds",
-        mahony_update_gyro
-            (
-            &gyro_filter,
-            gyro_body_rad_s,
-            0.001f
-            )
+        &gyro_filter,
+        gyro_body_rad_s,
+        0.001f
         );
 
-    TEST_ASSERT_TRUE
+    imu_status |= mahony_update_imu
         (
-        "Zero-accelerometer IMU update succeeds",
-        mahony_update_imu
-            (
-            &imu_filter,
-            gyro_body_rad_s,
-            zero_accel,
-            0.001f,
-            true
-            )
+        &imu_filter,
+        gyro_body_rad_s,
+        zero_accel,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Gyro-only updates succeed",
+    gyro_status,
+    MAHONY_OK
+    );
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Zero-accelerometer IMU updates succeed",
+    imu_status,
+    MAHONY_OK
+    );
 
 assert_quat_components
     (
@@ -1285,6 +1338,9 @@ void test_mahony_update_imu_disabled_accel_uses_gyro_only
 {
 int32_t index;
 
+MAHONY_STATUS gyro_status = MAHONY_OK;
+MAHONY_STATUS imu_status = MAHONY_OK;
+
 MAHONY_FILTER gyro_filter;
 MAHONY_FILTER imu_filter;
 
@@ -1310,7 +1366,7 @@ VECTOR_3F misaligned_accel =
     .z = 0.0f
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Gyro filter initialization succeeds",
     mahony_init
@@ -1319,10 +1375,11 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "IMU filter initialization succeeds",
     mahony_init
@@ -1331,35 +1388,42 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    gyro_status |= mahony_update_gyro
         (
-        "Gyro-only update succeeds",
-        mahony_update_gyro
-            (
-            &gyro_filter,
-            gyro_body_rad_s,
-            0.001f
-            )
+        &gyro_filter,
+        gyro_body_rad_s,
+        0.001f
         );
 
-    TEST_ASSERT_TRUE
+    imu_status |= mahony_update_imu
         (
-        "Disabled-accelerometer IMU update succeeds",
-        mahony_update_imu
-            (
-            &imu_filter,
-            gyro_body_rad_s,
-            misaligned_accel,
-            0.001f,
-            false
-            )
+        &imu_filter,
+        gyro_body_rad_s,
+        misaligned_accel,
+        0.001f,
+        false
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Gyro-only updates succeed",
+    gyro_status,
+    MAHONY_OK
+    );
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Disabled-accelerometer IMU updates succeed",
+    imu_status,
+    MAHONY_OK
+    );
 
 assert_quat_components
     (
@@ -1388,6 +1452,8 @@ void test_mahony_print_gyro_propagation
 {
 int32_t interval;
 
+MAHONY_STATUS status = MAHONY_OK;
+
 const int32_t interval_count = 10;
 const float delta_time_s = 0.1f;
 
@@ -1415,7 +1481,7 @@ VECTOR_3F gyro_body_rad_s =
     .z = deg_to_rad(20.0f)
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Gyro diagnostic filter initialization succeeds",
     mahony_init
@@ -1424,7 +1490,8 @@ TEST_ASSERT_TRUE
         identity,
         0.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 print_attitude_heading
@@ -1441,15 +1508,11 @@ print_attitude_sample
 
 for ( interval = 1; interval <= interval_count; interval++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_gyro
         (
-        "Gyro diagnostic propagation succeeds",
-        mahony_update_gyro
-            (
-            &filter,
-            gyro_body_rad_s,
-            delta_time_s
-            )
+        &filter,
+        gyro_body_rad_s,
+        delta_time_s
         );
 
     print_attitude_sample
@@ -1459,6 +1522,13 @@ for ( interval = 1; interval <= interval_count; interval++ )
         filter.attitude
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Gyro diagnostic propagation succeeds",
+    status,
+    MAHONY_OK
+    );
 
 /*
  * A propagated attitude must remain a unit quaternion.
@@ -1497,6 +1567,8 @@ void test_mahony_print_accelerometer_correction
     )
 {
 int32_t interval;
+
+MAHONY_STATUS status = MAHONY_OK;
 
 const int32_t interval_count = 10;
 const float delta_time_s = 0.1f;
@@ -1542,7 +1614,7 @@ QUAT initial_world_z = quat_rotate_body_to_world
     body_z
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Accelerometer diagnostic filter initialization succeeds",
     mahony_init
@@ -1551,7 +1623,8 @@ TEST_ASSERT_TRUE
         initial_attitude,
         1.5f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 print_attitude_heading
@@ -1568,17 +1641,13 @@ print_attitude_sample
 
 for ( interval = 1; interval <= interval_count; interval++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_imu
         (
-        "Accelerometer diagnostic update succeeds",
-        mahony_update_imu
-            (
-            &filter,
-            zero_gyro,
-            accel_body,
-            delta_time_s,
-            true
-            )
+        &filter,
+        zero_gyro,
+        accel_body,
+        delta_time_s,
+        true
         );
 
     print_attitude_sample
@@ -1588,6 +1657,13 @@ for ( interval = 1; interval <= interval_count; interval++ )
         filter.attitude
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Accelerometer diagnostic updates succeed",
+    status,
+    MAHONY_OK
+    );
 
 QUAT final_world_z = quat_rotate_body_to_world
     (
@@ -1624,6 +1700,9 @@ void test_mahony_update_imu_rejects_low_accel_magnitude
 {
 int32_t index;
 
+MAHONY_STATUS gyro_status = MAHONY_OK;
+MAHONY_STATUS imu_status = MAHONY_OK;
+
 MAHONY_FILTER gyro_filter;
 MAHONY_FILTER imu_filter;
 
@@ -1649,7 +1728,7 @@ VECTOR_3F low_accel =
     .z = 0.50f * GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Gyro filter initialization succeeds",
     mahony_init
@@ -1658,10 +1737,11 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "IMU filter initialization succeeds",
     mahony_init
@@ -1670,35 +1750,42 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    gyro_status |= mahony_update_gyro
         (
-        "Gyro-only update succeeds",
-        mahony_update_gyro
-            (
-            &gyro_filter,
-            gyro_body_rad_s,
-            0.001f
-            )
+        &gyro_filter,
+        gyro_body_rad_s,
+        0.001f
         );
 
-    TEST_ASSERT_TRUE
+    imu_status |= mahony_update_imu
         (
-        "Low-acceleration IMU update succeeds",
-        mahony_update_imu
-            (
-            &imu_filter,
-            gyro_body_rad_s,
-            low_accel,
-            0.001f,
-            true
-            )
+        &imu_filter,
+        gyro_body_rad_s,
+        low_accel,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Gyro-only updates succeed",
+    gyro_status,
+    MAHONY_OK
+    );
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Low-acceleration IMU updates succeed",
+    imu_status,
+    MAHONY_OK
+    );
 
 assert_quat_components
     (
@@ -1748,7 +1835,7 @@ VECTOR_3F invalid_accel =
     .z = GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Gyro filter initialization succeeds",
     mahony_init
@@ -1757,10 +1844,11 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "IMU filter initialization succeeds",
     mahony_init
@@ -1769,10 +1857,11 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Gyro-only update succeeds",
     mahony_update_gyro
@@ -1780,10 +1869,11 @@ TEST_ASSERT_TRUE
         &gyro_filter,
         gyro_body_rad_s,
         0.01f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Invalid-accelerometer IMU update succeeds",
     mahony_update_imu
@@ -1793,7 +1883,8 @@ TEST_ASSERT_TRUE
         invalid_accel,
         0.01f,
         true
-        )
+        ),
+    MAHONY_OK
     );
 
 assert_quat_components
@@ -1820,6 +1911,8 @@ void test_mahony_update_imu_accepts_valid_accel_magnitude
     )
 {
 int32_t index;
+
+MAHONY_STATUS status = MAHONY_OK;
 
 MAHONY_FILTER filter;
 
@@ -1858,7 +1951,7 @@ QUAT initial_world_z = quat_rotate_body_to_world
     body_z
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -1867,24 +1960,28 @@ TEST_ASSERT_TRUE
         initial_attitude,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_imu
         (
-        "Valid-acceleration IMU update succeeds",
-        mahony_update_imu
-            (
-            &filter,
-            zero_gyro,
-            valid_accel,
-            0.001f,
-            true
-            )
+        &filter,
+        zero_gyro,
+        valid_accel,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Valid-acceleration IMU updates succeed",
+    status,
+    MAHONY_OK
+    );
 
 QUAT corrected_world_z = quat_rotate_body_to_world
     (
@@ -1918,6 +2015,9 @@ void test_mahony_update_imu_rejects_high_accel_magnitude
 {
 int32_t index;
 
+MAHONY_STATUS gyro_status = MAHONY_OK;
+MAHONY_STATUS imu_status = MAHONY_OK;
+
 MAHONY_FILTER gyro_filter;
 MAHONY_FILTER imu_filter;
 
@@ -1943,7 +2043,7 @@ VECTOR_3F high_accel =
     .z = 2.0f * GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Gyro filter initialization succeeds",
     mahony_init
@@ -1952,10 +2052,11 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "IMU filter initialization succeeds",
     mahony_init
@@ -1964,35 +2065,42 @@ TEST_ASSERT_TRUE
         identity,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    gyro_status |= mahony_update_gyro
         (
-        "Gyro-only update succeeds",
-        mahony_update_gyro
-            (
-            &gyro_filter,
-            gyro_body_rad_s,
-            0.001f
-            )
+        &gyro_filter,
+        gyro_body_rad_s,
+        0.001f
         );
 
-    TEST_ASSERT_TRUE
+    imu_status |= mahony_update_imu
         (
-        "High-acceleration IMU update succeeds",
-        mahony_update_imu
-            (
-            &imu_filter,
-            gyro_body_rad_s,
-            high_accel,
-            0.001f,
-            true
-            )
+        &imu_filter,
+        gyro_body_rad_s,
+        high_accel,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Gyro-only updates succeed",
+    gyro_status,
+    MAHONY_OK
+    );
+
+TEST_ASSERT_EQ_UINT
+    (
+    "High-acceleration IMU updates succeed",
+    imu_status,
+    MAHONY_OK
+    );
 
 assert_quat_components
     (
@@ -2018,6 +2126,8 @@ int32_t index;
 
 MAHONY_FILTER filter;
 
+MAHONY_STATUS status = MAHONY_OK;
+
 QUAT initial_attitude = eul_to_quat
     (
     0.0f,
@@ -2039,7 +2149,7 @@ VECTOR_3F valid_accel =
     .z = GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -2048,24 +2158,28 @@ TEST_ASSERT_TRUE
         initial_attitude,
         1.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_imu
         (
-        "Zero-Ki update succeeds",
-        mahony_update_imu
-            (
-            &filter,
-            zero_gyro,
-            valid_accel,
-            0.001f,
-            true
-            )
+        &filter,
+        zero_gyro,
+        valid_accel,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Zero-Ki updates succeed",
+    status,
+    MAHONY_OK
+    );
 
 TEST_ASSERT_EQ_FLOAT
     (
@@ -2124,7 +2238,7 @@ VECTOR_3F valid_accel =
     .z = GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -2133,10 +2247,11 @@ TEST_ASSERT_TRUE
         initial_attitude,
         0.0f,
         0.5f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Integral update succeeds",
     mahony_update_imu
@@ -2146,7 +2261,8 @@ TEST_ASSERT_TRUE
         valid_accel,
         0.1f,
         true
-        )
+        ),
+    MAHONY_OK
     );
 
 TEST_ASSERT_TRUE
@@ -2184,6 +2300,8 @@ int32_t index;
 
 MAHONY_FILTER filter;
 
+MAHONY_STATUS status = MAHONY_OK;
+
 QUAT initial_attitude = eul_to_quat
     (
     0.0f,
@@ -2205,7 +2323,7 @@ VECTOR_3F valid_accel =
     .z = GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -2214,24 +2332,28 @@ TEST_ASSERT_TRUE
         initial_attitude,
         1.0f,
         0.5f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_imu
         (
-        "Disabled-accelerometer update succeeds",
-        mahony_update_imu
-            (
-            &filter,
-            zero_gyro,
-            valid_accel,
-            0.001f,
-            false
-            )
+        &filter,
+        zero_gyro,
+        valid_accel,
+        0.001f,
+        false
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Disabled-accelerometer updates succeed",
+    status,
+    MAHONY_OK
+    );
 
 TEST_ASSERT_EQ_FLOAT
     (
@@ -2269,6 +2391,8 @@ void test_mahony_integral_invalid_accel_does_not_accumulate
 {
 int32_t index;
 
+MAHONY_STATUS status = MAHONY_OK;
+
 MAHONY_FILTER filter;
 
 QUAT initial_attitude = eul_to_quat
@@ -2292,7 +2416,7 @@ VECTOR_3F invalid_accel =
     .z = 2.0f * GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -2301,24 +2425,28 @@ TEST_ASSERT_TRUE
         initial_attitude,
         1.0f,
         0.5f
-        )
+        ),
+    MAHONY_OK
     );
 
 for ( index = 0; index < 1000; index++ )
     {
-    TEST_ASSERT_TRUE
+    status |= mahony_update_imu
         (
-        "Invalid-accelerometer update succeeds",
-        mahony_update_imu
-            (
-            &filter,
-            zero_gyro,
-            invalid_accel,
-            0.001f,
-            true
-            )
+        &filter,
+        zero_gyro,
+        invalid_accel,
+        0.001f,
+        true
         );
     }
+
+TEST_ASSERT_EQ_UINT
+    (
+    "Invalid-accelerometer updates succeed",
+    status,
+    MAHONY_OK
+    );
 
 TEST_ASSERT_EQ_FLOAT
     (
@@ -2379,7 +2507,7 @@ VECTOR_3F valid_accel =
     .z = GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
     mahony_init
@@ -2388,10 +2516,11 @@ TEST_ASSERT_TRUE
         initial_attitude,
         0.0f,
         100.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "High-integral-gain update succeeds",
     mahony_update_imu
@@ -2401,7 +2530,8 @@ TEST_ASSERT_TRUE
         valid_accel,
         1.0f,
         true
-        )
+        ),
+    MAHONY_OK
     );
 
 TEST_ASSERT_TRUE
@@ -2474,7 +2604,7 @@ VECTOR_3F valid_accel =
     .z = GRAVITY
     };
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "No-integral filter initialization succeeds",
     mahony_init
@@ -2483,10 +2613,11 @@ TEST_ASSERT_TRUE
         initial_attitude,
         0.0f,
         0.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Integral filter initialization succeeds",
     mahony_init
@@ -2495,10 +2626,11 @@ TEST_ASSERT_TRUE
         initial_attitude,
         0.0f,
         1.0f
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "No-integral update succeeds",
     mahony_update_imu
@@ -2508,10 +2640,11 @@ TEST_ASSERT_TRUE
         valid_accel,
         0.1f,
         true
-        )
+        ),
+    MAHONY_OK
     );
 
-TEST_ASSERT_TRUE
+TEST_ASSERT_EQ_UINT
     (
     "Integral update succeeds",
     mahony_update_imu
@@ -2521,7 +2654,8 @@ TEST_ASSERT_TRUE
         valid_accel,
         0.1f,
         true
-        )
+        ),
+    MAHONY_OK
     );
 
 TEST_ASSERT_TRUE
