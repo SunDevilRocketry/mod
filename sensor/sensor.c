@@ -46,6 +46,8 @@
 #include "sensor.h"
 #include "math_sdr.h"
 #include "mahony.h"
+#include "error_sdr.h"
+#include "debug_sdr.h"
 
 /*------------------------------------------------------------------------------
  Private Macros
@@ -380,13 +382,18 @@ mahony_tick = imu_velo_tick;
 
 sensor_reset_velo();
 
-(void)mahony_init
+MAHONY_STATUS mahony_status = mahony_init
     (
     &mahony_filter,
     initial_attitude,
     SENSOR_MAHONY_KP,
     SENSOR_MAHONY_KI
     );
+
+if ( mahony_status != MAHONY_OK )
+    {
+    error_fail_fast( ERROR_SENSOR_CMD_ERROR );
+    }
 
 } /* sensor_init */
 
@@ -521,13 +528,19 @@ accel_body_m_s2.z = imu_converted->accel_z;
 use_accel =
     get_fc_state() <= FC_STATE_LAUNCH_DETECT;
 
-(void)mahony_update_imu
+MAHONY_STATUS mahony_status = mahony_update_imu
     (
     &mahony_filter,
     gyro_body_rad_s,
     accel_body_m_s2,
     delta_time_s,
     use_accel
+    );
+
+debug_assert
+    (
+    mahony_status == MAHONY_OK,
+    ERROR_SENSOR_CMD_ERROR
     );
 
 /*
