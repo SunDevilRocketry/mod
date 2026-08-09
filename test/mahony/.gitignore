@@ -1,0 +1,6 @@
+build/
+coverage/
+results.txt
+*.gcda
+*.gcno
+*.gcov
