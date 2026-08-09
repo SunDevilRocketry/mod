@@ -537,11 +537,14 @@ MAHONY_STATUS mahony_status = mahony_update_imu
     use_accel
     );
 
-debug_assert
-    (
-    mahony_status == MAHONY_OK,
-    ERROR_SENSOR_CMD_ERROR
-    );
+if ( mahony_status != MAHONY_OK )
+    {
+    debug_assert
+        (
+        false,
+        ERROR_SENSOR_CMD_ERROR
+        );
+    }
 
 /*
  * Store the filter's body-to-world quaternion as the system attitude estimate.
