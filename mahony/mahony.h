@@ -41,6 +41,23 @@ typedef struct _VECTOR_3F
     } VECTOR_3F;
 
 /**
+ * @brief Mahony attitude filter status codes.
+ */
+typedef enum
+    {
+    MAHONY_OK = 0,              //success (SDR convention)
+    MAHONY_NULL_POINTER,        //filter == NULL
+    MAHONY_INVALID_QUATERNION,  //attitude contains NaN/Inf
+    MAHONY_NONFINITE_GAIN,      //Kp or Ki is NaN/Inf
+    MAHONY_NEGATIVE_GAIN,       //Kp or Ki is below zero
+    MAHONY_INVALID_GYRO,        //gyro contains NaN/Inf
+    MAHONY_INVALID_DELTA_TIME   //dt is NaN/Inf, zero, or negative
+    // no MAHONY_INVALID_ACCEL because Invalid acceleration is..
+    // deliberately treated as "don't use accel correction; continue gyro-only,"..
+    // not as a failed Mahony update.
+    } MAHONY_STATUS;
+
+/**
  * @brief State and gains for a Mahony attitude filter.
  */
 typedef struct _MAHONY_FILTER
@@ -72,9 +89,10 @@ typedef struct _MAHONY_FILTER
  * @param proportional_gain Proportional correction gain.
  * @param integral_gain Integral correction gain.
  *
- * @return true when initialization succeeds; otherwise false.
+ * @return MAHONY_OK when initialization succeeds; otherwise a Mahony status
+ *         code describing the failure.
  */
-bool mahony_init
+MAHONY_STATUS mahony_init
     (
     MAHONY_FILTER *filter,
     QUAT initial_attitude,
@@ -92,9 +110,10 @@ bool mahony_init
  * @param gyro_body_rad_s Body-frame angular velocity in radians per second.
  * @param delta_time_s Elapsed time in seconds.
  *
- * @return true when the attitude was updated; otherwise false.
+ * @return MAHONY_OK when initialization succeeds; otherwise a Mahony status
+        code describing the failure.
  */
-bool mahony_update_gyro
+MAHONY_STATUS mahony_update_gyro
     (
     MAHONY_FILTER *filter,
     VECTOR_3F gyro_body_rad_s,
@@ -119,10 +138,11 @@ bool mahony_update_gyro
  * @param delta_time_s Elapsed time in seconds.
  * @param use_accel Whether accelerometer feedback should be applied.
  *
- * @return true when the attitude was updated; otherwise false.
+ * @return MAHONY_OK when the attitude was updated; otherwise a Mahony status
+        code describing the failure.
  */
 
-bool mahony_update_imu
+MAHONY_STATUS mahony_update_imu
     (
     MAHONY_FILTER *filter,
     VECTOR_3F gyro_body_rad_s,
