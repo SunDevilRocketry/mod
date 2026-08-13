@@ -23,7 +23,7 @@
   [..]
   (+) Macros for common values, conversions, and utilities
   (+) CRC-32 checksum of data
-  (+) Quaternion arithmetic
+  (+) Quaternion operations
   ******************************************************************************
   @endverbatim
   */
@@ -115,13 +115,6 @@ uint32_t crc32
     (
     const uint8_t *data, 
     size_t len
-    );
-
-QUAT eul_to_quat
-    (
-    float yaw,
-    float pitch,
-    float roll
     );
 
 QUAT quat_mult

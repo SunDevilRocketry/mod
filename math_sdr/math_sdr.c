@@ -60,45 +60,6 @@ return ~crc;
 
 
 /**
-  * @brief Converts ZYX Euler angles to a quaternion.
-  *
-  * @note Angles must be provided in radians.
-  * @note The rotation order is ZYX (standard aerospace convention). 
-  * @todo The rotation sequence has not been validated yet.
-  *
-  * @param yaw   Rotation about the Z axis in radians.
-  * @param pitch Rotation about the Y axis in radians.
-  * @param roll  Rotation about the X axis in radians.
-  *
-  * @return The quaternion representing the rotation.
-  */
-QUAT eul_to_quat
-    (
-    float yaw,
-    float pitch,
-    float roll
-    )
-{
-float cos_yaw = cosf(yaw / 2.0f);
-float cos_pitch = cosf(pitch / 2.0f);
-float cos_roll = cosf(roll / 2.0f);
-
-float sin_yaw = sinf(yaw / 2.0f);
-float sin_pitch = sinf(pitch / 2.0f);
-float sin_roll = sinf(roll / 2.0f);
-
-QUAT q;
-q.w = cos_roll * cos_pitch * cos_yaw + sin_roll * sin_pitch * sin_yaw;
-q.x = sin_roll * cos_pitch * cos_yaw - cos_roll * sin_pitch * sin_yaw;
-q.y = cos_roll * sin_pitch * cos_yaw + sin_roll * cos_pitch * sin_yaw;
-q.z = cos_roll * cos_pitch * sin_yaw - sin_roll * sin_pitch * cos_yaw;
-
-return q;
-
-} /* eul_to_quat */
-
-
-/**
   * @brief Hamilton product of two quaternions.
   *
   * @note Quaternion multiplication is NOT commutative.
