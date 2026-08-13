@@ -84,26 +84,6 @@ static void sensor_conv_mag
 	IMU_RAW* imu_raw
 	);
 
-static QUAT quat_grav_attitude
-	(
-	float ax,
-	float ay,
-	float az,
-	QUAT attitude
-	);
-
-// ETS: Postponed
-// static void gravity_comp_filter
-// 	(
-// 	QUAT* gyro_attitude,
-// 	QUAT g_orientation
-// 	);
-
-static float quat_to_yaw
-	(
-	QUAT q
-	);
-
 
 /*------------------------------------------------------------------------------
  API Functions 
@@ -329,11 +309,10 @@ imu_velo_tick = get_us_tick();
 
 sensor_reset_velo();
 
-float ax = preset_data->imu_offset.accel_x;
-float ay = preset_data->imu_offset.accel_y;
-float az = preset_data->imu_offset.accel_z;
-
-attitude = quat_grav_attitude(ax, ay, az, attitude);
+// NA: deferred to Mahony filter
+// float ax = preset_data->imu_offset.accel_x;
+// float ay = preset_data->imu_offset.accel_y;
+// float az = preset_data->imu_offset.accel_z;
 
 } /* sensor_init */
 
@@ -453,11 +432,7 @@ QUAT rate_dt = quat_scale(q_rate, dt);
 attitude = quat_add(attitude, rate_dt);
 
 /* Sensor fuson with gravity if not in flight */
-if ( get_fc_state() <= FC_STATE_LAUNCH_DETECT )
-	{
-	// QUAT q_acc = quat_grav_attitude(ax, ay, az, attitude);
-	// gravity_comp_filter(&attitude, q_acc);
-	}
+// NA: sensor fusion deferred to Mahony filter
 
 /* Scale back to unit quaternion to avoid drift */
 attitude = quat_normalize(attitude);
@@ -708,80 +683,6 @@ HAL_NVIC_EnableIRQ( GPS_UART_IRQn );
 /*------------------------------------------------------------------------------
  Internal procedures 
 ------------------------------------------------------------------------------*/
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		gravity_comp_filter                                                    *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Fuses integrated gyroscope rotation data with gravity vector to        *
-*		compensate for drift according to the formula                          *
-*		attitude = alpha * gyro_attitude + (1 - alpha) * g_orientation         *
-*                                                                              *
-* NOTE:                                                                        *
-*       This type of sensor fusion is only valid when the vehicle is mostly    *
-*       static (e.g. prelaunch). Do not use this during flight when large       *
-*       accerations come from sources other than gravity.                      *
-*                                                                              *
-*******************************************************************************/
-// ETS: Postponed
-// static void gravity_comp_filter
-// 	(
-// 	QUAT* gyro_attitude,
-// 	QUAT g_orientation
-// 	)
-// {
-// QUAT comp_gyro = quat_scale(*gyro_attitude, COMP_ALPHA);
-// QUAT comp_acc = quat_scale(g_orientation, 1.0f - COMP_ALPHA);
-
-// *gyro_attitude = quat_add(comp_gyro, comp_acc);
-
-// }
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		quat_grav_attitude                                                     *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Computes quaternion attitude from static accelerometer data            *
-*       Experiences gimbal lock at pitch = +/- 90 degrees                      *
-*                                                                              *
-*******************************************************************************/
-static QUAT quat_grav_attitude
-	(
-	float ax,
-	float ay,
-	float az,
-	QUAT attitude
-	)
-{
-/* Compute pitch/roll from accelerometer */
-float grav_pitch = atan2f(ax, sqrtf(ay * ay + az * az));
-float grav_roll  = atan2f(ay, az);
-
-float yaw = quat_to_yaw(attitude);
-
-return eul_to_quat(yaw, grav_pitch, grav_roll);
-
-}
-
-/* Comment deferred until mod#132 
- Formula in https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles */
-static float quat_to_yaw
-	(
-	QUAT q
-	)
-{
-float y = 2.0f * (q.w * q.z + q.x * q.y);
-float x = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
-
-return atan2f(y, x);
-}
-
 
 #ifdef A0002_REV2
 /*******************************************************************************
