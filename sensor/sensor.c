@@ -46,6 +46,8 @@
 #include "sensor.h"
 #include "math_sdr.h"
 #include "mahony.h"
+#include "error_sdr.h"
+#include "debug_sdr.h"
 
 /*------------------------------------------------------------------------------
  Private Macros
@@ -88,7 +90,7 @@ float velo_z_prev = 0.0f;
 /*------------------------------------------------------------------------------
  Static Variables 
 ------------------------------------------------------------------------------*/
-static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
+static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
 
 /*
  * Persistent attitude filter state. This instance retains the quaternion and
@@ -121,13 +123,6 @@ static QUAT quat_grav_attitude
 	float az,
 	QUAT attitude
 	);
-
-// ETS: Postponed
-// static void gravity_comp_filter
-// 	(
-// 	QUAT* gyro_attitude,
-// 	QUAT g_orientation
-// 	);
 
 static float quat_to_yaw
 	(
@@ -249,6 +244,7 @@ SENSOR_STATUS sensor_dump
  Local Variables 
 ------------------------------------------------------------------------------*/
 SENSOR_STATUS parallel_status; 
+SENSOR_STATUS body_state_status;
 IMU_STATUS    imu_status;
 BARO_STATUS   baro_status;
 IMU_RAW       imu_raw;
@@ -256,9 +252,10 @@ IMU_RAW       imu_raw;
 /*------------------------------------------------------------------------------
  Initializations 
 ------------------------------------------------------------------------------*/
-parallel_status = SENSOR_OK;
-imu_status      = IMU_OK;
-baro_status     = BARO_OK;
+parallel_status 	= SENSOR_OK;
+body_state_status 	= SENSOR_OK;
+imu_status      	= IMU_OK;
+baro_status     	= BARO_OK;
 
 /* Poll Sensors  */
 
@@ -302,7 +299,7 @@ baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr-
 sensor_conv_imu( &(sensor_data_ptr->imu_converted), &imu_raw );
 
 /* Calculated to get body state */
-sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
+body_state_status = sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
 /* Calculated velocity and position */
 sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
@@ -326,6 +323,10 @@ if( imu_status != IMU_OK )
 	{
 	return SENSOR_IMU_FAIL;
 	}
+else if ( body_state_status != SENSOR_OK )
+    {
+    return body_state_status;
+    }
 else if ( baro_status != BARO_OK)
 	{
 	return SENSOR_BARO_ERROR;
@@ -355,7 +356,7 @@ void sensor_init
     PRESET_DATA* preset_data
     )
 {
-QUAT identity =
+const QUAT identity =
     {
     .w = 1.0f,
     .x = 0.0f,
@@ -380,13 +381,18 @@ mahony_tick = imu_velo_tick;
 
 sensor_reset_velo();
 
-(void)mahony_init
+MAHONY_STATUS mahony_status = mahony_init
     (
     &mahony_filter,
     initial_attitude,
     SENSOR_MAHONY_KP,
     SENSOR_MAHONY_KI
     );
+
+if ( mahony_status != MAHONY_OK )
+    {
+    error_fail_fast( ERROR_SENSOR_CMD_ERROR );
+    }
 
 } /* sensor_init */
 
@@ -464,7 +470,7 @@ mount_orientation = orientation;
 *                                                                              *
 *******************************************************************************/
 
-void sensor_body_state
+SENSOR_STATUS sensor_body_state
     (
     const IMU_CONVERTED* imu_converted,
     STATE_ESTIMATION* state_estimate
@@ -521,7 +527,7 @@ accel_body_m_s2.z = imu_converted->accel_z;
 use_accel =
     get_fc_state() <= FC_STATE_LAUNCH_DETECT;
 
-(void)mahony_update_imu
+MAHONY_STATUS mahony_status = mahony_update_imu
     (
     &mahony_filter,
     gyro_body_rad_s,
@@ -529,6 +535,11 @@ use_accel =
     delta_time_s,
     use_accel
     );
+
+if ( mahony_status != MAHONY_OK )
+    {
+    return SENSOR_IMU_FAIL;
+    }
 
 /*
  * Store the filter's body-to-world quaternion as the system attitude estimate.
@@ -539,6 +550,8 @@ state_estimate->attitude = mahony_filter.attitude;
  * Preserve the existing public roll-rate units of degrees per second.
  */
 state_estimate->roll_rate = imu_converted->gyro_x;
+
+return SENSOR_OK;
 
 } /* sensor_body_state */
 
@@ -624,7 +637,10 @@ void sensor_imu_velo
 {
 float velo_x, velo_y, velo_z, velocity;
 
-/* The world frame defines gravity in the +Z direction. */
+/*
+ * The world frame uses North-East-Down (NED) coordinates,
+ * so gravity points in the world-frame +Z direction.
+ */
 const QUAT gravity_world =
     {
     .w = 0.0f,
@@ -825,36 +841,6 @@ HAL_NVIC_EnableIRQ( GPS_UART_IRQn );
  Internal procedures 
 ------------------------------------------------------------------------------*/
 
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		gravity_comp_filter                                                    *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Fuses integrated gyroscope rotation data with gravity vector to        *
-*		compensate for drift according to the formula                          *
-*		attitude = alpha * gyro_attitude + (1 - alpha) * g_orientation         *
-*                                                                              *
-* NOTE:                                                                        *
-*       This type of sensor fusion is only valid when the vehicle is mostly    *
-*       static (e.g. prelaunch). Do not use this during flight when large       *
-*       accerations come from sources other than gravity.                      *
-*                                                                              *
-*******************************************************************************/
-// ETS: Postponed
-// static void gravity_comp_filter
-// 	(
-// 	QUAT* gyro_attitude,
-// 	QUAT g_orientation
-// 	)
-// {
-// QUAT comp_gyro = quat_scale(*gyro_attitude, COMP_ALPHA);
-// QUAT comp_acc = quat_scale(g_orientation, 1.0f - COMP_ALPHA);
-
-// *gyro_attitude = quat_add(comp_gyro, comp_acc);
-
-// }
 
 
 /*******************************************************************************

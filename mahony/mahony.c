@@ -52,10 +52,10 @@ static bool mahony_quat_is_finite
 {
 return
     (
-    isfinite(quaternion.w) &&
-    isfinite(quaternion.x) &&
-    isfinite(quaternion.y) &&
-    isfinite(quaternion.z)
+    isfinite(quaternion.w)
+    && isfinite(quaternion.x)
+    && isfinite(quaternion.y)
+    && isfinite(quaternion.z)
     );
 
 } /* mahony_quat_is_finite */
@@ -70,13 +70,16 @@ static bool mahony_vector_is_finite
 {
 return
     (
-    isfinite(vector.x) &&
-    isfinite(vector.y) &&
-    isfinite(vector.z)
+    isfinite(vector.x)
+    && isfinite(vector.y)
+    && isfinite(vector.z)
     );
 
 } /* mahony_vector_is_finite */
 
+/**
+ * @brief Calculates the magnitude of a three-dimensional vector.
+ */
 static float vector_magnitude
     (
     VECTOR_3F vector
@@ -91,6 +94,9 @@ return sqrtf
 
 } /* vector_magnitude */
 
+/**
+ * @brief Normalizes a three-dimensional vector in place.
+ */
 static bool vector_normalize
     (
     VECTOR_3F *vector
@@ -123,6 +129,9 @@ return true;
 
 } /* vector_normalize */
 
+/**
+ * @brief Clamps a floating-point value between minimum and maximum bounds.
+ */
 static float clamp_float
     (
     float value,
@@ -144,6 +153,9 @@ return value;
 
 } /* clamp_float */
 
+/**
+ * @brief Calculates the cross product of two three-dimensional vectors.
+ */
 static VECTOR_3F vector_cross
     (
     VECTOR_3F a,
@@ -161,6 +173,9 @@ return result;
 } /* vector_cross */
 
 
+/**
+ * @brief Adds two three-dimensional vectors.
+ */
 static VECTOR_3F vector_add
     (
     VECTOR_3F a,
@@ -178,6 +193,9 @@ return result;
 } /* vector_add */
 
 
+/**
+ * @brief Scales a three-dimensional vector by a scalar.
+ */
 static VECTOR_3F vector_scale
     (
     VECTOR_3F vector,
@@ -196,10 +214,9 @@ return result;
 
 
 /*------------------------------------------------------------------------------
- Public Functions
- ------------------------------------------------------------------------------*/
-
-bool mahony_init
+ * Public Functions
+ *----------------------------------------------------------------------------*/
+MAHONY_STATUS mahony_init
     (
     MAHONY_FILTER *filter,
     QUAT initial_attitude,
@@ -209,37 +226,34 @@ bool mahony_init
 {
 if ( filter == NULL )
     {
-    return false;
+    return MAHONY_NULL_POINTER;
     }
 
 if ( !mahony_quat_is_finite(initial_attitude) )
     {
-    return false;
+    return MAHONY_INVALID_QUATERNION;
     }
 
-if ( !isfinite(proportional_gain) ||
-     !isfinite(integral_gain) )
+if ( !isfinite(proportional_gain)
+     || !isfinite(integral_gain) )
     {
-    return false;
+    return MAHONY_NONFINITE_GAIN;
     }
 
-if ( proportional_gain < 0.0f ||
-     integral_gain < 0.0f )
+if ( proportional_gain < 0.0f
+     || integral_gain < 0.0f )
     {
-    return false;
+    return MAHONY_NEGATIVE_GAIN;
     }
 
 filter->attitude = quat_normalize(initial_attitude);
-
 filter->integral_error.x = 0.0f;
 filter->integral_error.y = 0.0f;
 filter->integral_error.z = 0.0f;
-
 filter->proportional_gain = proportional_gain;
 filter->integral_gain = integral_gain;
 
-return true;
-
+return MAHONY_OK;
 } /* mahony_init */
 
 /*
@@ -250,7 +264,7 @@ return true;
  * timestep, add it to the current attitude, and normalize the result.
  */
 
-bool mahony_update_gyro
+MAHONY_STATUS mahony_update_gyro
     (
     MAHONY_FILTER *filter,
     VECTOR_3F gyro_body_rad_s,
@@ -263,30 +277,30 @@ QUAT attitude_delta;
 
 if ( filter == NULL )
     {
-    return false;
+    return MAHONY_NULL_POINTER;
     }
 
 if ( !mahony_quat_is_finite(filter->attitude) )
     {
-    return false;
+    return MAHONY_INVALID_QUATERNION;
     }
 
 if ( !mahony_vector_is_finite(gyro_body_rad_s) )
     {
-    return false;
+    return MAHONY_INVALID_GYRO;
     }
 
-if ( !isfinite(delta_time_s) ||
-     delta_time_s <= 0.0f )
+if ( !isfinite(delta_time_s)
+     || delta_time_s <= 0.0f )
     {
-    return false;
+    return MAHONY_INVALID_DELTA_TIME;
     }
 
 /*
- * The attitude quaternion is a body-to-world rotation and angular velocity is
- * expressed in the body frame:
+ * The attitude quaternion is a body-to-world rotation and angular velocity
+ * is expressed in the body frame:
  *
- *     q_dot = 0.5 * q * omega_body
+ * q_dot = 0.5 * q * omega_body
  */
 angular_velocity.w = 0.0f;
 angular_velocity.x = gyro_body_rad_s.x;
@@ -319,11 +333,11 @@ filter->attitude = quat_add
 
 filter->attitude = quat_normalize(filter->attitude);
 
-return true;
+return MAHONY_OK;
 
 } /* mahony_update_gyro */
 
-bool mahony_update_imu
+MAHONY_STATUS mahony_update_imu
     (
     MAHONY_FILTER *filter,
     VECTOR_3F gyro_body_rad_s,
@@ -347,31 +361,31 @@ bool apply_accel;
 
 if ( filter == NULL )
     {
-    return false;
+    return MAHONY_NULL_POINTER;
     }
 
 if ( !mahony_vector_is_finite(gyro_body_rad_s) )
     {
-    return false;
+    return MAHONY_INVALID_GYRO;
     }
 
-if ( !isfinite(delta_time_s) ||
-     delta_time_s <= 0.0f )
+if ( !isfinite(delta_time_s)
+     || delta_time_s <= 0.0f )
     {
-    return false;
+    return MAHONY_INVALID_DELTA_TIME;
     }
 
 accel_magnitude = vector_magnitude(accel_body);
 
 accel_valid =
-    mahony_vector_is_finite(accel_body) &&
-    isfinite(accel_magnitude) &&
-    accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE &&
-    accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
+    mahony_vector_is_finite(accel_body)
+    && isfinite(accel_magnitude)
+    && accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE
+    && accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
 
 apply_accel =
-    use_accel &&
-    accel_valid;
+    use_accel
+    && accel_valid;
 
 gyro_corrected = gyro_body_rad_s;
 
