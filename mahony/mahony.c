@@ -52,10 +52,10 @@ static bool mahony_quat_is_finite
 {
 return
     (
-    isfinite(quaternion.w) &&
-    isfinite(quaternion.x) &&
-    isfinite(quaternion.y) &&
-    isfinite(quaternion.z)
+    isfinite(quaternion.w)
+    && isfinite(quaternion.x)
+    && isfinite(quaternion.y)
+    && isfinite(quaternion.z)
     );
 
 } /* mahony_quat_is_finite */
@@ -70,9 +70,9 @@ static bool mahony_vector_is_finite
 {
 return
     (
-    isfinite(vector.x) &&
-    isfinite(vector.y) &&
-    isfinite(vector.z)
+    isfinite(vector.x)
+    && isfinite(vector.y)
+    && isfinite(vector.z)
     );
 
 } /* mahony_vector_is_finite */
@@ -216,14 +216,14 @@ if ( !mahony_quat_is_finite(initial_attitude) )
     return MAHONY_INVALID_QUATERNION;
     }
 
-if ( !isfinite(proportional_gain) ||
-     !isfinite(integral_gain) )
+if ( !isfinite(proportional_gain)
+     || !isfinite(integral_gain) )
     {
     return MAHONY_NONFINITE_GAIN;
     }
 
-if ( proportional_gain < 0.0f ||
-     integral_gain < 0.0f )
+if ( proportional_gain < 0.0f
+     || integral_gain < 0.0f )
     {
     return MAHONY_NEGATIVE_GAIN;
     }
@@ -272,8 +272,8 @@ if ( !mahony_vector_is_finite(gyro_body_rad_s) )
     return MAHONY_INVALID_GYRO;
     }
 
-if ( !isfinite(delta_time_s) ||
-     delta_time_s <= 0.0f )
+if ( !isfinite(delta_time_s)
+     || delta_time_s <= 0.0f )
     {
     return MAHONY_INVALID_DELTA_TIME;
     }
@@ -351,8 +351,8 @@ if ( !mahony_vector_is_finite(gyro_body_rad_s) )
     return MAHONY_INVALID_GYRO;
     }
 
-if ( !isfinite(delta_time_s) ||
-     delta_time_s <= 0.0f )
+if ( !isfinite(delta_time_s)
+     || delta_time_s <= 0.0f )
     {
     return MAHONY_INVALID_DELTA_TIME;
     }
@@ -360,14 +360,14 @@ if ( !isfinite(delta_time_s) ||
 accel_magnitude = vector_magnitude(accel_body);
 
 accel_valid =
-    mahony_vector_is_finite(accel_body) &&
-    isfinite(accel_magnitude) &&
-    accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE &&
-    accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
+    mahony_vector_is_finite(accel_body)
+    && isfinite(accel_magnitude)
+    && accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE
+    && accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
 
 apply_accel =
-    use_accel &&
-    accel_valid;
+    use_accel
+    && accel_valid;
 
 gyro_corrected = gyro_body_rad_s;
 
