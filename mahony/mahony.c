@@ -234,7 +234,7 @@ if ( !vector_is_finite(gyro_body_rad_s) )
     }
 
 if ( !isfinite(delta_time_s)
-    || delta_time_s <= 0.0f )
+     || delta_time_s <= 0.0f )
     {
     return MAHONY_INVALID_DELTA_TIME;
     }
