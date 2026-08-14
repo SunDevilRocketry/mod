@@ -675,9 +675,9 @@ predicted_attitude = quat_normalize(predicted_attitude);
  * partly along another axis after rotation.
  *
  * Constructs:
- *   -[ω]× * Δt = [     0     -ω_z*Δt   ω_y*Δt ]
- *                [  ω_z*Δt      0     -ω_x*Δt ]
- *                [ -ω_y*Δt   ω_x*Δt      0    ]
+ *   -[ω]× * Δt = [     0      ω_z*Δt  -ω_y*Δt ]
+ *                [ -ω_z*Δt      0       ω_x*Δt ]
+ *                [  ω_y*Δt  -ω_x*Δt      0    ]
  */
 for ( row = 0U; row < MEKF_ERROR_STATE_DIM; row++ )
     {
