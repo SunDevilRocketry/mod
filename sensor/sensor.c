@@ -90,7 +90,7 @@ float velo_z_prev = 0.0f;
 /*------------------------------------------------------------------------------
  Static Variables 
 ------------------------------------------------------------------------------*/
-static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
+static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
 
 /*
  * Persistent attitude filter state. This instance retains the quaternion and
@@ -114,6 +114,19 @@ static void sensor_conv_mag
 	(
 	IMU_CONVERTED* imu_converted, 
 	IMU_RAW* imu_raw
+	);
+
+static QUAT quat_grav_attitude
+	(
+	float ax,
+	float ay,
+	float az,
+	QUAT attitude
+	);
+
+static float quat_to_yaw
+	(
+	QUAT q
 	);
 
 
@@ -823,6 +836,50 @@ HAL_NVIC_EnableIRQ( GPS_UART_IRQn );
 /*------------------------------------------------------------------------------
  Internal procedures 
 ------------------------------------------------------------------------------*/
+
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		quat_grav_attitude                                                     *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Computes quaternion attitude from static accelerometer data            *
+*       Experiences gimbal lock at pitch = +/- 90 degrees                      *
+*                                                                              *
+*******************************************************************************/
+static QUAT quat_grav_attitude
+	(
+	float ax,
+	float ay,
+	float az,
+	QUAT attitude
+	)
+{
+/* Compute pitch/roll from accelerometer */
+float grav_pitch = atan2f(ax, sqrtf(ay * ay + az * az));
+float grav_roll  = atan2f(ay, az);
+
+float yaw = quat_to_yaw(attitude);
+
+return eul_to_quat(yaw, grav_pitch, grav_roll);
+
+}
+
+/* Comment deferred until mod#132 
+ Formula in https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles */
+static float quat_to_yaw
+	(
+	QUAT q
+	)
+{
+float y = 2.0f * (q.w * q.z + q.x * q.y);
+float x = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
+
+return atan2f(y, x);
+}
+
 
 #ifdef A0002_REV2
 /*******************************************************************************
