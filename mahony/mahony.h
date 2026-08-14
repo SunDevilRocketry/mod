@@ -31,16 +31,6 @@ extern "C"
  ------------------------------------------------------------------------------*/
 
 /**
- * @brief Three-dimensional floating-point vector.
- */
-typedef struct _VECTOR_3F
-    {
-    float x;
-    float y;
-    float z;
-    } VECTOR_3F;
-
-/**
  * @brief Mahony attitude filter status codes.
  */
 typedef enum

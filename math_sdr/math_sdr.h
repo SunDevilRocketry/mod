@@ -57,6 +57,15 @@ typedef struct _QUAT
 	float w, x, y, z;
 	} QUAT;
 
+/**
+ * @brief Three-dimensional floating-point vector.
+ */
+typedef struct _VECTOR_3F
+    {
+    float x;
+    float y;
+    float z;
+    } VECTOR_3F;
 
 /*------------------------------------------------------------------------------
  Macros
