@@ -77,6 +77,9 @@ return
 
 } /* mahony_vector_is_finite */
 
+/**
+ * @brief Calculates the magnitude of a three-dimensional vector.
+ */
 static float vector_magnitude
     (
     VECTOR_3F vector
@@ -91,6 +94,9 @@ return sqrtf
 
 } /* vector_magnitude */
 
+/**
+ * @brief Normalizes a three-dimensional vector in place.
+ */
 static bool vector_normalize
     (
     VECTOR_3F *vector
@@ -123,6 +129,9 @@ return true;
 
 } /* vector_normalize */
 
+/**
+ * @brief Clamps a floating-point value between minimum and maximum bounds.
+ */
 static float clamp_float
     (
     float value,
@@ -144,6 +153,9 @@ return value;
 
 } /* clamp_float */
 
+/**
+ * @brief Calculates the cross product of two three-dimensional vectors.
+ */
 static VECTOR_3F vector_cross
     (
     VECTOR_3F a,
@@ -161,6 +173,9 @@ return result;
 } /* vector_cross */
 
 
+/**
+ * @brief Adds two three-dimensional vectors.
+ */
 static VECTOR_3F vector_add
     (
     VECTOR_3F a,
@@ -178,6 +193,9 @@ return result;
 } /* vector_add */
 
 
+/**
+ * @brief Scales a three-dimensional vector by a scalar.
+ */
 static VECTOR_3F vector_scale
     (
     VECTOR_3F vector,
