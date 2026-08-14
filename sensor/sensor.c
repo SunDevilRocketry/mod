@@ -356,7 +356,7 @@ void sensor_init
     PRESET_DATA* preset_data
     )
 {
-QUAT identity =
+const QUAT identity =
     {
     .w = 1.0f,
     .x = 0.0f,
