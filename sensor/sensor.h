@@ -176,7 +176,7 @@ void sensor_reset_velo
 	);
 
 /* Perform sensor fusion on imu converted data to get body rate */
-void sensor_body_state
+SENSOR_STATUS sensor_body_state
 	(
 	const IMU_CONVERTED* imu_converted,
 	STATE_ESTIMATION* state_estimate
