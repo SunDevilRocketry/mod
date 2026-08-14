@@ -230,7 +230,7 @@ void sensor_reset_velo
   * @param imu_converted Converted IMU data.
   * @param state_estimate State estimate to update.
   */
-void sensor_body_state
+SENSOR_STATUS sensor_body_state
 	(
 	const IMU_CONVERTED* imu_converted,
 	STATE_ESTIMATION* state_estimate

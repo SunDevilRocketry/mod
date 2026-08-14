@@ -255,6 +255,7 @@ SENSOR_STATUS sensor_dump
  Local Variables 
 ------------------------------------------------------------------------------*/
 SENSOR_STATUS parallel_status; 
+SENSOR_STATUS body_state_status;
 IMU_STATUS    imu_status;
 BARO_STATUS   baro_status;
 IMU_RAW       imu_raw;
@@ -262,9 +263,10 @@ IMU_RAW       imu_raw;
 /*------------------------------------------------------------------------------
  Initializations 
 ------------------------------------------------------------------------------*/
-parallel_status = SENSOR_OK;
-imu_status      = IMU_OK;
-baro_status     = BARO_OK;
+parallel_status 	= SENSOR_OK;
+body_state_status 	= SENSOR_OK;
+imu_status      	= IMU_OK;
+baro_status     	= BARO_OK;
 
 /* Poll Sensors  */
 
@@ -308,7 +310,7 @@ baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr-
 sensor_conv_imu( &(sensor_data_ptr->imu_converted), &imu_raw );
 
 /* Calculated to get body state */
-sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
+body_state_status = sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
 /* Calculated velocity and position */
 sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
@@ -335,6 +337,10 @@ if( imu_status != IMU_OK )
 	{
 	return SENSOR_IMU_FAIL;
 	}
+else if ( body_state_status != SENSOR_OK )
+    {
+    return body_state_status;
+    }
 else if ( baro_status != BARO_OK)
 	{
 	return SENSOR_BARO_ERROR;
@@ -480,7 +486,7 @@ static uint32_t last_tick = 0;
   * @param imu_converted Converted IMU data.
   * @param state_estimate State estimate to update.
   */
-void sensor_body_state
+SENSOR_STATUS sensor_body_state
     (
     const IMU_CONVERTED* imu_converted,
     STATE_ESTIMATION* state_estimate
@@ -548,11 +554,7 @@ MAHONY_STATUS mahony_status = mahony_update_imu
 
 if ( mahony_status != MAHONY_OK )
     {
-    debug_assert
-        (
-        false,
-        ERROR_SENSOR_CMD_ERROR
-        );
+    return SENSOR_IMU_FAIL;
     }
 
 /*
@@ -564,6 +566,8 @@ state_estimate->attitude = mahony_filter.attitude;
  * Preserve the existing public roll-rate units of degrees per second.
  */
 state_estimate->roll_rate = imu_converted->gyro_x;
+
+return SENSOR_OK;
 
 } /* sensor_body_state */
 
