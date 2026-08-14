@@ -90,7 +90,7 @@ float velo_z_prev = 0.0f;
 /*------------------------------------------------------------------------------
  Static Variables 
 ------------------------------------------------------------------------------*/
-static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
+static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
 
 /*
  * Persistent attitude filter state. This instance retains the quaternion and
@@ -123,13 +123,6 @@ static QUAT quat_grav_attitude
 	float az,
 	QUAT attitude
 	);
-
-// ETS: Postponed
-// static void gravity_comp_filter
-// 	(
-// 	QUAT* gyro_attitude,
-// 	QUAT g_orientation
-// 	);
 
 static float quat_to_yaw
 	(
@@ -844,36 +837,6 @@ HAL_NVIC_EnableIRQ( GPS_UART_IRQn );
  Internal procedures 
 ------------------------------------------------------------------------------*/
 
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		gravity_comp_filter                                                    *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Fuses integrated gyroscope rotation data with gravity vector to        *
-*		compensate for drift according to the formula                          *
-*		attitude = alpha * gyro_attitude + (1 - alpha) * g_orientation         *
-*                                                                              *
-* NOTE:                                                                        *
-*       This type of sensor fusion is only valid when the vehicle is mostly    *
-*       static (e.g. prelaunch). Do not use this during flight when large       *
-*       accerations come from sources other than gravity.                      *
-*                                                                              *
-*******************************************************************************/
-// ETS: Postponed
-// static void gravity_comp_filter
-// 	(
-// 	QUAT* gyro_attitude,
-// 	QUAT g_orientation
-// 	)
-// {
-// QUAT comp_gyro = quat_scale(*gyro_attitude, COMP_ALPHA);
-// QUAT comp_acc = quat_scale(g_orientation, 1.0f - COMP_ALPHA);
-
-// *gyro_attitude = quat_add(comp_gyro, comp_acc);
-
-// }
 
 
 /*******************************************************************************

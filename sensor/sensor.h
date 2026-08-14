@@ -60,7 +60,6 @@ typedef struct _PRESET_DATA PRESET_DATA; /* From main.h */
 /* General */
 #define NUM_SENSORS         ( 38   )
 #define SENSOR_DATA_SIZE	( 128   )
-#define COMP_ALPHA 			( 0.98f ) /* Used in sensor fusion */
 
 
 /*------------------------------------------------------------------------------
@@ -90,8 +89,8 @@ typedef enum
 /* Mount configuration of FC */
 typedef enum 
 	{
-	MOUNT_ORIENTATION_IMU_INVERTED = -1,
-	MOUNT_ORIENTATION_IMU_NORMAL   = 1
+    MOUNT_ORIENTATION_IMU_INVERTED = -1, /* Antenna pointing up   */
+    MOUNT_ORIENTATION_IMU_NORMAL   = 1   /* Antenna pointing down */
 	} MOUNT_ORIENTATION;
 
 /* State estimation from processed sensors */
