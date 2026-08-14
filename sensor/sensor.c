@@ -95,7 +95,7 @@ QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
 /*------------------------------------------------------------------------------
  Static Variables 
 ------------------------------------------------------------------------------*/
-static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_INVERTED; /* Default assumption: antennta pointing up */
+static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
 
 /*
  * Persistent attitude filter state. This instance retains the quaternion and
@@ -848,7 +848,6 @@ float x = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
 
 return atan2f(y, x);
 }
-
 
 #ifdef A0002_REV2
 
