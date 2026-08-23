@@ -94,6 +94,23 @@ typedef enum
 	MOUNT_ORIENTATION_IMU_NORMAL   = 1 		/* Antenna pointing down */
 	} MOUNT_ORIENTATION;
 
+/** @brief Physical-unit converted accel/gyro/mag data 
+ *
+ *  @note Migrated from imu.h/imu_legacy.h to avoid recursive include issues
+ */
+typedef struct _IMU_CONVERTED 
+    {
+    float accel_x;
+    float accel_y;
+    float accel_z;
+    float gyro_x ;
+    float gyro_y ;
+    float gyro_z ;
+    float mag_x ;
+    float mag_y ;
+    float mag_z ;
+    } IMU_CONVERTED;
+
 /* State estimation from processed sensors */
 typedef struct _STATE_ESTIMATION {
     QUAT attitude;
@@ -103,6 +120,13 @@ typedef struct _STATE_ESTIMATION {
     float velo_y;
     float velo_z;     
 } STATE_ESTIMATION;
+
+/** @brief Aggregate struct containing converted IMU data and state estimate */
+typedef struct _IMU_DATA 
+    {
+    IMU_CONVERTED imu_converted;
+    STATE_ESTIMATION state_estimate;
+    } IMU_DATA;
 
 /* Sensor Data */
 typedef struct SENSOR_DATA 
