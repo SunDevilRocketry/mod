@@ -9,11 +9,24 @@ the children if this is the parent. Do not use "closes" keywords on child PRs, o
 the parent.
 
 ### Testing
-- [ ] Passes existing unit tests
-- [ ] Unit tests modified (link the test changes as a child PR)
-- [ ] Integration test performed
+- [ ] Passes existing automated tests
+- [ ] Automated tests modified
+- [ ] Manual test performed
 
-Attach any test artifacts here, if relevant.
+Include any relevant test artifacts here.
+
+### AI Disclosure (Required)
+- [ ] Was an AI agent used to synthesize a significant portion of the submitted code?
+- [ ] Do you understand that you are responsible for your contributions, regardless of whether they are generated or hand-written?
+
+Scope of AI assistance:<br>
+<ex: Used to generate an inverse function for magnetometer calibration>
+
+Please consider disclosing the specific tools you used (this part is optional):
+- Model: <Model (i.e. ChatGPT 5.6 Sol)>
+  - Thinking Level (if applicable):
+  - Context Size (if applicable):
+- Harness: <Harness (i.e. GitHub Copilot)>
 
 ### Other
 Leave any additional notes here
@@ -28,18 +41,25 @@ Leave any additional notes here
 - [ ] Code is readable and commented properly
 - [ ] License terms are respected
 
+### Accuracy
+- [ ] Code implements the correct requirement (a.k.a. does the right thing)
+- [ ] Code is logically correct (a.k.a. does the thing right)
+
 ### Error Handling
 - [ ] Potentially unsafe functions return a status code
 - [ ] Error returns properly handled
+- [ ] Fail-fast errors are only thrown when unsafe to continue software execution
+- [ ] Debug errors are thrown for exceptions where execution should still continue (to be noticed during development)
 
 ### Memory
 - [ ] Stack allocated memory is scoped correctly
-- [ ] Heap allocated memory is avoided
-- [ ] Globally allocated memory is minimized except when necessary
+- [ ] Heap allocated memory is not used
+- [ ] Statically/Globally allocated memory is minimized except when necessary
 - [ ] Pointers are used correctly
-- [ ] Concurrency has been considered
+- [ ] Concurrent access has been considered (especially by/from interrupt service routines)
 
 ### Performance
 - [ ] Rate limiters are respected
-- [ ] Busy waiting is avoided
+- [ ] Busy waiting is avoided in performance sensitive code
 - [ ] "Delay" calls are not used in performance sensitive code
+- [ ] If performance is negatively impacted, a justification is provided and the impact is quantified
