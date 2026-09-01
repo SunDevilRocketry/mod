@@ -54,6 +54,12 @@ static void telemetry_build_msg_vehicle_id
     );
 
 
+static void telemetry_build_msg_calibration
+    (
+    TELEMETRY_MESSAGE* msg_buf
+    );
+
+
 static void telemetry_build_msg_dashboard_dump
     (
     TELEMETRY_MESSAGE* msg_buf
@@ -85,10 +91,15 @@ void telemetry_get_next_message
 TELEMETRY_MESSAGE_TYPES msg_type;
 
 /* Determine which payload to send */
-if( ( message_idx % 2 == 0 )
+if( ( message_idx % 3 == 0 )
     && ( get_fc_state() == FC_STATE_LAUNCH_DETECT ) )
     {
     msg_type = TELEMETRY_MSG_VEHICLE_ID;
+    }
+else if( ( message_idx % 3 == 1 )
+    && ( get_fc_state() == FC_STATE_LAUNCH_DETECT ) )
+    {
+    msg_type = TELEMETRY_MSG_CALIBRATION;
     }
 else
     {
@@ -135,6 +146,11 @@ switch( message_type )
     case TELEMETRY_MSG_DASHBOARD_DATA:
         {
         telemetry_build_msg_dashboard_dump(msg_buf);
+        break;
+        }
+    case TELEMETRY_MSG_CALIBRATION:
+        {
+        telemetry_build_msg_calibration(msg_buf);
         break;
         }
     default:
@@ -193,6 +209,46 @@ msg_buf->payload.vehicle_id.version |= ( VERSION_PRERELEASE_NUMBER );
 strncpy( msg_buf->payload.vehicle_id.flight_id, "AVIONICS_TEST", 16 );
 
 } /* telemetry_build_msg_vehicle_id */
+
+
+/*********************************************************************************
+*                                                                                *
+* FUNCTION:                                                                      * 
+* 		telemetry_build_msg_calibration                                          *
+*                                                                                *
+* DESCRIPTION:                                                                   * 
+* 		Build the calibration payload. Assume header is filled by caller.        *
+*                                                                                *
+*********************************************************************************/
+static void telemetry_build_msg_calibration
+    (
+    TELEMETRY_MESSAGE* msg_buf
+    )
+{
+/*------------------------------------------------------------------------------ 
+ Local Variables                                    
+------------------------------------------------------------------------------*/
+SENSOR_DATA qfe_sensor_data;
+
+memset( &qfe_sensor_data, 0, sizeof( SENSOR_DATA ) );
+
+/*------------------------------------------------------------------------------ 
+ Construct known elements from preset data                                      
+------------------------------------------------------------------------------*/
+msg_buf->payload.calibration.imu_offset = preset_data.imu_offset;
+msg_buf->payload.calibration.baro_preset = preset_data.baro_preset;
+msg_buf->payload.calibration.servo_preset = preset_data.servo_preset;
+
+/*------------------------------------------------------------------------------ 
+ Determine QFE reference elevation
+------------------------------------------------------------------------------*/
+qfe_sensor_data.baro_pressure = preset_data.baro_preset.baro_pres;
+qfe_sensor_data.baro_temp = preset_data.baro_preset.baro_temp;
+sensor_baro_alt( &qfe_sensor_data );
+
+msg_buf->payload.calibration.qfe_elevation = qfe_sensor_data.baro_alt;
+
+} /* telemetry_build_msg_calibration */
 
 
 /*********************************************************************************

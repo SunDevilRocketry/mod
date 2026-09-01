@@ -75,6 +75,7 @@ typedef enum _TELEMETRY_MESSAGE_TYPES
     {
     TELEMETRY_MSG_VEHICLE_ID = 0x00000001,
     TELEMETRY_MSG_DASHBOARD_DATA = 0x00000002,
+    TELEMETRY_MSG_CALIBRATION = 0x00000003,
     __TELEMETRY_MSG_FORCE_32BIT = 0xFFFFFFFF /* used to force this type size to 32 bits */
     } TELEMETRY_MESSAGE_TYPES;
     _Static_assert( sizeof(TELEMETRY_MESSAGE_TYPES) == 4, "TELEMETRY_MESSAGE_TYPES size invalid.");
@@ -115,6 +116,15 @@ typedef struct __attribute__((packed)) _TELEMETRY_MSG_DASHBOARD_DUMP_TYPE
     } TELEMETRY_MSG_DASHBOARD_DUMP_TYPE;
     _Static_assert( sizeof(TELEMETRY_MSG_DASHBOARD_DUMP_TYPE) == LORA_PAYLOAD_SIZE, "TELEMETRY_MSG_DASHBOARD_DUMP_TYPE size invalid.");
 
+typedef struct __attribute__((packed)) _TELEMETRY_MSG_CALIBRATION_TYPE
+    {
+    IMU_OFFSET imu_offset;
+    BARO_PRESET baro_preset;
+    float       qfe_elevation;
+    SERVO_PRESET servo_preset;
+    } TELEMETRY_MSG_CALIBRATION_TYPE;
+    _Static_assert( sizeof(TELEMETRY_MSG_CALIBRATION_TYPE) == LORA_PAYLOAD_SIZE, "TELEMETRY_MSG_CALIBRATION size invalid." );
+
 /* struct is packed to inhibit padding */
 typedef struct __attribute__((packed)) _TELEMETRY_MESSAGE
 	{
@@ -123,6 +133,7 @@ typedef struct __attribute__((packed)) _TELEMETRY_MESSAGE
         {
         TELEMETRY_MSG_VEHICLE_ID_TYPE vehicle_id; /* provide information about the transmitting device */
         TELEMETRY_MSG_DASHBOARD_DUMP_TYPE dashboard_dump; /* gives vehicle state info (location, orientation) */
+        TELEMETRY_MSG_CALIBRATION_TYPE calibration;
         } payload;
 	} TELEMETRY_MESSAGE;
 	_Static_assert( sizeof(TELEMETRY_MESSAGE) == TELEMETRY_MESSAGE_SIZE, "LORA_PAYLOAD size invalid.");
