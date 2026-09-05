@@ -462,8 +462,8 @@ void sensor_axis_remap
 	)
 {
 *x *= mount_orientation;
-*y *= mount_orientation; /* flip y too to maintain right-handedness */
-(void)z; /* Points down when FC is horizontal */
+(void)y;
+*z *= mount_orientation;
 }
 
 
