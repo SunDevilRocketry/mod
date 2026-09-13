@@ -33,6 +33,7 @@
 #include "math_sdr.h"
 #include "commands.h"
 #include "error_sdr.h"
+#include "debug_sdr.h"
 #include "telemetry.h"
 #include "lora.h"
 
@@ -155,7 +156,17 @@ switch( message_type )
         }
     default:
         {
-        error_fail_fast( ERROR_RECORD_FLIGHT_EVENTS_ERROR );
+        /** In order to support projects with safety critical 
+         * requirements, mod does not throw fail-fast errors.
+         *
+         * Thus, this should nop on release builds.
+         * 
+         * This ensures that the library will only fail fast in
+         * the event of a hardfault and enables it to offload
+         * FHA requirements to the project that integrates it,
+         * if needed.
+         */
+        debug_assert( false, ERROR_RECORD_FLIGHT_EVENTS_ERROR );
         break;
         }
     }
