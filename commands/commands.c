@@ -1,23 +1,22 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		commands.c
-*
-* DESCRIPTION: 
-* 		Contains general command functions common to all embedded controllers
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : commands.c
+  * @brief          : Contains general command functions common to all embedded controllers
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE
+  * file in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 
 /*------------------------------------------------------------------------------
@@ -44,16 +43,10 @@ extern SENSOR_DATA sensor_data;
 ------------------------------------------------------------------------------*/
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		ping                                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Sends a 1 byte response back to host PC to signal a functioning        * 
-*       serial connection                                                      *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Sends a 1 byte response back to host PC to signal a functioning
+  * serial connection
+  */
 void ping
     (
     void
@@ -78,15 +71,11 @@ usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
 
 
 #ifdef A0002_REV2
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		dashboard_dump                                                         *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Sends the data required by the dashboard.                              *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Sends the data required by the dashboard.
+  *
+  * @return USB transmission status.
+  */
 USB_STATUS dashboard_dump
     (
     void
@@ -113,15 +102,12 @@ return usb_transmit( &buffer,
 } /* dashboard_dump */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		dashboard_construct_dump                                               *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Fill the buffer with the dashboard dump.                               *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Fill the buffer with the dashboard dump.
+  *
+  * @param dump_buffer_ptr Pointer to the dashboard dump buffer. Must be
+  *        DASHBOARD_DUMP_SIZE.
+  */
 void dashboard_construct_dump
     (
     DASHBOARD_DUMP_TYPE* dump_buffer_ptr /* must be DASHBOARD_DUMP_SIZE */

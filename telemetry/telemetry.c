@@ -1,23 +1,22 @@
-/*******************************************************************************
-*                                                                              *
-* FILE:                                                                        * 
-* 		telemetry.c                                                            *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Module for LoRa (wireless) communication.                              *
-*                                                                              *
-* COPYRIGHT:                                                                   *
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 *
-*       All rights reserved.                                                   *
-*                                                                              *
-*       This software is licensed under terms that can be found in the LICENSE *
-*       file in the root directory of this software component.                 *
-*       If no LICENSE file comes with this software, it is covered under the   *
-*       BSD-3-Clause.                                                          *
-*                                                                              *
-*       https://opensource.org/license/bsd-3-clause                            *
-*                                                                              *
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : telemetry.c
+  * @brief          : Module for LoRa (wireless) communication.
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE
+  * file in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 /*------------------------------------------------------------------------------ 
  Standard Includes                                                                     
@@ -70,20 +69,10 @@ static void telemetry_build_msg_dashboard_dump
  Public APIs                                                                    
 ------------------------------------------------------------------------------*/
 
-
-/*********************************************************************************
-*                                                                                *
-* FUNCTION:                                                                      * 
-* 		telemetry_get_next_message                                               *
-*                                                                                *
-* DESCRIPTION:                                                                   * 
-* 		Construct a new telemetry message.                                       *
-*                                                                                *
-* NOTE:                                                                          *
-*       Future implementations might benefit from contracting this function so   *
-*       each app can decide. For now (and for simplicity) we will choose.        *
-*                                                                                *
-*********************************************************************************/
+/**
+  * @brief Selects and constructs the next scheduled telemetry message.
+  * @param payload Telemetry message buffer to fill.
+  */
 void telemetry_get_next_message
     (
     TELEMETRY_MESSAGE* payload /* o: constructed telemetry message */
@@ -112,15 +101,11 @@ message_idx++;
 } /* telemetry_get_next_message */
 
 
-/*********************************************************************************
-*                                                                                *
-* FUNCTION:                                                                      * 
-* 		telemetry_build_payload                                                  *
-*                                                                                *
-* DESCRIPTION:                                                                   * 
-* 		Builds a LoRa payload.                                                   *
-*                                                                                *
-*********************************************************************************/
+/**
+  * @brief Builds the requested telemetry payload and fills its message header.
+  * @param msg_buf Telemetry message buffer to fill.
+  * @param message_type Type of telemetry message to build.
+  */
 void telemetry_build_payload
     (
     TELEMETRY_MESSAGE*       msg_buf,      /* o: buffer passed by caller        */
@@ -157,15 +142,14 @@ switch( message_type )
     default:
         {
         /** In order to support projects with safety critical 
-         * requirements, mod does not throw fail-fast errors.
-         *
-         * Thus, this should nop on release builds.
-         * 
-         * This ensures that the library will only fail fast in
-         * the event of a hardfault and enables it to offload
-         * FHA requirements to the project that integrates it,
-         * if needed.
-         */
+          * requirements, mod does not throw fail-fast errors.
+          * Thus, this should nop on release builds.
+          * 
+          * This ensures that the library will only fail fast in
+          * the event of a hardfault and enables it to offload
+          * FHA requirements to the project that integrates it,
+          * if needed.
+          */
         debug_assert( false, ERROR_RECORD_FLIGHT_EVENTS_ERROR );
         break;
         }
@@ -191,15 +175,10 @@ switch( message_type )
  Telemetry Message Constructors                                                                    
 ------------------------------------------------------------------------------*/
 
-/*********************************************************************************
-*                                                                                *
-* FUNCTION:                                                                      * 
-* 		telemetry_build_msg_vehicle_id                                           *
-*                                                                                *
-* DESCRIPTION:                                                                   * 
-* 		Build the vehicle id payload. Assume header is filled by caller.         *
-*                                                                                *
-*********************************************************************************/
+/**
+  * @brief Builds a payload containing the vehicle identification and version.
+  * @param msg_buf Telemetry message buffer to fill.
+  */
 static void telemetry_build_msg_vehicle_id
     (
     TELEMETRY_MESSAGE* msg_buf
@@ -222,15 +201,10 @@ strncpy( msg_buf->payload.vehicle_id.flight_id, "AVIONICS_TEST", 16 );
 } /* telemetry_build_msg_vehicle_id */
 
 
-/*********************************************************************************
-*                                                                                *
-* FUNCTION:                                                                      * 
-* 		telemetry_build_msg_calibration                                          *
-*                                                                                *
-* DESCRIPTION:                                                                   * 
-* 		Build the calibration payload. Assume header is filled by caller.        *
-*                                                                                *
-*********************************************************************************/
+/**
+  * @brief Builds a payload containing calibration data and QFE elevation.
+  * @param msg_buf Telemetry message buffer to fill.
+  */
 static void telemetry_build_msg_calibration
     (
     TELEMETRY_MESSAGE* msg_buf
@@ -262,15 +236,10 @@ msg_buf->payload.calibration.qfe_elevation = qfe_sensor_data.baro_alt;
 } /* telemetry_build_msg_calibration */
 
 
-/*********************************************************************************
-*                                                                                *
-* FUNCTION:                                                                      * 
-* 		telemetry_build_msg_dashboard_dump                                       *
-*                                                                                *
-* DESCRIPTION:                                                                   * 
-* 		Build the dashboard dump payload. Assume header is filled by caller.     *
-*                                                                                *
-*********************************************************************************/
+/**
+  * @brief Builds a payload containing the current flight state and dashboard data.
+  * @param msg_buf Telemetry message buffer to fill.
+  */
 static void telemetry_build_msg_dashboard_dump
     (
     TELEMETRY_MESSAGE* msg_buf
