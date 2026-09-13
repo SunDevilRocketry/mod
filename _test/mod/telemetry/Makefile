@@ -56,6 +56,7 @@ C_INCLUDES = \
 -I./mock \
 -I$(ROOT_DIR)/app/rev2 \
 -I$(ROOT_DIR)/mod/telemetry \
+-I$(ROOT_DIR)/mod/debug_sdr \
 -I$(ROOT_DIR)/mod/commands \
 -I$(ROOT_DIR)/mod/math_sdr \
 -I$(ROOT_DIR)/mod/error_sdr \

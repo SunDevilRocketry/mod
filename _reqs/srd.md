@@ -3,7 +3,7 @@
 <!-- Desired behaviors are expected to be specified by human engineers. No AI assistance allowed for requirement specification -->
 # SDR "mod" Library Software Requirements Document
 
-### QA level: Mission Critical
+### QA level: Safety Critical
 ### Part Number: A0013-XXX
 
 ## 1. Structural

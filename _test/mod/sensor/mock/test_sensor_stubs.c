@@ -6,6 +6,8 @@ static IMU_STATUS start_imu_status;
 static BARO_STATUS start_baro_status;
 static unsigned int start_imu_calls;
 static unsigned int start_baro_calls;
+static unsigned int usb_transmit_calls;
+static uint64_t us_tick;
 
 void stubs_reset(void)
 {
@@ -13,6 +15,8 @@ void stubs_reset(void)
     start_baro_status = BARO_OK;
     start_imu_calls = 0;
     start_baro_calls = 0;
+    usb_transmit_calls = 0;
+    us_tick = 0;
 }
 
 void set_start_imu_status(IMU_STATUS status)
@@ -25,6 +29,11 @@ void set_start_baro_status(BARO_STATUS status)
     start_baro_status = status;
 }
 
+void set_us_tick(uint64_t tick)
+{
+    us_tick = tick;
+}
+
 unsigned int get_start_imu_calls(void)
 {
     return start_imu_calls;
@@ -33,6 +42,11 @@ unsigned int get_start_imu_calls(void)
 unsigned int get_start_baro_calls(void)
 {
     return start_baro_calls;
+}
+
+unsigned int get_usb_transmit_calls(void)
+{
+    return usb_transmit_calls;
 }
 
 IMU_STATUS start_imu_read_IT(void)
@@ -75,7 +89,7 @@ MAG_TRIM imu_get_mag_trim(void)
 
 uint64_t get_us_tick(void)
 {
-    return 0;
+    return us_tick;
 }
 
 void HAL_NVIC_DisableIRQ(IRQn_Type IRQn)
@@ -106,6 +120,7 @@ USB_STATUS usb_transmit(void* tx_data_ptr, size_t tx_data_size, uint32_t timeout
     (void)tx_data_ptr;
     (void)tx_data_size;
     (void)timeout;
+    usb_transmit_calls++;
     return USB_OK;
 }
 

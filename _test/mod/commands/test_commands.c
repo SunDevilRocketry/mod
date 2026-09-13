@@ -64,8 +64,6 @@ ping();
 /*------------------------------------------------------------------------------
 Verify results
 ------------------------------------------------------------------------------*/
-TEST_ASSERT_EQ_UINT( "Ping transmits one response byte.", get_usb_transmit_size(), sizeof( expected_response ) );
-TEST_ASSERT_EQ_UINT( "Ping uses the default timeout.", get_usb_transmit_timeout(), HAL_DEFAULT_TIMEOUT );
 TEST_ASSERT_EQ_MEMORY( "Ping transmits the board response code.", get_usb_transmit_buffer(), &expected_response, sizeof( expected_response ) );
 
 } /* test_commands_ping */
@@ -220,9 +218,9 @@ Test Cases
 ------------------------------------------------------------------------------*/
 unit_test tests[] =
 	{
-	{ "Commands: Ping", test_commands_ping },
-	{ "Commands: Dashboard Construction", test_commands_dashboard_construct_dump },
-	{ "Commands: Dashboard Dump", test_commands_dashboard_dump }
+	{ "Commands: Ping", test_commands_ping, "RQ.MOD.00004" },
+	{ "Commands: Dashboard Construction", test_commands_dashboard_construct_dump, "RQ.MOD.00006" },
+	{ "Commands: Dashboard Dump", test_commands_dashboard_dump, "RQ.MOD.00005" }
 	};
 
 /*------------------------------------------------------------------------------

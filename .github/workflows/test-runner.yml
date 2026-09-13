@@ -1,0 +1,70 @@
+name: Mod Test Runner
+run-name: ${{ github.actor }} is running mod unit tests 🤖
+# Temporarily disabled while we bring this up
+on:
+  release:
+  pull_request:
+  push:
+    paths:
+    branches:
+      - main
+      - staging
+      - integration/**
+jobs:
+  driver-runner:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }}."
+      - name: Install test environment
+        run: |
+          python -m pip install --upgrade pip
+          pip install gcovr
+      - name: Check out FCF repository code (provide an environment for certain external dependencies)
+        uses: actions/checkout@v6
+        with:
+          path: Flight-Computer-Firmware
+          repository: SunDevilRocketry/Flight-Computer-Firmware
+          submodules: 'recursive'
+      - name: Check out mod submodule to this ref
+        uses: actions/checkout@v6
+        with:
+          path: Flight-Computer-Firmware/mod
+          submodules: 'recursive'
+      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+
+      - name: Build and run the tests
+        run: |
+          cd Flight-Computer-Firmware/mod/_test
+          bash run_tests.sh
+      - name: Collect test results
+        run: |
+          test_root="Flight-Computer-Firmware/mod/_test/mod"
+          artifact_root="Flight-Computer-Firmware/mod/_test/artifacts/results"
+          rm -rf "$artifact_root"
+          mkdir -p "$artifact_root"
+          find "$test_root" -type f -name 'results.txt' -print0 | while IFS= read -r -d '' result_file; do
+            relative_path="${result_file#"$test_root/"}"
+            destination="$artifact_root/$relative_path"
+            mkdir -p "$(dirname "$destination")"
+            cp "$result_file" "$destination"
+          done
+      - name: Promote test results
+        uses: actions/upload-artifact@v6
+        with:
+          name: mod-test-results
+          path: Flight-Computer-Firmware/mod/_test/artifacts/results/
+      - name: Generate trace report
+        run: |
+          cd Flight-Computer-Firmware/mod/_test
+          ./trace_mod.sh
+      - name: Promote trace report
+        uses: actions/upload-artifact@v6
+        with:
+          name: mod-trace-report
+          path: Flight-Computer-Firmware/mod/_test/trace-report.md
+      - run: echo "🍏 This job's status is ${{ job.status }}."

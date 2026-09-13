@@ -6,11 +6,18 @@
 
 static unsigned int error_fail_fast_calls;
 static ERROR_CODE reported_error;
+static FLIGHT_COMP_STATE_TYPE fc_state;
 
 void stubs_reset(void)
 {
     error_fail_fast_calls = 0;
     reported_error = ERROR_UNKNOWN_FATAL_ERROR;
+    fc_state = FC_STATE_IDLE;
+}
+
+void set_fc_state(FLIGHT_COMP_STATE_TYPE state)
+{
+    fc_state = state;
 }
 
 unsigned int get_error_fail_fast_calls(void)
@@ -51,7 +58,7 @@ uint32_t HAL_GetUIDw2(void)
 
 FLIGHT_COMP_STATE_TYPE get_fc_state(void)
 {
-    return FC_STATE_IDLE;
+    return fc_state;
 }
 
 void dashboard_construct_dump(DASHBOARD_DUMP_TYPE* dump_buffer_ptr)

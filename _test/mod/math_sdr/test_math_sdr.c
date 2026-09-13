@@ -277,13 +277,13 @@ Test Cases
 ------------------------------------------------------------------------------*/
 unit_test tests[] =
 	{
-	{ "Math SDR: CRC-32C", test_math_sdr_crc32 },
-	{ "Math SDR: Quaternion Multiplication", test_math_sdr_quat_mult },
-	{ "Math SDR: Quaternion Dot Product", test_math_sdr_quat_dot },
-	{ "Math SDR: Quaternion Addition", test_math_sdr_quat_add },
-	{ "Math SDR: Quaternion Scaling", test_math_sdr_quat_scale },
-	{ "Math SDR: Quaternion Normalization", test_math_sdr_quat_normalize },
-	{ "Math SDR: Quaternion Conjugation", test_math_sdr_quat_conj }
+	{ "Math SDR: CRC-32C", test_math_sdr_crc32, "RQ.MOD.00016" },
+	{ "Math SDR: Quaternion Multiplication", test_math_sdr_quat_mult, "RQ.MOD.00017" },
+	{ "Math SDR: Quaternion Dot Product", test_math_sdr_quat_dot, "RQ.MOD.00018" },
+	{ "Math SDR: Quaternion Addition", test_math_sdr_quat_add, "RQ.MOD.00019" },
+	{ "Math SDR: Quaternion Scaling", test_math_sdr_quat_scale, "RQ.MOD.00020" },
+	{ "Math SDR: Quaternion Normalization", test_math_sdr_quat_normalize, "RQ.MOD.00021" },
+	{ "Math SDR: Quaternion Conjugation", test_math_sdr_quat_conj, "RQ.MOD.00022" }
 	};
 
 /*------------------------------------------------------------------------------

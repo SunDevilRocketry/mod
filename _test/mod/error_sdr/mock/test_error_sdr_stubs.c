@@ -1,4 +1,5 @@
 #include "test_error_sdr_stubs.h"
+#include "led.h"
 
 static unsigned int callback_calls;
 static ERROR_CODE callback_error;
@@ -28,4 +29,9 @@ void test_error_callback(ERROR_CODE error_code)
 uint32_t HAL_GetTick(void)
 {
     return 9876;
+}
+
+void led_set_color(LED_COLOR_CODES color)
+{
+    (void)color;
 }

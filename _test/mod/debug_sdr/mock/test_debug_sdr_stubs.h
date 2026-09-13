@@ -11,5 +11,7 @@ size_t get_last_write_size(void);
 const uint8_t* get_last_write_buffer(void);
 unsigned int get_overflow_calls(void);
 size_t get_last_overflow_size(void);
+void test_write_callback(void* buffer, size_t size);
+void test_overflow_callback(const char* message, size_t size);
 
 #endif
