@@ -41,6 +41,21 @@ jobs:
         run: |
           cd Flight-Computer-Firmware/mod/_test
           bash run_tests.sh
+      - name: Generate combined library coverage
+        run: |
+          coverage_root="Flight-Computer-Firmware/mod/_test/artifacts/coverage"
+          rm -rf "$coverage_root"
+          mkdir -p "$coverage_root"
+          gcovr \
+            --root Flight-Computer-Firmware \
+            --filter '.*[/\\\\]mod[/\\\\](commands|debug_sdr|error_sdr|math_sdr|sensor|telemetry)[/\\\\].*[.]c$' \
+            --html-details "$coverage_root/index.html" \
+            --json-summary "$coverage_root/coverage.json"
+      - name: Promote combined library coverage
+        uses: actions/upload-artifact@v6
+        with:
+          name: mod-library-coverage
+          path: Flight-Computer-Firmware/mod/_test/artifacts/coverage/
       - name: Collect test results
         run: |
           test_root="Flight-Computer-Firmware/mod/_test/mod"
