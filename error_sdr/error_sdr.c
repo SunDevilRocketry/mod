@@ -1,23 +1,17 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		error_sdr.c
-*
-* DESCRIPTION: 
-* 		Contains error-related functions for SDR code.
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  * @file error_sdr.c
+  * @brief Contains error-related functions for SDR code.
+  * COPYRIGHT:                                                                   
+  *       Copyright (c) 2025 Sun Devil Rocketry.                                 
+  *       All rights reserved.                                                   
+  *                                                                              
+  *       This software is licensed under terms that can be found in the LICENSE 
+  *       file in the root directory of this software component.                 
+  *       If no LICENSE file comes with this software, it is covered under the   
+  *       BSD-3-Clause.                                                          
+  *                                                                              
+  *       https://opensource.org/license/bsd-3-clause          
+  */
 
 
 /*------------------------------------------------------------------------------
@@ -96,16 +90,11 @@ volatile ERROR_CALLBACK default_error_handler = { 0, dflt_error_handler };
 ------------------------------------------------------------------------------*/
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_fail_fast                                                        *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		This handles errors by matching an error code to its callback in the   *
-*       table.                                                                 *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Dispatches an error to its registered callback or default handler.
+  * @param error_code Error code to handle.
+  */
 void error_fail_fast
     (
     volatile ERROR_CODE error_code
@@ -139,16 +128,12 @@ default_error_handler.error_callback( error_code );
 
 
 #if defined(USE_CALLBACK_TABLE)
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		callback_table_lookup                                                  *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Match an error code to its callback table entry. Returns null if       *
-*       a callback is not found.                                               *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Finds the callback associated with an error code.
+  * @param error_code Error code to find.
+  * @return Pointer to the matching callback, or NULL if none exists.
+  */
 static volatile ERROR_CALLBACK* callback_table_lookup
     (
     volatile ERROR_CODE error_code
@@ -169,22 +154,18 @@ return NULL;
 
 
 /**
- * GCOVR_EXCL_START
- * 
- * This whole function is excluded due to the control flow trap. It is impossible
- * to return from this function. This case can be reached, but the whole point of
- * getting here is that an error is unrecoverable, so via analysis we can prove
- * that this will not return.
- */
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		dflt_error_handler                                                     *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Legacy style error trap function. Default error handler.               *
-*                                                                              *
-*******************************************************************************/
+  * GCOVR_EXCL_START
+  * 
+  * This whole function is excluded due to the control flow trap. It is impossible
+  * to return from this function. This case can be reached, but the whole point of
+  * getting here is that an error is unrecoverable, so via analysis we can prove
+  * that this will not return.
+  */
+
+/**
+  * @brief Handles an unrecoverable error using the default error trap.
+  * @param error_code Error code that caused the unrecoverable failure.
+  */
 static void dflt_error_handler
     (
     volatile ERROR_CODE error_code
@@ -195,9 +176,9 @@ while(1); /* Control flow trap */
 
 } /* dflt_error_handler */
 /**
- * GCOVR_EXCL_STOP
- */
+  * GCOVR_EXCL_STOP
+  */
 
-/*******************************************************************************
-* END OF FILE                                                                  * 
-*******************************************************************************/
+/**
+  * END OF FILE                                                                  * 
+  */
