@@ -167,8 +167,8 @@ float z = 3.0f;
 set_mount_orientation( MOUNT_ORIENTATION_IMU_INVERTED );
 sensor_axis_remap( &x, &y, &z );
 TEST_ASSERT_EQ_FLOAT( "Inverted mounting remaps the x axis.", x, -1.0f );
-TEST_ASSERT_EQ_FLOAT( "Inverted mounting remaps the y axis.", y, 2.0f );
-TEST_ASSERT_EQ_FLOAT( "Axis remap preserves z.", z, 3.0f );
+TEST_ASSERT_EQ_FLOAT( "Leave the y axis intact.", y, -2.0f );
+TEST_ASSERT_EQ_FLOAT( "Inverted mounting remaps the z axis.", z, -3.0f );
 set_mount_orientation( MOUNT_ORIENTATION_IMU_NORMAL );
 
 } /* test_sensor_axis_remap */
