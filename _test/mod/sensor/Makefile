@@ -130,7 +130,7 @@ test:
 	tail -n 7 "results.txt"
 	mkdir -p coverage
 	gcovr $(BUILD_DIR) \
-		--filter '.*/sensor[.]c$$' \
+		--filter '.*(?<!test_)sensor[.]c$$' \
 		--html-details coverage/coverage.html \
 		--json coverage/coverage.json
 

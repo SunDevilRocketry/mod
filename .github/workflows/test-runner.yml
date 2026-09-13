@@ -48,7 +48,7 @@ jobs:
           mkdir -p "$coverage_root"
           gcovr \
             --root Flight-Computer-Firmware \
-            --filter '.*[/\\\\]mod[/\\\\](commands|debug_sdr|error_sdr|math_sdr|sensor|telemetry)[/\\\\].*[.]c$' \
+            --filter '.*mod[/\\](commands[/\\]commands|debug_sdr[/\\]debug_sdr|error_sdr[/\\]error_sdr|math_sdr[/\\]math_sdr|sensor[/\\]sensor|telemetry[/\\]telemetry)[.]c$' \
             --html-details "$coverage_root/index.html" \
             --json-summary "$coverage_root/coverage.json"
       - name: Promote combined library coverage

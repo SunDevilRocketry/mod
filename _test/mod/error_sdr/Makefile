@@ -105,7 +105,7 @@ test:
 	tail -n 7 "results.txt"
 	mkdir -p coverage
 	gcovr $(BUILD_DIR) \
-		--filter '.*/error_sdr[.]c$$' \
+		--filter '.*(?<!test_)error_sdr[.]c$$' \
 		--html-details coverage/coverage.html \
 		--json coverage/coverage.json
 
