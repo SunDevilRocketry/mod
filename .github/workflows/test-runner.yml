@@ -76,7 +76,7 @@ jobs:
       - name: Generate trace report
         run: |
           cd Flight-Computer-Firmware/mod/_test
-          ./trace_mod.sh
+          bash trace_mod.sh
       - name: Promote trace report
         uses: actions/upload-artifact@v6
         with:
