@@ -84,6 +84,12 @@ static void sensor_conv_mag
 	IMU_RAW* imu_raw
 	);
 
+static float baro_ema
+	(
+	SENSOR_DATA* sensor_data_ptr, 
+	float ema_prev
+	);
+
 
 /*------------------------------------------------------------------------------
  API Functions 
@@ -828,6 +834,27 @@ imu_converted->mag_y = mag_y;
 imu_converted->mag_z = mag_z;
 } /* sensor_conv_mag */
 #endif
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		baro_ema                                          					   *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Calculates baro exponential moving average....                             *
+*                                                                              *
+*******************************************************************************/
+
+static float baro_ema
+	(
+	SENSOR_DATA* sensor_data_ptr, 
+	float ema_prev
+	)
+{
+	return (0.7 * sensor_data_ptr->baro_pressure) + (0.3 * ema_prev);
+
+}
 
 
 /*******************************************************************************
