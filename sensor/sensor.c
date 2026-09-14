@@ -842,7 +842,7 @@ imu_converted->mag_z = mag_z;
 * 		baro_ema                                          					   *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Calculates baro exponential moving average.                             *
+*       Calculates baro exponential moving average....                             *
 *                                                                              *
 *******************************************************************************/
 
