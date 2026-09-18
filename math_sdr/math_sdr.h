@@ -119,6 +119,13 @@ uint32_t crc32
     size_t len
     );
 
+QUAT eul_to_quat
+    (
+    float yaw,
+    float pitch,
+    float roll
+    );
+
 QUAT quat_mult
     (
     QUAT a,
