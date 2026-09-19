@@ -3,7 +3,7 @@
   * @file           : sensor.c
   * @brief          : Contains functions to interface between SDEC terminal commands and SDR sensor APIs
   ******************************************************************************
-  * @attention
+  * @copyright
   *
   * Copyright (c) 2025 Sun Devil Rocketry.
   * All rights reserved.

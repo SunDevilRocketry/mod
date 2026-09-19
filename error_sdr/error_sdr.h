@@ -3,7 +3,7 @@
   * @file           : error_sdr.h
   * @brief          : Contains error handling functions for SDR code.
   ******************************************************************************
-  * @attention
+  * @copyright
   *
   * Copyright (c) 2025 Sun Devil Rocketry.
   * All rights reserved.

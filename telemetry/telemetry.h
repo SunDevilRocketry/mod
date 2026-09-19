@@ -3,7 +3,7 @@
   * @file           : telemetry.h
   * @brief          : Definitions for the telemetry data structures.
   ******************************************************************************
-  * @attention
+  * @copyright
   *
   * Copyright (c) 2025 Sun Devil Rocketry.
   * All rights reserved.

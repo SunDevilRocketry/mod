@@ -3,7 +3,7 @@
   * @file           : telemetry.c
   * @brief          : Module for LoRa (wireless) communication.
   ******************************************************************************
-  * @attention
+  * @copyright
   *
   * Copyright (c) 2025 Sun Devil Rocketry.
   * All rights reserved.

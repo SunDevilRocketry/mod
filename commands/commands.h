@@ -3,7 +3,7 @@
   * @file           : commands.h
   * @brief          : Contains general command functions common to all embedded controllers
   ******************************************************************************
-  * @attention
+  * @copyright
   *
   * Copyright (c) 2025 Sun Devil Rocketry.
   * All rights reserved.
