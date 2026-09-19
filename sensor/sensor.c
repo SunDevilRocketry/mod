@@ -855,12 +855,12 @@ static float baro_ema
 	float ema_prev
 	)
 {
-	if (ema_prev == 0.0f)
+if (ema_prev == 0.0f)
 	{
-		ema_prev = sensor_data_ptr->baro_pressure;
-		return sensor_data_ptr->baro_pressure;
+	ema_prev = sensor_data_ptr->baro_pressure;
+	return sensor_data_ptr->baro_pressure;
 	}
-	return (0.7 * sensor_data_ptr->baro_pressure) + (0.3 * ema_prev);
+return (0.7 * sensor_data_ptr->baro_pressure) + (0.3 * ema_prev);
 }
 
 
