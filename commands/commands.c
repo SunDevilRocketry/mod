@@ -1,23 +1,22 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		commands.c
-*
-* DESCRIPTION: 
-* 		Contains general command functions common to all embedded controllers
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : commands.c
+  * @brief          : Contains general command functions common to all embedded controllers
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE
+  * file in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 
 /*------------------------------------------------------------------------------
@@ -31,14 +30,8 @@
 ------------------------------------------------------------------------------*/
 #include "main.h"
 #include "commands.h"
-#ifdef USE_RS485
-    #include "rs485.h"
-#endif
 #include "usb.h"
 #include "sensor.h"
-#ifdef VALVE_CONTROLLER
-    #include "valve.h"
-#endif
 
 /*------------------------------------------------------------------------------
  Globals 
@@ -50,23 +43,13 @@ extern SENSOR_DATA sensor_data;
 ------------------------------------------------------------------------------*/
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		ping                                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Sends a 1 byte response back to host PC to signal a functioning        * 
-*       serial connection                                                      *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Sends a 1 byte response back to host PC to signal a functioning
+  * serial connection
+  */
 void ping
     (
-    #ifndef VALVE_CONTROLLER
-        void
-    #else
-        CMD_SOURCE cmd_source
-    #endif
+    void
     )
 {
 /*------------------------------------------------------------------------------
@@ -74,57 +57,25 @@ void ping
 ------------------------------------------------------------------------------*/
 uint8_t    response;   /* A0002 Response Code */
 
-
 /*------------------------------------------------------------------------------
  Initializations 
 ------------------------------------------------------------------------------*/
 response = PING_RESPONSE_CODE; /* Code specific to board and revision */
 
-
-
 /*------------------------------------------------------------------------------
  Command Implementation                                                         
 ------------------------------------------------------------------------------*/
-#ifdef VALVE_CONTROLLER 
-    if ( cmd_source == CMD_SOURCE_USB )
-        {
-        usb_transmit( &response         , 
-                      sizeof( response ), 
-                      HAL_DEFAULT_TIMEOUT );
-        }
-    else
-        {
-        valve_transmit( &response         , 
-                        sizeof( response ), 
-                        HAL_DEFAULT_TIMEOUT );
-        }
-
-#elif defined(ENGINE_CONTROLLER)
-    #if defined( USE_RS485 )
-        rs485_transmit( &response, sizeof( response ), RS485_DEFAULT_TIMEOUT );
-    #else
-        usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
-    #endif
-#else
-
-    usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
-
-#endif
-
+usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
 
 } /* ping */
 
 
 #ifdef A0002_REV2
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		dashboard_dump                                                         *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Sends the data required by the dashboard.                              *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Sends the data required by the dashboard.
+  *
+  * @return USB transmission status.
+  */
 USB_STATUS dashboard_dump
     (
     void
@@ -151,15 +102,12 @@ return usb_transmit( &buffer,
 } /* dashboard_dump */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		dashboard_construct_dump                                               *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Fill the buffer with the dashboard dump.                               *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Fill the buffer with the dashboard dump.
+  *
+  * @param dump_buffer_ptr Pointer to the dashboard dump buffer. Must be
+  *        DASHBOARD_DUMP_SIZE.
+  */
 void dashboard_construct_dump
     (
     DASHBOARD_DUMP_TYPE* dump_buffer_ptr /* must be DASHBOARD_DUMP_SIZE */

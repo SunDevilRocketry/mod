@@ -1,23 +1,22 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		error_sdr.h
-*
-* DESCRIPTION: 
-* 		Contains error handling functions for SDR code.
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : error_sdr.h
+  * @brief          : Contains error handling functions for SDR code.
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE
+  * file in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -133,85 +132,34 @@ typedef struct TEXT_MESSAGE
  Macros & Inlines
 ------------------------------------------------------------------------------*/
 
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       assert_fail_fast                                                       *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		Checks condition, if false calls error_fail_fast with error            *
-*                                                                              *
-*******************************************************************************/
+/**
+ * @brief Assert that a condition is true, and fail-fast if not.
+ * @param condition A predicate that triggers an error if false.
+ * @param error The error code to report
+ */
 #define assert_fail_fast( condition, error ) do { if ( !(condition) ) error_fail_fast( error ); } while(0)
 
 
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       assert_return                                                          *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		Checks condition, if false returns the given value                     *
-*                                                                              *
-*******************************************************************************/
+/**
+ * @brief Assert that a condition is true, and return the provided value if not.
+ * @param condition A predicate that triggers an error if false.
+ * @param retval The value to return with
+ */
 #define assert_return( condition, retval ) do { if ( !(condition) ) return retval; } while(0)
-
-/* type check, bounds check, then execute */
-/* if either of these macros fail to expand, then its possible the user passed a pointer and not a literal. */
-#define error_log_warning( string ) \
-    do { \
-    _Static_assert( sizeof( "" string ) <= TEXT_MESSAGE_LENGTH, "Warning Message is oversized." ); \
-    __sdr_log_warning( string ); \
-    } while(0)
-
-/* type check, bounds check, then execute */
-/* if either of these macros fail to expand, then its possible the user passed a pointer and not a literal. */
-#define error_log_info( string ) \
-    do { \
-    _Static_assert( sizeof( "" string ) <= TEXT_MESSAGE_LENGTH, "Info Message is oversized." ); \
-    __sdr_log_info( string ); \
-    } while(0)
 
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-/* error handler */
+/**
+  * @brief Handles an error using the configured error callback.
+  *
+  * @param error_code Error code to handle.
+  */
 void error_fail_fast
     (
     volatile ERROR_CODE error_code
-    );
-
-/* warnings and info for telemetry */
-void __sdr_log_info
-    (
-    const char* message
-    );
-
-void __sdr_log_warning
-    (
-    const char* message
-    );
-
-bool error_get_warning
-    (
-    TEXT_MESSAGE* buffer
-    );
-
-bool error_get_info
-    (
-    TEXT_MESSAGE* buffer
-    );
-    
-bool error_is_pending_warning
-    (
-    void
-    );
-
-bool error_is_pending_info
-    (
-    void
     );
 
 #ifdef __cplusplus
@@ -220,5 +168,5 @@ bool error_is_pending_info
 #endif /* ERROR_SDR_H */
 
 /*******************************************************************************
-* END OF FILE                                                                  * 
-*******************************************************************************/
+  * END OF FILE                                                                  * 
+  *******************************************************************************/

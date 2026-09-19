@@ -1,29 +1,22 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		telemetry.h
-*
-* DESCRIPTION: 
-* 		Definitions for the telemetry data structures.
-*
-* NOTE:
-*       Every data structure given here is incredibly regression sensitive. All
-*       changes to structs must also change their factory/constructor procedures
-*       and ensure compatibility through the flight computer software stack
-*       (SDEC/API/CLI & Dashboard).
-*                                                                              
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*
-*       https://opensource.org/license/bsd-3-clause
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : telemetry.h
+  * @brief          : Definitions for the telemetry data structures.
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE
+  * file in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __TELEM_H
@@ -32,7 +25,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /*------------------------------------------------------------------------------
  Standard Includes                                                                    
@@ -61,7 +53,6 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Typedefs
 ------------------------------------------------------------------------------*/
-
 
 /* Aliased type if it doesn't exist on this platform */
 #ifndef FLIGHT_COMPUTER
@@ -142,15 +133,11 @@ typedef struct __attribute__((packed)) _TELEMETRY_MESSAGE
  Inlines                                             
 ------------------------------------------------------------------------------*/
 
-/*******************************************************************************
-*                                                                              *
-* INLINE:                                                                      * 
-*       get_uid                                                                *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		Gets the 12 byte UID value for the H7 chip.                            *
-*                                                                              *
-*******************************************************************************/
+/**
+ * @brief Get the UID from the HAL.
+ * 
+ * @param uid_buffer A 12-byte buffer to store the UID in.
+ */
 static inline void get_uid
     (
     ST_UID_TYPE* uid_buffer
@@ -170,12 +157,22 @@ memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
  Function prototypes                                             
 ------------------------------------------------------------------------------*/
 
-/* telemetry.c */
+/**
+  * @brief Constructs the next telemetry message.
+  *
+  * @param payload Telemetry message buffer to fill.
+  */
 void telemetry_get_next_message
     (
     TELEMETRY_MESSAGE* payload
     );
 
+/**
+  * @brief Builds a telemetry payload of the requested type.
+  *
+  * @param msg_buf Telemetry message buffer to fill.
+  * @param message_type Type of telemetry message to build.
+  */
 void telemetry_build_payload
     (
     TELEMETRY_MESSAGE*       msg_buf,      /* o: buffer passed by caller        */
@@ -190,5 +187,5 @@ void telemetry_build_payload
 
 
 /*******************************************************************************
-* END OF FILE                                                                  *
-*******************************************************************************/
+  * END OF FILE                                                                  *
+  */
