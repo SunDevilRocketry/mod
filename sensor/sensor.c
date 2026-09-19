@@ -67,7 +67,7 @@ QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
  Static Variables 
 ------------------------------------------------------------------------------*/
 static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
-
+static float ema_prev = 0.0f;
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -262,6 +262,9 @@ sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_e
 
 /* Calculated velocity and position */
 sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
+
+/* Calculated baro exponential moving average */
+ema_prev = sensor_baro_ema( sensor_data_ptr, ema_prev );
 
 /* Calculated altitude from barometer */
 sensor_baro_alt( sensor_data_ptr );
@@ -842,7 +845,7 @@ imu_converted->mag_z = mag_z;
 * 		baro_ema                                          					   *
 *                                                                              *
 * DESCRIPTION:                                                                 *
-*       Calculates baro exponential moving average....                             *
+*       Calculates baro exponential moving average                             *
 *                                                                              *
 *******************************************************************************/
 
@@ -852,8 +855,12 @@ static float baro_ema
 	float ema_prev
 	)
 {
+	if (ema_prev == 0.0f)
+	{
+		ema_prev = sensor_data_ptr->baro_pressure;
+		return sensor_data_ptr->baro_pressure;
+	}
 	return (0.7 * sensor_data_ptr->baro_pressure) + (0.3 * ema_prev);
-
 }
 
 
