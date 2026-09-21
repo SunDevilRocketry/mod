@@ -1,27 +1,44 @@
-/*******************************************************************************
- *
- * FILE:
- *      mahony.c
- *
- * DESCRIPTION:
- *      Mahony attitude filter implementation.
- *
- ******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : mahony.h
+  * @brief          : Mahony attitude filter interface.
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  @verbatim
+  ==============================================================================
+                        ##### Integration Guide #####
+  ==============================================================================
+  [..]
+  (+) Initialize the filter with a pointer to an existing or uninitialized filter, 
+      an initial attiutude estimate, and the proportional and integral gains for
+      accelerometer correction.
+  (+) Call updates to the filter with gyroscope and accelerometer vectors and 
+      time elapsed. Optionally disable accelerometer fusion during dynamic 
+      flight.
+  ******************************************************************************
+  @endverbatim
+  */
 
-/*------------------------------------------------------------------------------
- Standard Includes
- ------------------------------------------------------------------------------*/
+/* Standard Includes ---------------------------------------------------------*/
 #include <math.h>
 #include <stddef.h>
 
-/*------------------------------------------------------------------------------
- Project Includes
- ------------------------------------------------------------------------------*/
+/* Project Includes ----------------------------------------------------------*/
 #include "mahony.h"
 
-/*------------------------------------------------------------------------------
- Private Macros
- ------------------------------------------------------------------------------*/
+/* Private Macros ------------------------------------------------------------*/
 
 /*
  * Accelerometer feedback is only used when the measured magnitude is reasonably
@@ -38,184 +55,19 @@
  */
 #define MAHONY_INTEGRAL_LIMIT_RAD_S    0.25f
 
-/*------------------------------------------------------------------------------
- Private Functions
- ------------------------------------------------------------------------------*/
+/* Public Functions ----------------------------------------------------------*/
 
 /**
- * @brief Determines whether every quaternion component is finite.
+ * @brief Initializes a Mahony attitude filter.
+ *
+ * @param filter Filter instance to initialize.
+ * @param initial_attitude Initial body-to-world attitude quaternion.
+ * @param proportional_gain Proportional correction gain.
+ * @param integral_gain Integral correction gain.
+ *
+ * @return MAHONY_OK when initialization succeeds; otherwise a Mahony status
+ *         code describing the failure.
  */
-static bool quat_is_finite
-    (
-    QUAT quaternion
-    )
-{
-return
-    (
-    isfinite(quaternion.w)
-    && isfinite(quaternion.x)
-    && isfinite(quaternion.y)
-    && isfinite(quaternion.z)
-    );
-
-} /* quat_is_finite */
-
-/**
- * @brief Determines whether every vector component is finite.
- */
-static bool vector_is_finite
-    (
-    VECTOR_3F vector
-    )
-{
-return
-    (
-    isfinite(vector.x)
-    && isfinite(vector.y)
-    && isfinite(vector.z)
-    );
-
-} /* vector_is_finite */
-
-/**
- * @brief Calculates the magnitude of a three-dimensional vector.
- */
-static float vector_magnitude
-    (
-    VECTOR_3F vector
-    )
-{
-return sqrtf
-    (
-    vector.x * vector.x +
-    vector.y * vector.y +
-    vector.z * vector.z
-    );
-
-} /* vector_magnitude */
-
-/**
- * @brief Normalizes a three-dimensional vector in place.
- */
-static bool vector_normalize
-    (
-    VECTOR_3F *vector
-    )
-{
-float magnitude;
-
-if ( vector == NULL )
-    {
-    return false;
-    }
-
-if ( !vector_is_finite(*vector) )
-    {
-    return false;
-    }
-
-magnitude = vector_magnitude(*vector);
-
-if ( magnitude <= 0.0f || !isfinite(magnitude) )
-    {
-    return false;
-    }
-
-vector->x /= magnitude;
-vector->y /= magnitude;
-vector->z /= magnitude;
-
-return true;
-
-} /* vector_normalize */
-
-/**
- * @brief Clamps a floating-point value between minimum and maximum bounds.
- */
-static float clamp_float
-    (
-    float value,
-    float minimum,
-    float maximum
-    )
-{
-if ( value < minimum )
-    {
-    return minimum;
-    }
-
-if ( value > maximum )
-    {
-    return maximum;
-    }
-
-return value;
-
-} /* clamp_float */
-
-/**
- * @brief Calculates the cross product of two three-dimensional vectors.
- */
-static VECTOR_3F vector_cross
-    (
-    VECTOR_3F a,
-    VECTOR_3F b
-    )
-{
-VECTOR_3F result;
-
-result.x = a.y * b.z - a.z * b.y;
-result.y = a.z * b.x - a.x * b.z;
-result.z = a.x * b.y - a.y * b.x;
-
-return result;
-
-} /* vector_cross */
-
-
-/**
- * @brief Adds two three-dimensional vectors.
- */
-static VECTOR_3F vector_add
-    (
-    VECTOR_3F a,
-    VECTOR_3F b
-    )
-{
-VECTOR_3F result;
-
-result.x = a.x + b.x;
-result.y = a.y + b.y;
-result.z = a.z + b.z;
-
-return result;
-
-} /* vector_add */
-
-
-/**
- * @brief Scales a three-dimensional vector by a scalar.
- */
-static VECTOR_3F vector_scale
-    (
-    VECTOR_3F vector,
-    float scalar
-    )
-{
-VECTOR_3F result;
-
-result.x = vector.x * scalar;
-result.y = vector.y * scalar;
-result.z = vector.z * scalar;
-
-return result;
-
-} /* vector_scale */
-
-
-/*------------------------------------------------------------------------------
- * Public Functions
- *----------------------------------------------------------------------------*/
 MAHONY_STATUS mahony_init
     (
     MAHONY_FILTER *filter,
@@ -256,14 +108,23 @@ filter->integral_gain = integral_gain;
 return MAHONY_OK;
 } /* mahony_init */
 
-/*
+
+/**
+ * @brief Propagates attitude using body-frame gyroscope measurements.
+ *
  * Verify the filter, gyro, and timestep are valid.
  * Convert the body-frame angular velocity into a pure quaternion.
  * Use the quaternion differential equation to calculate how quickly the
  * body-to-world attitude is changing. Multiply that derivative by the
  * timestep, add it to the current attitude, and normalize the result.
+ *
+ * @param filter Initialized filter instance.
+ * @param gyro_body_rad_s Body-frame angular velocity in radians per second.
+ * @param delta_time_s Elapsed time in seconds.
+ *
+ * @return MAHONY_OK when initialization succeeds; otherwise a Mahony status
+           code describing the failure.
  */
-
 MAHONY_STATUS mahony_update_gyro
     (
     MAHONY_FILTER *filter,
@@ -318,6 +179,28 @@ return MAHONY_OK;
 
 } /* mahony_update_gyro */
 
+
+/**
+ * @brief Updates attitude using gyroscope propagation and accelerometer
+ *        proportional feedback.
+ *
+ * The gyroscope must be expressed in the body frame in radians per second.
+ * The accelerometer must be expressed in the body frame. Its magnitude is
+ * removed internally because the filter uses only its measured direction.
+ *
+ * Accelerometer feedback is applied only when the caller enables it and the
+ * measured acceleration magnitude falls within the configured validity range.
+ * Invalid accelerometer samples are ignored while gyro propagation continues.
+ *
+ * @param filter Initialized filter instance.
+ * @param gyro_body_rad_s Body-frame angular velocity in radians per second.
+ * @param accel_body Body-frame accelerometer measurement.
+ * @param delta_time_s Elapsed time in seconds.
+ * @param use_accel Whether accelerometer feedback should be applied.
+ *
+ * @return MAHONY_OK when the attitude was updated; otherwise a Mahony status
+        code describing the failure.
+ */
 MAHONY_STATUS mahony_update_imu
     (
     MAHONY_FILTER *filter,
@@ -415,16 +298,10 @@ if ( apply_accel && vector_normalize(&accel_body) )
     proportional_correction = vector_scale(attitude_error, filter->proportional_gain);
 
     gyro_corrected = vector_add(gyro_corrected, proportional_correction);
-
     gyro_corrected = vector_add(gyro_corrected, filter->integral_error);
     }
 
-return mahony_update_gyro
-    (
-    filter,
-    gyro_corrected,
-    delta_time_s
-    );
+return mahony_update_gyro(filter, gyro_corrected, delta_time_s);
 
 } /* mahony_update_imu */
 

@@ -18,20 +18,14 @@
   ******************************************************************************
   */
 
-/*------------------------------------------------------------------------------
- Standard Includes
-------------------------------------------------------------------------------*/
+/* Standard Includes ---------------------------------------------------------*/
 
 
-/*------------------------------------------------------------------------------
- Project Includes
-------------------------------------------------------------------------------*/
+/* Project Includes ----------------------------------------------------------*/
 #include "main.h"
 #include "math_sdr.h"
 
-/*------------------------------------------------------------------------------
- API Functions
-------------------------------------------------------------------------------*/
+/* API Functions -------------------------------------------------------------*/
 
 /**
   * @brief Computes a CRC-32 checksum over a block of data.
@@ -58,6 +52,35 @@ return ~crc;
 
 } /* crc32 */
 
+/**
+ * @brief Clamps a floating-point value between minimum and maximum bounds.
+ * 
+ * @param value   Value to clamp.
+ * @param minimum Minimum value.
+ * @param maximum Maximum value.
+ */
+float clamp_float
+    (
+    float value,
+    float minimum,
+    float maximum
+    )
+{
+if ( value < minimum )
+    {
+    return minimum;
+    }
+
+if ( value > maximum )
+    {
+    return maximum;
+    }
+
+return value;
+
+} /* clamp_float */
+
+/* Quaternions ---------------------------------------------------------------*/
 
 /**
   * @brief Converts ZYX Euler angles to a quaternion.
@@ -318,6 +341,155 @@ return quat_mult
     );
 
 } /* quat_rotate_body_to_world */
+
+/**
+ * @brief Determines whether every quaternion component is finite.
+ */
+bool quat_is_finite
+    (
+    QUAT quaternion
+    )
+{
+return
+    (
+    isfinite(quaternion.w)
+    && isfinite(quaternion.x)
+    && isfinite(quaternion.y)
+    && isfinite(quaternion.z)
+    );
+
+} /* quat_is_finite */
+
+/* Vectors -------------------------------------------------------------------*/
+
+/**
+ * @brief Determines whether every vector component is finite.
+ */
+bool vector_is_finite
+    (
+    VECTOR_3F vector
+    )
+{
+return
+    (
+    isfinite(vector.x)
+    && isfinite(vector.y)
+    && isfinite(vector.z)
+    );
+
+} /* vector_is_finite */
+
+/**
+ * @brief Calculates the magnitude of a three-dimensional vector.
+ */
+float vector_magnitude
+    (
+    VECTOR_3F vector
+    )
+{
+return sqrtf
+    (
+    vector.x * vector.x +
+    vector.y * vector.y +
+    vector.z * vector.z
+    );
+
+} /* vector_magnitude */
+
+/**
+ * @brief Normalizes a three-dimensional vector in place.
+ */
+bool vector_normalize
+    (
+    VECTOR_3F *vector
+    )
+{
+float magnitude;
+
+if ( vector == NULL )
+    {
+    return false;
+    }
+
+if ( !vector_is_finite(*vector) )
+    {
+    return false;
+    }
+
+magnitude = vector_magnitude(*vector);
+
+if ( magnitude <= 0.0f || !isfinite(magnitude) )
+    {
+    return false;
+    }
+
+vector->x /= magnitude;
+vector->y /= magnitude;
+vector->z /= magnitude;
+
+return true;
+
+} /* vector_normalize */
+
+
+/**
+ * @brief Calculates the cross product of two three-dimensional vectors.
+ */
+VECTOR_3F vector_cross
+    (
+    VECTOR_3F a,
+    VECTOR_3F b
+    )
+{
+VECTOR_3F result;
+
+result.x = a.y * b.z - a.z * b.y;
+result.y = a.z * b.x - a.x * b.z;
+result.z = a.x * b.y - a.y * b.x;
+
+return result;
+
+} /* vector_cross */
+
+
+/**
+ * @brief Adds two three-dimensional vectors.
+ */
+VECTOR_3F vector_add
+    (
+    VECTOR_3F a,
+    VECTOR_3F b
+    )
+{
+VECTOR_3F result;
+
+result.x = a.x + b.x;
+result.y = a.y + b.y;
+result.z = a.z + b.z;
+
+return result;
+
+} /* vector_add */
+
+
+/**
+ * @brief Scales a three-dimensional vector by a scalar.
+ */
+VECTOR_3F vector_scale
+    (
+    VECTOR_3F vector,
+    float scalar
+    )
+{
+VECTOR_3F result;
+
+result.x = vector.x * scalar;
+result.y = vector.y * scalar;
+result.z = vector.z * scalar;
+
+return result;
+
+} /* vector_scale */
 
 /*******************************************************************************
 * END OF FILE                                                                  *
