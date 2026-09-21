@@ -201,7 +201,7 @@ void sensor_init
   *
   * @return The configured mount orientation.
   */
-MOUNT_ORIENTATION get_mount_orientation
+MOUNT_ORIENTATION sensor_get_mount_orientation
 	(
 	void
 	);
@@ -211,7 +211,7 @@ MOUNT_ORIENTATION get_mount_orientation
   *
   * @param orientation Mount orientation to use for axis remapping.
   */
-void set_mount_orientation
+void sensor_set_mount_orientation
 	(
 	MOUNT_ORIENTATION orientation
 	);
