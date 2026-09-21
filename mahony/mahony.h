@@ -92,28 +92,6 @@ MAHONY_STATUS mahony_update_gyro
     float delta_time_s
     );
 
-/**
- * @brief Updates attitude using gyroscope propagation and accelerometer
- *        proportional feedback.
- *
- * The gyroscope must be expressed in the body frame in radians per second.
- * The accelerometer must be expressed in the body frame. Its magnitude is
- * removed internally because the filter uses only its measured direction.
- *
- * Accelerometer feedback is applied only when the caller enables it and the
- * measured acceleration magnitude falls within the configured validity range.
- * Invalid accelerometer samples are ignored while gyro propagation continues.
- *
- * @param filter Initialized filter instance.
- * @param gyro_body_rad_s Body-frame angular velocity in radians per second.
- * @param accel_body Body-frame accelerometer measurement.
- * @param delta_time_s Elapsed time in seconds.
- * @param use_accel Whether accelerometer feedback should be applied.
- *
- * @return MAHONY_OK when the attitude was updated; otherwise a Mahony status
-        code describing the failure.
- */
-
 MAHONY_STATUS mahony_update_imu
     (
     MAHONY_FILTER *filter,

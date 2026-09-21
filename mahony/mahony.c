@@ -303,7 +303,7 @@ if ( apply_accel && vector_normalize(&accel_body) )
     }
 
 return mahony_update_gyro(filter, gyro_corrected, delta_time_s);
-    
+
 } /* mahony_update_imu */
 
 /*******************************************************************************
