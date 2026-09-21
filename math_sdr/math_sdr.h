@@ -1,23 +1,32 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		math_sdr.h
-*
-* DESCRIPTION: 
-* 		Contains utility functions for SDR code.
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : math_sdr.h
+  * @brief          : Contains math and utility functions for SDR code.
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  @verbatim
+  ==============================================================================
+                      ##### Math module features #####
+  ==============================================================================
+  [..]
+  (+) Macros for common values, conversions, and utilities
+  (+) CRC-32 checksum of data
+  (+) Quaternion operations
+  ******************************************************************************
+  @endverbatim
+  */
 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -40,106 +49,106 @@ extern "C" {
  Typedefs 
 ------------------------------------------------------------------------------*/
 
-/* UID serial number (packed struct inhibits padding) */
-typedef struct __attribute__((packed)) _ST_UID_TYPE 
-    {
-    uint32_t wafer_coords;
-    char lot_num_1[3];
-    uint8_t wafer_num;
-    char lot_num_2[4];
-    } ST_UID_TYPE;
-_Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
+/* Quaternion */
+typedef struct _QUAT
+	{
+	float w, x, y, z;
+	} QUAT;
 
 
 /*------------------------------------------------------------------------------
- Macros and Inlines
+ Macros
 ------------------------------------------------------------------------------*/
 
 /* Constants */
-#define COMP_ALPHA 0.98f /* Used in sensor fusion */
 #define GRAVITY 9.8f
 
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       util_set_bit                                                           *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Sets a certain bit and returns the new value                           *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Sets a certain bit and returns the new value.
+  *
+  * @param orig The original value.
+  * @param idx Index of the bit to set.
+  *
+  * @return @p orig with bit @p idx set.
+  */
 #define util_set_bit( orig, idx ) ( orig | ( 1 << idx ) )
 
 
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       rad_to_deg                                                             *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Convert a value in radians to degrees.                                 *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Convert a value in radians to degrees.
+  *
+  * @param x Value in radians.
+  *
+  * @return Equivalent value in degrees.
+  */
 #define rad_to_deg(x) ((x) * 57.29577951f)
 
 
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       deg_to_rad                                                             *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Convert a value in degrees to radians.                                 *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Convert a value in degrees to radians.
+  *
+  * @param x Value in degrees.
+  *
+  * @return Equivalent value in radians.
+  */
 #define deg_to_rad(x) ((x) * 0.01745329252f)
 
 
-/*******************************************************************************
-*                                                                              *
-* MACRO:                                                                       * 
-*       array_size                                                             *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Returns the number of elements in an array where each element is a     *
-*       fixed size. An error or warning from this macro indicates that it      *
-*       can't be used in that context.                                         *
-*                                                                              *
-*******************************************************************************/
+/**
+  * @brief Returns the number of elements in an array where each element is a fixed size.
+  *
+  * @note An error or warning from this macro indicates that it can't be used 
+  *       in that context.
+  *
+  * @param array The array with desired element count.
+  *
+  * @return Number of elements in @p array.
+  */
 #define array_size( array ) ( sizeof( array ) / sizeof( array[0] ) )
-
-
-/*******************************************************************************
-*                                                                              *
-* INLINE:                                                                      * 
-*       get_uid                                                                *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-* 		Gets the 12 byte UID value for the H7 chip.                            *
-*                                                                              *
-*******************************************************************************/
-static inline void get_uid
-    (
-    ST_UID_TYPE* uid_buffer
-    )
-{
-uint32_t uid[3];
-uid[0] = HAL_GetUIDw0();
-uid[1] = HAL_GetUIDw1();
-uid[2] = HAL_GetUIDw2();
-
-memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
-
-} /* get_uid */
-
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
+
 uint32_t crc32
     (
     const uint8_t *data, 
     size_t len
+    );
+
+QUAT quat_mult
+    (
+    QUAT a,
+    QUAT b
+    );
+
+float quat_dot
+    (
+    QUAT a,
+    QUAT b
+    );
+
+QUAT quat_add
+    (
+    QUAT a,
+    QUAT b
+    );
+
+QUAT quat_scale
+    (
+    QUAT q,
+    float s
+    );
+
+QUAT quat_normalize
+    (
+    QUAT q
+    );
+
+QUAT quat_conj
+    (
+    QUAT q
     );
     
 #ifdef __cplusplus

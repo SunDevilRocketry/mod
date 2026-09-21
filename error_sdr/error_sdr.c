@@ -1,23 +1,22 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		error_sdr.c
-*
-* DESCRIPTION: 
-* 		Contains error-related functions for SDR code.
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************* 
+  * @file error_sdr.c
+  * @brief Contains error-related functions for SDR code.
+  *******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2026 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the   
+  * BSD-3-Clause.                                                          
+  *                                                                              
+  * https://opensource.org/license/bsd-3-clause        
+  *
+  *******************************************************************************
+  */
 
 
 /*------------------------------------------------------------------------------
@@ -36,7 +35,7 @@
 
 #ifdef STM32H750xx
 #include "stm32h7xx_hal.h"
-#elif defined( F1_TESTBED )
+#elif defined( F1_TESTBED ) && !defined( UNIT_TEST )
 // LEDs not supported. Provide a stub.
 typedef enum {
     LED_RED,
@@ -96,16 +95,11 @@ volatile ERROR_CALLBACK default_error_handler = { 0, dflt_error_handler };
 ------------------------------------------------------------------------------*/
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_fail_fast                                                        *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		This handles errors by matching an error code to its callback in the   *
-*       table.                                                                 *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Dispatches an error to its registered callback or default handler.
+  * @param error_code Error code to handle.
+  */
 void error_fail_fast
     (
     volatile ERROR_CODE error_code
@@ -138,149 +132,13 @@ default_error_handler.error_callback( error_code );
 } /* error_fail_fast */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_log_warning                                                      *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Place a warning message in the buffer.                                 *
-*                                                                              *
-*******************************************************************************/
-void error_log_warning
-    (
-    char* message
-    )
-{
-last_warning.systick = HAL_GetTick();
-memcpy( last_warning.message, message, 72 );
-is_pending_warning = true;
-
-} /* error_log_warning */
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_log_info                                                      *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Place a warning message in the buffer.                                 *
-*                                                                              *
-*******************************************************************************/
-void error_log_info
-    (
-    char* message
-    )
-{
-last_info.systick = HAL_GetTick();
-memcpy( last_info.message, message, 72 );
-is_pending_info = true;
-
-} /* error_log_info */
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_get_warning                                                      *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Get the latest warning message if one exists.                          *
-*                                                                              *
-*******************************************************************************/
-bool error_get_warning
-    (
-    TEXT_MESSAGE* buffer
-    )
-{
-if ( !is_pending_warning )
-    {
-    return false;
-    }
-
-memcpy( buffer, &last_warning, sizeof( TEXT_MESSAGE ) );
-is_pending_warning = false;
-return true;
-
-} /* error_get_warning */
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_is_pending_warning                                               *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Get the latest warning message if one exists.                          *
-*                                                                              *
-*******************************************************************************/
-bool error_is_pending_warning
-    (
-    void
-    )
-{
-return is_pending_warning;
-
-} /* error_is_pending_warning */
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_get_info                                                         *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Get the latest info message if one exists.                             *
-*                                                                              *
-*******************************************************************************/
-bool error_get_info
-    (
-    TEXT_MESSAGE* buffer
-    )
-{
-if ( !is_pending_info )
-    {
-    return false;
-    }
-
-memcpy( buffer, &last_info, sizeof( TEXT_MESSAGE ) );
-is_pending_info = false;
-return true;
-
-} /* error_get_info */
-
-
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		error_is_pending_info                                                  *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Get the latest info message if one exists.                             *
-*                                                                              *
-*******************************************************************************/
-bool error_is_pending_info
-    (
-    void
-    )
-{
-return is_pending_info;
-
-} /* error_is_pending_info */
-
-
 #if defined(USE_CALLBACK_TABLE)
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		callback_table_lookup                                                  *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Match an error code to its callback table entry. Returns null if       *
-*       a callback is not found.                                               *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Finds the callback associated with an error code.
+  * @param error_code Error code to find.
+  * @return Pointer to the matching callback, or NULL if none exists.
+  */
 static volatile ERROR_CALLBACK* callback_table_lookup
     (
     volatile ERROR_CODE error_code
@@ -301,22 +159,18 @@ return NULL;
 
 
 /**
- * GCOVR_EXCL_START
- * 
- * This whole function is excluded due to the control flow trap. It is impossible
- * to return from this function. This case can be reached, but the whole point of
- * getting here is that an error is unrecoverable, so via analysis we can prove
- * that this will not return.
- */
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-* 		dflt_error_handler                                                     *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-* 		Legacy style error trap function. Default error handler.               *
-*                                                                              *
-*******************************************************************************/
+  * GCOVR_EXCL_START
+  * 
+  * This whole function is excluded due to the control flow trap. It is impossible
+  * to return from this function. This case can be reached, but the whole point of
+  * getting here is that an error is unrecoverable, so via analysis we can prove
+  * that this will not return.
+  */
+
+/**
+  * @brief Handles an unrecoverable error using the default error trap.
+  * @param error_code Error code that caused the unrecoverable failure.
+  */
 static void dflt_error_handler
     (
     volatile ERROR_CODE error_code
@@ -327,9 +181,9 @@ while(1); /* Control flow trap */
 
 } /* dflt_error_handler */
 /**
- * GCOVR_EXCL_STOP
- */
+  * GCOVR_EXCL_STOP
+  */
 
-/*******************************************************************************
-* END OF FILE                                                                  * 
-*******************************************************************************/
+/**
+  * END OF FILE                                                                  * 
+  */

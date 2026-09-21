@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
-  * @file           : debug_sdr.c
+  * @file           : debug_sdr.h
   * @brief          : Interfaces for debugging SDR embedded firmware.
   ******************************************************************************
-  * @attention
+  * @copyright
   *
   * Copyright (c) 2026 Sun Devil Rocketry.
   * All rights reserved.
@@ -166,7 +166,8 @@ void debug_callback_handler
 #if defined( EMULATOR )
   #define debug_ignore_emulator_warnings_start()        \
     _Pragma("GCC diagnostic push")                      \
-    _Pragma("GCC diagnostic ignored \"-Wformat\"")
+    _Pragma("GCC diagnostic ignored \"-Wformat\"")      \
+    _Pragma("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"")
 #else
   #define debug_ignore_emulator_warnings_start() /* do nothing */
 #endif

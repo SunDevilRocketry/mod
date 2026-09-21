@@ -1,24 +1,22 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		sensor.h
-*
-* DESCRIPTION: 
-* 		Contains functions to interface between sdec terminal commands and SDR
-*       sensor APIs
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : sensor.h
+  * @brief          : Contains functions to interface between SDEC terminal commands and SDR sensor APIs
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE
+  * file in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef SENSOR_H
@@ -41,6 +39,8 @@ Includes
 	#include <stdint.h>
 #endif
 
+typedef struct _PRESET_DATA PRESET_DATA; /* From main.h */
+
 
 /*------------------------------------------------------------------------------
  Macros 
@@ -57,8 +57,9 @@ Includes
 
 /* General */
 #define NUM_SENSORS         ( 38   )
-// #define IMU_DATA_SIZE       ( 20   )
 #define SENSOR_DATA_SIZE	( 128   )
+#define COMP_ALPHA 			( 0.98f ) /* Used in sensor fusion */
+
 
 /*------------------------------------------------------------------------------
  Typdefs 
@@ -84,14 +85,55 @@ typedef enum
 	SENSOR_IT_TIMEOUT
     } SENSOR_STATUS;
 
+/* Mount configuration of FC */
+typedef enum 
+	{
+	MOUNT_ORIENTATION_IMU_INVERTED = -1, 	/* Antenna pointing up   */
+	MOUNT_ORIENTATION_IMU_NORMAL   = 1 		/* Antenna pointing down */
+	} MOUNT_ORIENTATION;
+
+/** @brief Physical-unit converted accel/gyro/mag data 
+  *
+  *  @note Migrated from imu.h/imu_legacy.h to avoid recursive include issues
+  */
+typedef struct _IMU_CONVERTED 
+    {
+    float accel_x;
+    float accel_y;
+    float accel_z;
+    float gyro_x ;
+    float gyro_y ;
+    float gyro_z ;
+    float mag_x ;
+    float mag_y ;
+    float mag_z ;
+    } IMU_CONVERTED;
+
+/* State estimation from processed sensors */
+typedef struct _STATE_ESTIMATION {
+    QUAT attitude;
+	float roll_rate;
+    float velocity;
+    float velo_x;
+    float velo_y;
+    float velo_z;     
+} STATE_ESTIMATION;
+
+/** @brief Aggregate struct containing converted IMU data and state estimate */
+typedef struct _IMU_DATA 
+    {
+    IMU_CONVERTED imu_converted;
+    STATE_ESTIMATION state_estimate;
+    } IMU_DATA;
+
 /* Sensor Data */
 typedef struct SENSOR_DATA 
 	{
-	IMU_DATA imu_data;
+	IMU_CONVERTED imu_converted;
+    STATE_ESTIMATION state_estimate;
 	float    baro_pressure; 
 	float    baro_temp;	
 	float	 baro_alt;
-	float 	 baro_velo;
 	float	 gps_altitude_ft;
 	float 	 gps_speed_kmh;
 	float 	 gps_utc_time;
@@ -114,81 +156,171 @@ typedef struct _BARO_PRESET
  Public Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-/* Execute a sensor subcommand */
+/**
+  * @brief Executes a sensor subcommand.
+  *
+  * @param subcommand Sensor subcommand code.
+  * @return Sensor operation status.
+  */
 SENSOR_STATUS sensor_cmd_execute
 	(
 	uint8_t subcommand
     );
 
-/* Dump all sensor readings to console */
+/**
+  * @brief Reads all sensors and fills the sensor data structure.
+  *
+  * @param sensor_data_ptr Pointer to the sensor data structure to fill.
+  * @return Sensor operation status.
+  */
 SENSOR_STATUS sensor_dump
 	(
     SENSOR_DATA* sensor_data_ptr 
     );
 
-/* Set the initial values for baro and imu tick at calibration */
-void sensor_initialize_tick
+/**
+  * @brief Initializes sensor timing, velocity, and attitude state.
+  *
+  * @param preset_data Pointer to the preset calibration data.
+  */
+void sensor_init
+	(
+	PRESET_DATA* preset_data
+	);
+
+/**
+  * @brief Gets the configured flight-computer mount orientation.
+  *
+  * @return The configured mount orientation.
+  */
+MOUNT_ORIENTATION get_mount_orientation
 	(
 	void
 	);
 
-/* Reset velocity values to prevent accumulation of drift */
+/**
+  * @brief Sets the flight-computer mount orientation.
+  *
+  * @param orientation Mount orientation to use for axis remapping.
+  */
+void set_mount_orientation
+	(
+	MOUNT_ORIENTATION orientation
+	);
+
+/**
+  * @brief Resets velocity values to prevent accumulation of drift.
+  */
 void sensor_reset_velo
 	(
 	void
 	);
 
-/* Perform sensor fusion on imu converted data to get body rate */
+/**
+  * @brief Performs sensor fusion on converted IMU data to get body rate.
+  *
+  * @param imu_converted Converted IMU data.
+  * @param state_estimate State estimate to update.
+  */
 void sensor_body_state
 	(
-	IMU_DATA* imu_data
+	const IMU_CONVERTED* imu_converted,
+	STATE_ESTIMATION* state_estimate
 	);
 
-/* Calculate the velocity depending on accel */
+/**
+  * @brief Remaps sensor axes for the flight configuration.
+  *
+  * @param x X-axis value to remap.
+  * @param y Y-axis value to remap.
+  * @param z Z-axis value to remap.
+  */
+void sensor_axis_remap
+	(
+	float* x,
+	float* y,
+	float* z
+	);
+
+/**
+  * @brief Calculates velocity from acceleration.
+  *
+  * @param imu_converted Converted IMU data.
+  * @param state_estimate State estimate to update.
+  */
 void sensor_imu_velo
 	(
-	IMU_DATA* imu_data
+	const IMU_CONVERTED* imu_converted,
+	STATE_ESTIMATION* state_estimate
 	);
 
-/* Conversion of IMU raw chip readouts into 9-axis Accelerometer and Gyro. */
+/**
+  * @brief Converts raw IMU readouts into accelerometer, gyro, and magnetometer data.
+  *
+  * @param imu_converted Converted IMU data to fill.
+  * @param imu_raw Raw IMU readouts.
+  */
 void sensor_conv_imu
 	(
-	IMU_DATA* imu_data,
+	IMU_CONVERTED* imu_converted,
 	IMU_RAW* imu_raw
 	);
 
-/* Convert Acc readouts to m/s^2 */
+/**
+  * @brief Converts accelerometer readouts to meters per second squared.
+  *
+  * @param readout Raw accelerometer readout.
+  * @return Acceleration in meters per second squared.
+  */
 float sensor_acc_conv
 	(
 	int16_t readout
 	);
 
-/* Convert gyro readouts to deg/s */
+/**
+  * @brief Converts gyro readouts to degrees per second.
+  *
+  * @param readout Raw gyro readout.
+  * @return Angular rate in degrees per second.
+  */
 float sensor_gyro_conv
 	(
 	int16_t readout
 	);
 
-/* Calculate the velocity from pressure readings */
-void sensor_baro_velo
+/**
+  * @brief Calculates altitude from pressure readings.
+  *
+  * @param sensor_data_ptr Sensor data structure to update.
+  */
+void sensor_baro_alt
 	(
 	SENSOR_DATA* sensor_data_ptr
 	);
 
 #ifdef A0002_REV2 
-/* Signal IT enabled peripherals to collect data. */
+/**
+  * @brief Signals interrupt-enabled peripherals to collect data.
+  *
+  * @param sensor_data_ptr Sensor data structure associated with the readings.
+  * @return Sensor operation status.
+  */
 SENSOR_STATUS sensor_start_IT
 	( 
 	SENSOR_DATA* sensor_data_ptr 
 	);
 
-/* Reserve the sensor data struct mutex and disable interrupts to ISRs that will check out the mutex. */
+/**
+  * @brief Reserves the sensor data mutex and disables related interrupts.
+  */
 void sensor_mutex_reserve
     (
     void
     );
 
-/* Release the sensor data struct mutex and enable interrupts to ISRs that will check out the mutex. */
+/**
+  * @brief Releases the sensor data mutex and enables related interrupts.
+  */
 void sensor_mutex_release
 	(
 	void

@@ -1,0 +1,5 @@
+build/
+coverage/
+results.txt
+trace-report.md
+_doc/

@@ -1,24 +1,22 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		sensor.c
-*
-* DESCRIPTION: 
-* 		Contains functions to interface between sdec terminal commands and SDR
-*       sensor APIs
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : sensor.c
+  * @brief          : Contains functions to interface between SDEC terminal commands and SDR sensor APIs
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE
+  * file in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 
 /*------------------------------------------------------------------------------
@@ -50,14 +48,23 @@
 /*------------------------------------------------------------------------------
  Global Variables 
 ------------------------------------------------------------------------------*/
-
-/* Timing (sensors) */
-extern volatile uint32_t tdelta, previous_time;
-uint64_t baro_velo_tick = 0;
-uint64_t imu_velo_tick = 0;
-
 extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
+
+/* Timing (sensors) */
+uint64_t imu_velo_tick = 0;
+
+/* IMU */
+float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
+
+/* State estimation */
+QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+
+/*------------------------------------------------------------------------------
+ Static Variables 
+------------------------------------------------------------------------------*/
+static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
 
 
 /*------------------------------------------------------------------------------
@@ -71,7 +78,7 @@ static SENSOR_STATUS sensor_get_it_ready
 
 static void sensor_conv_mag
 	(
-	IMU_DATA* imu_data, 
+	IMU_CONVERTED* imu_converted, 
 	IMU_RAW* imu_raw
 	);
 
@@ -81,15 +88,12 @@ static void sensor_conv_mag
 ------------------------------------------------------------------------------*/
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_cmd_execute                                                     *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Executes a sensor subcommand                                           *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Executes a sensor subcommand and transmits the requested readings.
+  * @param subcommand Sensor subcommand code.
+  * @return Sensor operation status.
+  */
 SENSOR_STATUS sensor_cmd_execute 
 	(
 	uint8_t subcommand 
@@ -171,15 +175,12 @@ switch ( subcommand )
 } /* sensor_cmd_execute */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_dump                                                            *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       reads from all sensors and fill in the sensor data structure           *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Reads the available sensors and fills the sensor data structure.
+  * @param sensor_data_ptr Pointer to the sensor data structure to fill.
+  * @return Sensor operation status.
+  */
 SENSOR_STATUS sensor_dump 
 	(
     SENSOR_DATA*        sensor_data_ptr /* Pointer to the sensor data struct should 
@@ -240,16 +241,16 @@ baro_status = baro_get_IT( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr-
 /*Compute State Estimations*/
 
 /* Calculated and retrieve converted IMU data */
-sensor_conv_imu( &(sensor_data_ptr->imu_data), &imu_raw );
+sensor_conv_imu( &(sensor_data_ptr->imu_converted), &imu_raw );
 
 /* Calculated to get body state */
-sensor_body_state( &(sensor_data_ptr->imu_data) );
+sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
 /* Calculated velocity and position */
-sensor_imu_velo( &(sensor_data_ptr->imu_data) );
+sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
-/* Calculated velocity from barometer */
-sensor_baro_velo( sensor_data_ptr );
+/* Calculated altitude from barometer */
+sensor_baro_alt( sensor_data_ptr );
 
 /* CRITICAL SECTION END */
 
@@ -282,147 +283,187 @@ else
 } /* sensor_dump */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_initialize_tick                                                 *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Set the initial values for baro and imu tick at calibration            *
-*                                                                              *
-*******************************************************************************/
-void sensor_initialize_tick
+
+/**
+  * @brief Initializes sensor timing and resets velocity state.
+  * @param preset_data Pointer to the preset calibration data.
+  */
+void sensor_init
+	(
+	PRESET_DATA* preset_data
+	)
+{
+imu_velo_tick = get_us_tick();
+
+sensor_reset_velo();
+
+// NA: deferred to Mahony filter
+// float ax = preset_data->imu_offset.accel_x;
+// float ay = preset_data->imu_offset.accel_y;
+// float az = preset_data->imu_offset.accel_z;
+
+} /* sensor_init */
+
+
+
+/**
+  * @brief Converts raw IMU readings into calibrated, remapped sensor data.
+  * @param imu_converted Converted IMU data to fill.
+  * @param imu_raw Raw IMU readouts.
+  */
+void sensor_conv_imu
+	(
+	IMU_CONVERTED* imu_converted, 
+	IMU_RAW* imu_raw
+	)
+{
+/* Convert raw accel values */ 
+imu_converted->accel_x = sensor_acc_conv(imu_raw->accel_x);
+imu_converted->accel_y = sensor_acc_conv(imu_raw->accel_y);
+imu_converted->accel_z = sensor_acc_conv(imu_raw->accel_z);
+
+sensor_axis_remap( &(imu_converted->accel_x), &(imu_converted->accel_y), &(imu_converted->accel_z) );
+
+/* Do not use offset compensation for accel to preserve gravity */
+/*
+imu_converted.accel_x -= imu_offset.accel_x;
+imu_converted.accel_y -= imu_offset.accel_y;
+imu_converted.accel_z -= imu_offset.accel_z;
+*/
+
+/* Convert raw gyroscope values to deg/s and remap axes */
+imu_converted->gyro_x = sensor_gyro_conv(imu_raw->gyro_x);
+imu_converted->gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
+imu_converted->gyro_z = sensor_gyro_conv(imu_raw->gyro_z);
+
+/* Remove gyro bias BEFORE applying axis conversion */
+imu_converted->gyro_x -= imu_offset.gyro_x;
+imu_converted->gyro_y -= imu_offset.gyro_y;
+imu_converted->gyro_z -= imu_offset.gyro_z;
+
+sensor_axis_remap( &(imu_converted->gyro_x), &(imu_converted->gyro_y), &(imu_converted->gyro_z) );
+
+sensor_conv_mag(imu_converted, imu_raw);
+}
+
+
+/**
+ * @brief Get the mount orientation
+ * 
+ * @return The configured mount orientation 
+ */
+MOUNT_ORIENTATION get_mount_orientation
 	(
 	void
 	)
 {
-baro_velo_tick = get_us_tick();
-imu_velo_tick = baro_velo_tick;
+return mount_orientation;
 
-} /* sensor_initialize_tick */
+} /* get_mount_orientation */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_conv_imu                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Conversion of IMU raw chip readouts into 9-axis Accelerometer and Gyro.*
-*                                                                              *
-*******************************************************************************/
-void sensor_conv_imu
+/**
+ * @brief Set the mount orientation
+ * 
+ * @param orientation The new mount orientation
+ */
+void set_mount_orientation
 	(
-	IMU_DATA* imu_data, 
-	IMU_RAW* imu_raw
+	MOUNT_ORIENTATION orientation
 	)
 {
-/* Convert raw accel values */
-imu_data->imu_converted.accel_x = sensor_acc_conv(imu_raw->accel_x);
-imu_data->imu_converted.accel_y = sensor_acc_conv(imu_raw->accel_y);
-imu_data->imu_converted.accel_z = sensor_acc_conv(imu_raw->accel_z);
+mount_orientation = orientation;
 
-/* Do not use offset compensation for accel to preserve gravity */
-/*
-imu_data->imu_converted.accel_x -= imu_offset.accel_x;
-imu_data->imu_converted.accel_y -= imu_offset.accel_y;
-imu_data->imu_converted.accel_z -= imu_offset.accel_z;
-*/
-
-/* Convert raw gyroscope values to deg/s */
-imu_data->imu_converted.gyro_x = sensor_gyro_conv(imu_raw->gyro_x);
-imu_data->imu_converted.gyro_y = sensor_gyro_conv(imu_raw->gyro_y);
-imu_data->imu_converted.gyro_z = sensor_gyro_conv(imu_raw->gyro_z);
-
-/* Remove gyro bias */
-imu_data->imu_converted.gyro_x -= imu_offset.gyro_x;
-imu_data->imu_converted.gyro_y -= imu_offset.gyro_y;
-imu_data->imu_converted.gyro_z -= imu_offset.gyro_z;
-
-sensor_conv_mag(imu_data, imu_raw);
-}
+} /* set_mount_orientation */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_body_state                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Perform sensor fusion on imu converted data to get body rate           *
-*                                                                              *
-*******************************************************************************/
+
 static uint32_t last_tick = 0;
+/**
+  * @brief Integrates gyro data to update the estimated body attitude and rate.
+  * @param imu_converted Converted IMU data.
+  * @param state_estimate State estimate to update.
+  */
 void sensor_body_state
 	(
-	IMU_DATA* imu_data
+	const IMU_CONVERTED* imu_converted,
+	STATE_ESTIMATION* state_estimate
 	)
 {
 /* Determine delta T */
 uint32_t now_tick = HAL_GetTick();
 float dt = (now_tick - last_tick) / 1000.0f;
-if (dt <= 0.0f || dt > 1.0f) dt = 0.01f;
+if ( dt <= 0.0f || dt > 1.0f ) 
+	{
+	dt = 0.01f;
+	}
 last_tick = now_tick;
 
 /* Copy IMU data for readability */
-float ax = imu_data->imu_converted.accel_x;
-float ay = imu_data->imu_converted.accel_y;
-float az = imu_data->imu_converted.accel_z;
+// float ax = imu_converted->accel_x;
+// float ay = imu_converted->accel_y;
+// float az = imu_converted->accel_z;
 
-float gx = imu_data->imu_converted.gyro_x;
-float gy = imu_data->imu_converted.gyro_y;
-float gz = imu_data->imu_converted.gyro_z;
+/* Raw gyro data in deg/s */
+float gx = imu_converted->gyro_x;
+float gy = imu_converted->gyro_y;
+float gz = imu_converted->gyro_z;
 
-/* Compute pitch/roll from accelerometer */
-float acc_roll  = -rad_to_deg(atan2f(ay, ax));
-float acc_pitch = rad_to_deg(atan2f(-az, sqrtf(ax * ax + ay * ay)));
+/* Convert gyro to pure quaternion */
+QUAT q_gyro; /* Must be in radians */
+q_gyro.w = 0.0f;
+q_gyro.x = deg_to_rad(gx);
+q_gyro.y = deg_to_rad(gy);
+q_gyro.z = deg_to_rad(gz);
 
-/* Integrate gyro data */
-static float roll = 0.0f;
-static float pitch = 0.0f;
-static float yaw = 0.0f;
+/* q_rate = 0.5 * attitude * q_gyro */
+QUAT q_rate = quat_mult(attitude, q_gyro);
+q_rate = quat_scale(q_rate, 0.5f);
 
-roll  += gx * dt;
-pitch += gy * dt;
-yaw   += gz * dt;
+/* Dead reckoing orientation by integrating gyro */
+/* attitude += dt * q_rate */
+QUAT rate_dt = quat_scale(q_rate, dt);
+attitude = quat_add(attitude, rate_dt);
 
-/* Wrap yaw to -180..180 degrees */
-if (yaw > 180.0f)  yaw -= 360.0f;
-if (yaw < -180.0f) yaw += 360.0f;
+/* Sensor fuson with gravity if not in flight */
+// NA: sensor fusion deferred to Mahony filter
 
-/* Complementary filter fusion */
-roll  = COMP_ALPHA * roll  + (1.0f - COMP_ALPHA) * acc_roll;
-pitch = COMP_ALPHA * pitch + (1.0f - COMP_ALPHA) * acc_pitch;
-// yaw uses gyro data only
+/* Scale back to unit quaternion to avoid drift */
+attitude = quat_normalize(attitude);
 
-/* Compute angular rates (deg/s) */
-float roll_r = deg_to_rad(roll);
-float pitch_r = deg_to_rad(pitch);
-
-float roll_rate  = gx + sinf(roll_r) * tanf(pitch_r) * gy + cosf(roll_r) * tanf(pitch_r) * gz;
-float pitch_rate = cosf(roll_r) * gy - sinf(roll_r) * gz;
-float yaw_rate   = (sinf(roll_r) / cosf(pitch_r)) * gy + (cosf(roll_r) / cosf(pitch_r)) * gz;
-
-/* Store results (angles & rates in degrees / deg/s) */
-imu_data->state_estimate.roll_angle  = roll;
-imu_data->state_estimate.pitch_angle = pitch;
-imu_data->state_estimate.yaw_angle   = yaw;
-imu_data->state_estimate.roll_rate   = roll_rate;
-imu_data->state_estimate.pitch_rate  = pitch_rate;
-imu_data->state_estimate.yaw_rate    = yaw_rate;
+/* Store results */
+state_estimate->attitude = attitude;
+state_estimate->roll_rate = gx; 	    /* Rate in deg/s */
 
 }
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_acc_conv                                                        *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Convert Acc readouts to m/s^2                                          *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Remaps sensor axes according to the flight-computer mounting orientation.
+  * @param x X-axis value to remap.
+  * @param y Y-axis value to remap.
+  * @param z Z-axis value to remap.
+  */
+void sensor_axis_remap
+	(
+	float* x,
+	float* y,
+	float* z
+	)
+{
+  *x *= mount_orientation;
+(void)y;
+  *z *= mount_orientation;
+}
+
+
+
+/**
+  * @brief Converts a raw accelerometer reading to meters per second squared.
+  * @param readout Raw accelerometer readout.
+  * @return Acceleration in meters per second squared.
+  */
 float sensor_acc_conv
 	(
 	int16_t readout
@@ -435,15 +476,12 @@ return accel_step * readout;
  
 } /* sensor_acc_conv */
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_gyro_conv                                                       *   
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Convert gyro readouts to deg/s                                         *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Converts a raw gyro reading to degrees per second.
+  * @param readout Raw gyro readout.
+  * @return Angular rate in degrees per second.
+  */
 float sensor_gyro_conv
 	(
 	int16_t readout
@@ -455,76 +493,65 @@ return readout / gyro_sens;
 
 } /* sensor_gyro_conv */
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_imu_velo                                                        *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Calculate the velocity depending on accel 							   *
-*                                                                              *
-*******************************************************************************/
-float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
-void sensor_imu_velo(IMU_DATA* imu_data){
-	float velo_x, velo_y, velo_z, velocity;
 
-	float accel_x = imu_data->imu_converted.accel_x;
-	float accel_y = imu_data->imu_converted.accel_y;
-	float accel_z = imu_data->imu_converted.accel_z;
+/**
+  * @brief Calculates velocity from converted accelerometer measurements.
+  * @param imu_converted Converted IMU data.
+  * @param state_estimate State estimate to update.
+  */
+void sensor_imu_velo
+	(
+	const IMU_CONVERTED* imu_converted,
+	STATE_ESTIMATION* state_estimate
+	)
+{
+float velo_x, velo_y, velo_z, velocity;
 
-	float ts_delta;
-	
-	uint64_t current_tick = get_us_tick();
-	uint64_t imu_tdelta = current_tick - imu_velo_tick;
-	ts_delta = imu_tdelta / MICROSEC_PER_SEC;
+float accel_x = imu_converted->accel_x;
+float accel_y = imu_converted->accel_y;
+float accel_z = imu_converted->accel_z;
 
-	// Calculate 3 velocity vectors using motion equations
-	velo_x = velo_x_prev + accel_x*ts_delta;
-	velo_y = velo_y_prev + accel_y*ts_delta;
-	velo_z = velo_z_prev + accel_z*ts_delta;
+float ts_delta;
 
-	// Calculate the velocity scalar
-	velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
+uint64_t current_tick = get_us_tick();
+uint64_t imu_tdelta = current_tick - imu_velo_tick;
+ts_delta = imu_tdelta / MICROSEC_PER_SEC;
 
-	/* Update state estimations*/
-	imu_data->state_estimate.velo_x = velo_x;
-	imu_data->state_estimate.velo_y = velo_y;
-	imu_data->state_estimate.velo_z = velo_z;
+// Calculate 3 velocity vectors using motion equations
+velo_x = velo_x_prev + accel_x*ts_delta;
+velo_y = velo_y_prev + accel_y*ts_delta;
+velo_z = velo_z_prev + accel_z*ts_delta;
 
-	imu_data->state_estimate.velocity = velocity;
+// Calculate the velocity scalar
+velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
 
-	// Save current velocity for next computation
-	velo_x_prev = velo_x;
-	velo_y_prev = velo_y;
-	velo_z_prev = velo_z;
+/* Update state estimations*/
+state_estimate->velo_x = velo_x;
+state_estimate->velo_y = velo_y;
+state_estimate->velo_z = velo_z;
 
-	imu_data->state_estimate.position = 0; //TODO: Implement position
+state_estimate->velocity = velocity;
 
-	imu_velo_tick = current_tick;
+// Save current velocity for next computation
+velo_x_prev = velo_x;
+velo_y_prev = velo_y;
+velo_z_prev = velo_z;
+
+imu_velo_tick = current_tick;
 
 }
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_baro_velo                                                       *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Calculate the velocity from pressure readings 						   *
-*                                                                              *
-*******************************************************************************/
-float velo_prev, alt_prev = 0.0;
-void sensor_baro_velo(SENSOR_DATA* sen_data)
-{
-	float velocity;
 
+/**
+  * @brief Calculates altitude from the current barometric pressure and temperature.
+  * @param sen_data Sensor data structure to update.
+  */
+void sensor_baro_alt(SENSOR_DATA* sen_data)
+{
 	float pressure = sen_data->baro_pressure;
 	float temp = sen_data->baro_temp;
 	// conv pressure to pascal for equation
 	// pressure *= 6894.76;
-	uint64_t current_tick = get_us_tick();
-	uint64_t baro_tdelta = current_tick - baro_velo_tick;
-	float ts_delta = baro_tdelta / MICROSEC_PER_SEC;
 
 	// calc altitude
 	float PRESSURE_SEA_LEVEL = 101325;
@@ -533,35 +560,20 @@ void sensor_baro_velo(SENSOR_DATA* sen_data)
 
     float alt = (pow(PRESSURE_SEA_LEVEL / pressure, EXP) - 1) * (temp + 273.15) / TEMP_LAPSE_RATE;
 
-
-	// Calculate the velocity scalar
-	velocity = (alt-alt_prev)/ts_delta;
-	alt_prev = alt;
-	velo_prev = velocity;
-
 	sen_data->baro_alt = alt;
-	sen_data->baro_velo = velocity;
-
-	baro_velo_tick = current_tick;
 
 }
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_reset_velo                                                      *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Reset velocity values to prevent accumulation of drift                 *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Resets accumulated velocity values to prevent drift.
+  */
 void sensor_reset_velo
 	(
 	void
 	)
 {
-velo_prev = 0;
 velo_x_prev = 0;
 velo_y_prev = 0;
 velo_z_prev = 0;
@@ -570,15 +582,12 @@ velo_z_prev = 0;
 
 
 #if defined( A0002_REV2 )
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_start_IT                                                   	   *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Signal IT enabled peripherals to collect data.                         *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Starts interrupt-driven measurements for the enabled sensors.
+  * @param sensor_data_ptr Sensor data structure associated with the readings.
+  * @return Sensor operation status.
+  */
 SENSOR_STATUS sensor_start_IT
 	( 
 	SENSOR_DATA* sensor_data_ptr
@@ -597,16 +606,10 @@ return SENSOR_OK;
 } /* sensor_start_IT */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-*       sensor_mutex_reserve                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-*       Reserve the sensor data struct mutex and disable interrupts            *
-*       to ISRs that will check out the mutex.                                 *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Disables sensor-related interrupts while sensor data is accessed.
+  */
 void sensor_mutex_reserve
     (
     void
@@ -618,16 +621,10 @@ HAL_NVIC_DisableIRQ( GPS_UART_IRQn );
 } /* sensor_mutex_reserve */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-*       sensor_mutex_release                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-*       Release the sensor data struct mutex and enable interrupts             *
-*       to ISRs that will check out the mutex.                                 *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Re-enables sensor-related interrupts after sensor data access.
+  */
 void sensor_mutex_release
     (
     void
@@ -645,17 +642,13 @@ HAL_NVIC_EnableIRQ( GPS_UART_IRQn );
  Internal procedures 
 ------------------------------------------------------------------------------*/
 
-
 #ifdef A0002_REV2
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_get_it_ready                                            *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Ensures baro & mag & imu are ready to be read from.                          *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Waits until the interrupt-driven sensors report ready status.
+  * @param timeout Maximum wait time in milliseconds.
+  * @return Sensor operation status.
+  */
 static SENSOR_STATUS sensor_get_it_ready
 	(
 	uint32_t timeout
@@ -683,58 +676,56 @@ return SENSOR_IT_TIMEOUT;
 }
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_conv_mag											           	   *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Convert raw magnetometer values to useful magnetic field data.         *
-*                                                                              *
-* COPYRIGHT:                                                                   *
-*       This function is heavily derived from the official Bosch BMM150        *
-*       driver, which is protected by the BSD-3-Clause license. This function  *
-*		is exempt from any licensing that may be applied to a current/future   * 
-*		Sun Devil Rocketry project. Per the terms of the BSD-3-Clause license, *
-*		the following notice is retained from the source project and applies   *
-*		to the procedure below.                                                *
-*	              							                                   *
-*		Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.		   *
-*																			   *
-*		BSD-3-Clause														   *
-*																			   *
-*		Redistribution and use in source and binary forms, with or without	   *
-*		modification, are permitted provided that the following conditions are *
-*		met:																   *
-*																			   *
-*		1. Redistributions of source code must retain the above copyright      *
-*	    notice, this list of conditions and the following disclaimer.		   *
-*																			   *
-*		2. Redistributions in binary form must reproduce the above copyright   *
-*	    notice, this list of conditions and the following disclaimer in the    *
-*	    documentation and/or other materials provided with the distribution.   *
-*																			   *
-*		3. Neither the name of the copyright holder nor the names of its       *
-*	    contributors may be used to endorse or promote products derived from   *
-*	    this software without specific prior written permission. 			   *
-*																			   *
-*		THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS	   *
-*		"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT	   *
-*		LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS	   *
-*		FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE		   *
-*		COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,   *
-*		INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES			   *
-*		(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR	   *
-*		SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)	   *
-*		HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,	   *
-*		STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  *
-*		IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE	   *
-*		POSSIBILITY OF SUCH DAMAGE.											   *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Converts raw magnetometer readings into magnetic field data.
+  * @param imu_converted Converted IMU data to update.
+  * @param imu_raw Raw magnetometer readouts.
+  *
+  * @attention 
+  * 
+  * This function is heavily derived from the official Bosch BMM150
+  * driver, which is protected by the BSD-3-Clause license. This function
+  *	is exempt from any licensing that may be applied to a current/future
+  *	Sun Devil Rocketry project. Per the terms of the BSD-3-Clause license,
+  *	the following notice is retained from the source project and applies
+  *	to the procedure below.
+  *
+  * 	Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.
+  *
+  *		BSD-3-Clause
+  *																			   
+  *		Redistribution and use in source and binary forms, with or without	   
+  *		modification, are permitted provided that the following conditions are 
+  *		met:																   
+  *																			   
+  *		1. Redistributions of source code must retain the above copyright      
+  *	    notice, this list of conditions and the following disclaimer.		   
+  *																			   
+  *		2. Redistributions in binary form must reproduce the above copyright   
+  *	    notice, this list of conditions and the following disclaimer in the    
+  *	    documentation and/or other materials provided with the distribution.   
+  *																			   
+  *		3. Neither the name of the copyright holder nor the names of its       
+  *	    contributors may be used to endorse or promote products derived from   
+  *	    this software without specific prior written permission. 			   
+  *																			   
+  *		THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS	   
+  *		"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT	   
+  *		LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS	   
+  *		FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE		   
+  *		COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,   
+  *		INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES			   
+  *		(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR	   
+  *		SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)	   
+  *		HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,	   
+  *		STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  
+  *		IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE	   
+  *		POSSIBILITY OF SUCH DAMAGE.		
+  */
 static void sensor_conv_mag
 	(
-	IMU_DATA* imu_data, 
+	IMU_CONVERTED* imu_converted, 
 	IMU_RAW* imu_raw
 	)
 {
@@ -785,13 +776,13 @@ mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
 /*------------------------------------------------------------------------------
  Store converted field data
 ------------------------------------------------------------------------------*/
-imu_data->imu_converted.mag_x = mag_x;
-imu_data->imu_converted.mag_y = mag_y;
-imu_data->imu_converted.mag_z = mag_z;
+imu_converted->mag_x = mag_x;
+imu_converted->mag_y = mag_y;
+imu_converted->mag_z = mag_z;
 } /* sensor_conv_mag */
 #endif
 
 
-/*******************************************************************************
-* END OF FILE                                                                  * 
-*******************************************************************************/
+/**
+  * END OF FILE                                                                  * 
+  */

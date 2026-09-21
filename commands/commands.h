@@ -1,23 +1,22 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		commands.h
-*
-* DESCRIPTION: 
-* 		Contains general command functions common to all embedded controllers
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : commands.h
+  * @brief          : Contains general command functions common to all embedded controllers
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE
+  * file in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef COMMANDS_H
@@ -30,6 +29,7 @@ extern "C" {
 /* platform specific includes */
 #if defined( A0002_REV2 ) || defined( A0005_REV1 )
 #include "imu.h"
+#include "usb.h"
 #endif
 
 /*------------------------------------------------------------------------------
@@ -95,36 +95,29 @@ extern "C" {
 #define FIRMWARE_RECEIVER	    ( 0x11 ) /* Reciever Firmware 	 */
 
 /* Other macros */
-#define DASHBOARD_DUMP_SIZE	( 72 )
+#define DASHBOARD_DUMP_SIZE	( 36 )
 
 typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
 	{
+	QUAT attitude;
+	float alt;
+	float latitude;
+	float longitude;
 	float acc_x;
-	float acc_y;
-	float acc_z;
-	float gyro_x;
-	float gyro_y;
-	float gyro_z;
-	float roll_angle;
-	float pitch_angle;
-	float yaw_angle;
 	float roll_rate;
-	float pitch_rate;
-	float yaw_rate;
-	float    baro_pressure; 
-	float    baro_temp;	
-	float	 baro_alt;
-	float 	 baro_velo;
-	float	 gps_dec_longitude;
-	float	 gps_dec_latitude;
 	} DASHBOARD_DUMP_TYPE;
-	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == 72, "DASHBOARD_DUMP_TYPE size invalid.");
+	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == DASHBOARD_DUMP_SIZE, "DASHBOARD_DUMP_TYPE size invalid.");
 
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
 
-/* Sends a single response byte back to sender */
+/**
+  * @brief Sends a single response byte back to sender.
+  *
+  * @param cmd_source The source of the command when building for a valve
+  *        controller.
+  */
 void ping
 	(
 	#ifndef VALVE_CONTROLLER
@@ -135,11 +128,22 @@ void ping
 	);
 
 #ifdef A0002_REV2
+/**
+  * @brief Sends the data required by the dashboard.
+  *
+  * @return USB transmission status.
+  */
 USB_STATUS dashboard_dump
     (
     void
     );
 
+/**
+  * @brief Fill the buffer with the dashboard dump.
+  *
+  * @param buffer Pointer to the dashboard dump buffer. Must be
+  *        DASHBOARD_DUMP_SIZE.
+  */
 void dashboard_construct_dump
     (
     DASHBOARD_DUMP_TYPE* buffer /* must be DASHBOARD_DUMP_SIZE */
