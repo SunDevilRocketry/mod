@@ -442,7 +442,7 @@ sensor_conv_mag(imu_converted, imu_raw);
 }
 
 
-MOUNT_ORIENTATION get_mount_orientation
+MOUNT_ORIENTATION sensor_get_mount_orientation
 	(
 	void
 	)
@@ -451,7 +451,7 @@ return mount_orientation;
 }
 
 
-void set_mount_orientation
+void sensor_set_mount_orientation
 	(
 	MOUNT_ORIENTATION orientation
 	)
@@ -524,8 +524,7 @@ accel_body_m_s2.z = imu_converted->accel_z;
  * Permit accelerometer correction only before powered flight. The Mahony
  * filter still performs its own magnitude and finite-value checks.
  */
-use_accel =
-    get_fc_state() <= FC_STATE_LAUNCH_DETECT;
+use_accel = get_fc_state() <= FC_STATE_LAUNCH_DETECT;
 
 MAHONY_STATUS mahony_status = mahony_update_imu
     (

@@ -45,7 +45,7 @@
 /**
  * @brief Determines whether every quaternion component is finite.
  */
-static bool mahony_quat_is_finite
+static bool quat_is_finite
     (
     QUAT quaternion
     )
@@ -58,12 +58,12 @@ return
     && isfinite(quaternion.z)
     );
 
-} /* mahony_quat_is_finite */
+} /* quat_is_finite */
 
 /**
  * @brief Determines whether every vector component is finite.
  */
-static bool mahony_vector_is_finite
+static bool vector_is_finite
     (
     VECTOR_3F vector
     )
@@ -75,7 +75,7 @@ return
     && isfinite(vector.z)
     );
 
-} /* mahony_vector_is_finite */
+} /* vector_is_finite */
 
 /**
  * @brief Calculates the magnitude of a three-dimensional vector.
@@ -109,7 +109,7 @@ if ( vector == NULL )
     return false;
     }
 
-if ( !mahony_vector_is_finite(*vector) )
+if ( !vector_is_finite(*vector) )
     {
     return false;
     }
@@ -229,13 +229,13 @@ if ( filter == NULL )
     return MAHONY_NULL_POINTER;
     }
 
-if ( !mahony_quat_is_finite(initial_attitude) )
+if ( !quat_is_finite(initial_attitude) )
     {
     return MAHONY_INVALID_QUATERNION;
     }
 
 if ( !isfinite(proportional_gain)
-     || !isfinite(integral_gain) )
+    || !isfinite(integral_gain) )
     {
     return MAHONY_NONFINITE_GAIN;
     }
@@ -280,18 +280,18 @@ if ( filter == NULL )
     return MAHONY_NULL_POINTER;
     }
 
-if ( !mahony_quat_is_finite(filter->attitude) )
+if ( !quat_is_finite(filter->attitude) )
     {
     return MAHONY_INVALID_QUATERNION;
     }
 
-if ( !mahony_vector_is_finite(gyro_body_rad_s) )
+if ( !vector_is_finite(gyro_body_rad_s) )
     {
     return MAHONY_INVALID_GYRO;
     }
 
 if ( !isfinite(delta_time_s)
-     || delta_time_s <= 0.0f )
+    || delta_time_s <= 0.0f )
     {
     return MAHONY_INVALID_DELTA_TIME;
     }
@@ -299,38 +299,19 @@ if ( !isfinite(delta_time_s)
 /*
  * The attitude quaternion is a body-to-world rotation and angular velocity
  * is expressed in the body frame:
- *
- * q_dot = 0.5 * q * omega_body
  */
 angular_velocity.w = 0.0f;
 angular_velocity.x = gyro_body_rad_s.x;
 angular_velocity.y = gyro_body_rad_s.y;
 angular_velocity.z = gyro_body_rad_s.z;
 
-attitude_derivative = quat_mult
-    (
-    filter->attitude,
-    angular_velocity
-    );
+/* q_dot = 0.5 * q * omega_body */
+attitude_derivative = quat_mult(filter->attitude, angular_velocity);
+attitude_derivative = quat_scale(attitude_derivative, 0.5f);
 
-attitude_derivative = quat_scale
-    (
-    attitude_derivative,
-    0.5f
-    );
-
-attitude_delta = quat_scale
-    (
-    attitude_derivative,
-    delta_time_s
-    );
-
-filter->attitude = quat_add
-    (
-    filter->attitude,
-    attitude_delta
-    );
-
+/* Scale q_dot by delta_t, add to attitude, and normalize*/
+attitude_delta = quat_scale(attitude_derivative, delta_time_s);
+filter->attitude = quat_add(filter->attitude, attitude_delta);
 filter->attitude = quat_normalize(filter->attitude);
 
 return MAHONY_OK;
@@ -364,28 +345,25 @@ if ( filter == NULL )
     return MAHONY_NULL_POINTER;
     }
 
-if ( !mahony_vector_is_finite(gyro_body_rad_s) )
+if ( !vector_is_finite(gyro_body_rad_s) )
     {
     return MAHONY_INVALID_GYRO;
     }
 
 if ( !isfinite(delta_time_s)
-     || delta_time_s <= 0.0f )
+    || delta_time_s <= 0.0f )
     {
     return MAHONY_INVALID_DELTA_TIME;
     }
 
 accel_magnitude = vector_magnitude(accel_body);
 
-accel_valid =
-    mahony_vector_is_finite(accel_body)
-    && isfinite(accel_magnitude)
-    && accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE
-    && accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
+accel_valid = vector_is_finite(accel_body)
+            && isfinite(accel_magnitude)
+            && accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE
+            && accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
 
-apply_accel =
-    use_accel
-    && accel_valid;
+apply_accel = use_accel && accel_valid;
 
 gyro_corrected = gyro_body_rad_s;
 
@@ -393,39 +371,29 @@ gyro_corrected = gyro_body_rad_s;
  * Accelerometer feedback is optional. If the measurement is invalid or has
  * zero magnitude, continue with gyroscope-only propagation.
  */
-if ( apply_accel )
+if ( apply_accel && vector_normalize(&accel_body) )
     {
-    if ( vector_normalize(&accel_body) )
-        {
-        /*
-         * The attitude quaternion represents the body-to-world rotation.
-         * Rotate the fixed world gravity direction into the body frame to
-         * predict where gravity should appear according to the estimate.
-         */
-        gravity_world.w = 0.0f;
-        gravity_world.x = 0.0f;
-        gravity_world.y = 0.0f;
-        gravity_world.z = 1.0f;
+    /*
+        * The attitude quaternion represents the body-to-world rotation.
+        * Rotate the fixed world gravity direction into the body frame to
+        * predict where gravity should appear according to the estimate.
+        */
+    gravity_world.w = 0.0f;
+    gravity_world.x = 0.0f;
+    gravity_world.y = 0.0f;
+    gravity_world.z = -1.0f;
 
-        gravity_body_quat = quat_rotate_world_to_body
-            (
-            filter->attitude,
-            gravity_world
-            );
+    gravity_body_quat = quat_rotate_world_to_body(filter->attitude, gravity_world);
 
-        gravity_estimated_body.x = gravity_body_quat.x;
-        gravity_estimated_body.y = gravity_body_quat.y;
-        gravity_estimated_body.z = gravity_body_quat.z;
+    gravity_estimated_body.x = gravity_body_quat.x;
+    gravity_estimated_body.y = gravity_body_quat.y;
+    gravity_estimated_body.z = gravity_body_quat.z;
 
-        /*
-         * measured x estimated produces a correction that drives the
-         * estimated gravity direction toward the measured direction.
-         */
-        attitude_error = vector_cross
-        (
-        accel_body,
-        gravity_estimated_body
-        );
+    /*
+    * measured x estimated produces a correction that drives the
+    * estimated gravity direction toward the measured direction.
+    */
+    attitude_error = vector_cross(accel_body, gravity_estimated_body);
 
     /*
     * Accumulate persistent attitude error as a gyro-rate correction. Integral
@@ -435,61 +403,20 @@ if ( apply_accel )
     */
     if ( filter->integral_gain > 0.0f )
         {
-        filter->integral_error.x +=
-            filter->integral_gain *
-            attitude_error.x *
-            delta_time_s;
+        filter->integral_error.x += filter->integral_gain * attitude_error.x * delta_time_s;
+        filter->integral_error.y += filter->integral_gain * attitude_error.y * delta_time_s;
+        filter->integral_error.z += filter->integral_gain * attitude_error.z * delta_time_s;
 
-        filter->integral_error.y +=
-            filter->integral_gain *
-            attitude_error.y *
-            delta_time_s;
-
-        filter->integral_error.z +=
-            filter->integral_gain *
-            attitude_error.z *
-            delta_time_s;
-
-        filter->integral_error.x = clamp_float
-            (
-            filter->integral_error.x,
-            -MAHONY_INTEGRAL_LIMIT_RAD_S,
-            MAHONY_INTEGRAL_LIMIT_RAD_S
-            );
-
-        filter->integral_error.y = clamp_float
-            (
-            filter->integral_error.y,
-            -MAHONY_INTEGRAL_LIMIT_RAD_S,
-            MAHONY_INTEGRAL_LIMIT_RAD_S
-            );
-
-        filter->integral_error.z = clamp_float
-            (
-            filter->integral_error.z,
-            -MAHONY_INTEGRAL_LIMIT_RAD_S,
-            MAHONY_INTEGRAL_LIMIT_RAD_S
-            );
+        filter->integral_error.x = clamp_float(filter->integral_error.x, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
+        filter->integral_error.y = clamp_float(filter->integral_error.y, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
+        filter->integral_error.z = clamp_float(filter->integral_error.z, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
         }
 
-    proportional_correction = vector_scale
-        (
-        attitude_error,
-        filter->proportional_gain
-        );
+    proportional_correction = vector_scale(attitude_error, filter->proportional_gain);
 
-    gyro_corrected = vector_add
-        (
-        gyro_corrected,
-        proportional_correction
-        );
+    gyro_corrected = vector_add(gyro_corrected, proportional_correction);
 
-    gyro_corrected = vector_add
-        (
-        gyro_corrected,
-        filter->integral_error
-        );
-        }
+    gyro_corrected = vector_add(gyro_corrected, filter->integral_error);
     }
 
 return mahony_update_gyro

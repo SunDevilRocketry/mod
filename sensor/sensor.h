@@ -183,12 +183,12 @@ void sensor_init
 	PRESET_DATA* preset_data
 	);
 
-MOUNT_ORIENTATION get_mount_orientation
+MOUNT_ORIENTATION sensor_get_mount_orientation
 	(
 	void
 	);
 
-void set_mount_orientation
+void sensor_set_mount_orientation
 	(
 	MOUNT_ORIENTATION orientation
 	);
