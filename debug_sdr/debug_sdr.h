@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
-  * @file           : debug_sdr.c
+  * @file           : debug_sdr.h
   * @brief          : Interfaces for debugging SDR embedded firmware.
   ******************************************************************************
-  * @attention
+  * @copyright
   *
   * Copyright (c) 2026 Sun Devil Rocketry.
   * All rights reserved.
