@@ -573,8 +573,8 @@ void sensor_axis_remap
 	)
 {
 *x *= mount_orientation;
-(void)y;
-*z *= mount_orientation;
+(void)z;
+*y *= mount_orientation;
 }
 
 
@@ -645,7 +645,7 @@ const QUAT gravity_world =
     .w = 0.0f,
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 /*
