@@ -572,8 +572,8 @@ void sensor_axis_remap
 	)
 {
 *x *= mount_orientation;
-(void)y;
-*z *= mount_orientation;
+(void)z;
+*y *= mount_orientation;
 }
 
 
