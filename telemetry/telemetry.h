@@ -59,6 +59,7 @@ extern "C" {
 typedef uint8_t FLIGHT_COMP_STATE_TYPE;
 
 /* opaque structs to allow FC dependencies to be used on non-FC platforms*/
+#ifdef F1_TESTBED
 typedef struct {
     float imu_offset[ 6 ];
 } IMU_OFFSET;
@@ -70,6 +71,7 @@ typedef struct {
 typedef struct {
     uint8_t servo_preset[ 4 ];
 } SERVO_PRESET;
+#endif /* F1_TESTBED */
 #endif
 
 typedef uint32_t VERSION_INFO_TYPE; /* hw version : fw version : fw patch : fw prerelease */
