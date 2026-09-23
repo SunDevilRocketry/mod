@@ -59,7 +59,7 @@ C_INCLUDES = \
 C_DEFS = \
 -DUNIT_TEST \
 -DUSE_CALLBACK_TABLE \
--DF1_TESTBED
+-DSTM32H750xx
 
 CFLAGS = $(C_INCLUDES) $(C_DEFS) $(OPT) -Wall -g
 CFLAGS += -Wno-unused-function
