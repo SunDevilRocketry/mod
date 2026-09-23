@@ -288,11 +288,12 @@ if ( apply_accel && vector_normalize(&accel_body) )
         {
         filter->integral_error.x += filter->integral_gain * attitude_error.x * delta_time_s;
         filter->integral_error.y += filter->integral_gain * attitude_error.y * delta_time_s;
-        filter->integral_error.z += filter->integral_gain * attitude_error.z * delta_time_s;
+        /* The filter has no yaw reference, so avoid accumulating drift on the z axis */
+        /* filter->integral_error.z += filter->integral_gain * attitude_error.z * delta_time_s; */
 
         filter->integral_error.x = clamp_float(filter->integral_error.x, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
         filter->integral_error.y = clamp_float(filter->integral_error.y, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
-        filter->integral_error.z = clamp_float(filter->integral_error.z, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
+        /* filter->integral_error.z = clamp_float(filter->integral_error.z, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S); */
         }
 
     proportional_correction = vector_scale(attitude_error, filter->proportional_gain);
@@ -302,7 +303,7 @@ if ( apply_accel && vector_normalize(&accel_body) )
     }
 
 return mahony_update_gyro(filter, gyro_corrected, delta_time_s);
-
+    
 } /* mahony_update_imu */
 
 /*******************************************************************************
