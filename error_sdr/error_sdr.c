@@ -31,11 +31,11 @@
 #include "main.h"
 #include "math_sdr.h"
 #include "error_sdr.h"
-#include "led.h"
 
 #ifdef STM32H750xx
 #include "stm32h7xx_hal.h"
-#elif defined( F1_TESTBED ) && !defined( UNIT_TEST )
+#include "led.h"
+#elif defined( F1_TESTBED )
 // LEDs not supported. Provide a stub.
 typedef enum {
     LED_RED,
