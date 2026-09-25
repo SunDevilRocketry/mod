@@ -46,30 +46,6 @@ TEST_end_nested_case();
 
 } /* assert_quat_components */
 
-/**
- * @brief Limits a floating-point value to a specified range.
- */
-static float clamp_float
-    (
-    float value,
-    float minimum,
-    float maximum
-    )
-{
-if ( value < minimum )
-    {
-    return minimum;
-    }
-
-if ( value > maximum )
-    {
-    return maximum;
-    }
-
-return value;
-
-} /* clamp_float */
-
 
 /**
  * @brief Converts a body-to-world quaternion into ZYX Euler angles.
@@ -819,7 +795,7 @@ VECTOR_3F accel_body =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -906,7 +882,7 @@ VECTOR_3F accel_body =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 QUAT body_z =
@@ -1017,7 +993,7 @@ VECTOR_3F accel_body =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 QUAT body_z =
@@ -1128,7 +1104,7 @@ VECTOR_3F accel_body =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 QUAT body_x =
@@ -1597,7 +1573,7 @@ VECTOR_3F accel_body =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 QUAT body_z =
@@ -1725,7 +1701,7 @@ VECTOR_3F low_accel =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = 0.50f * GRAVITY
+    .z = 0.50f * -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -1832,7 +1808,7 @@ VECTOR_3F invalid_accel =
     {
     .x = NAN,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -1934,7 +1910,7 @@ VECTOR_3F valid_accel =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 QUAT body_z =
@@ -2040,7 +2016,7 @@ VECTOR_3F high_accel =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = 2.0f * GRAVITY
+    .z = 2.0f * -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -2146,7 +2122,7 @@ VECTOR_3F valid_accel =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -2235,7 +2211,7 @@ VECTOR_3F valid_accel =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -2320,7 +2296,7 @@ VECTOR_3F valid_accel =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -2413,7 +2389,7 @@ VECTOR_3F invalid_accel =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = 2.0f * GRAVITY
+    .z = 2.0f * -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -2504,7 +2480,7 @@ VECTOR_3F valid_accel =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -2601,7 +2577,7 @@ VECTOR_3F valid_accel =
     {
     .x = 0.0f,
     .y = 0.0f,
-    .z = GRAVITY
+    .z = -GRAVITY
     };
 
 TEST_ASSERT_EQ_UINT
@@ -2682,116 +2658,35 @@ int main
 {
 unit_test tests[] =
     {
-    {
-    "mahony_init_identity_attitude",
-    test_mahony_init_identity_attitude
-    },
-    {
-    "mahony_init_normalizes_attitude",
-    test_mahony_init_normalizes_attitude
-    },
-    {
-    "mahony_init_zero_quaternion_uses_identity",
-    test_mahony_init_zero_quaternion_uses_identity
-    },
-    {
-    "mahony_init_clears_integral_error",
-    test_mahony_init_clears_integral_error
-    },
-    {
-    "mahony_init_rejects_null_filter",
-    test_mahony_init_rejects_null_filter
-    },
-    {
-    "mahony_init_rejects_negative_gain",
-    test_mahony_init_rejects_negative_gain
-    },
-    {
-    "mahony_update_gyro_zero_rate",
-    test_mahony_update_gyro_zero_rate
-    },
-    {
-    "mahony_update_gyro_positive_yaw",
-    test_mahony_update_gyro_positive_yaw
-    },
-    {
-    "mahony_update_gyro_rejects_invalid_delta_time",
-    test_mahony_update_gyro_rejects_invalid_delta_time
-    },
-    {
-    "mahony_update_imu_aligned_gravity",
-    test_mahony_update_imu_aligned_gravity
-    },
-    {
-    "mahony_update_imu_roll_error_converges",
-    test_mahony_update_imu_roll_error_converges
-    },
-    {
-    "mahony_update_imu_pitch_error_converges",
-    test_mahony_update_imu_pitch_error_converges
-    },
-    {
-    "mahony_update_imu_yaw_error_does_not_converge",
-    test_mahony_update_imu_yaw_error_does_not_converge
-    },
-    {
-    "mahony_update_imu_zero_accel_uses_gyro_only",
-    test_mahony_update_imu_zero_accel_uses_gyro_only
-    },
-    {
-    "mahony_update_imu_disabled_accel_uses_gyro_only",
-    test_mahony_update_imu_disabled_accel_uses_gyro_only
-    },
-    {
-    "mahony_print_gyro_propagation",
-    test_mahony_print_gyro_propagation
-    },
-    {
-    "mahony_print_accelerometer_correction",
-    test_mahony_print_accelerometer_correction
-    },
-    {
-    "mahony_update_imu_rejects_low_accel_magnitude",
-    test_mahony_update_imu_rejects_low_accel_magnitude
-    },
-    {
-    "mahony_update_imu_rejects_high_accel_magnitude",
-    test_mahony_update_imu_rejects_high_accel_magnitude
-    },
-    {
-    "mahony_update_imu_rejects_nonfinite_accel",
-    test_mahony_update_imu_rejects_nonfinite_accel
-    },
-    {
-    "mahony_update_imu_accepts_valid_accel_magnitude",
-    test_mahony_update_imu_accepts_valid_accel_magnitude
-    },
-    {
-    "mahony_integral_zero_gain_does_not_accumulate",
-    test_mahony_integral_zero_gain_does_not_accumulate
-    },
-    {
-    "mahony_integral_valid_error_accumulates",
-    test_mahony_integral_valid_error_accumulates
-    },
-    {
-    "mahony_integral_disabled_accel_does_not_accumulate",
-    test_mahony_integral_disabled_accel_does_not_accumulate
-    },
-    {
-    "mahony_integral_invalid_accel_does_not_accumulate",
-    test_mahony_integral_invalid_accel_does_not_accumulate
-    },
-    {
-    "mahony_integral_is_limited",
-    test_mahony_integral_is_limited
-    },
-    {
-    "mahony_integral_correction_affects_attitude",
-    test_mahony_integral_correction_affects_attitude
-    },
+    { "mahony_init_identity_attitude", test_mahony_init_identity_attitude },
+    { "mahony_init_normalizes_attitude", test_mahony_init_normalizes_attitude },
+    { "mahony_init_zero_quaternion_uses_identity", test_mahony_init_zero_quaternion_uses_identity },
+    { "mahony_init_clears_integral_error", test_mahony_init_clears_integral_error },
+    { "mahony_init_rejects_null_filter", test_mahony_init_rejects_null_filter },
+    { "mahony_init_rejects_negative_gain", test_mahony_init_rejects_negative_gain },
+    { "mahony_update_gyro_zero_rate", test_mahony_update_gyro_zero_rate },
+    { "mahony_update_gyro_positive_yaw", test_mahony_update_gyro_positive_yaw },
+    { "mahony_update_gyro_rejects_invalid_delta_time", test_mahony_update_gyro_rejects_invalid_delta_time },
+    { "mahony_update_imu_aligned_gravity", test_mahony_update_imu_aligned_gravity },
+    { "mahony_update_imu_roll_error_converges", test_mahony_update_imu_roll_error_converges },
+    { "mahony_update_imu_pitch_error_converges", test_mahony_update_imu_pitch_error_converges },
+    { "mahony_update_imu_yaw_error_does_not_converge", test_mahony_update_imu_yaw_error_does_not_converge },
+    { "mahony_update_imu_zero_accel_uses_gyro_only", test_mahony_update_imu_zero_accel_uses_gyro_only },
+    { "mahony_update_imu_disabled_accel_uses_gyro_only", test_mahony_update_imu_disabled_accel_uses_gyro_only },
+    { "mahony_print_gyro_propagation", test_mahony_print_gyro_propagation },
+    { "mahony_print_accelerometer_correction", test_mahony_print_accelerometer_correction },
+    { "mahony_update_imu_rejects_low_accel_magnitude", test_mahony_update_imu_rejects_low_accel_magnitude },
+    { "mahony_update_imu_rejects_high_accel_magnitude", test_mahony_update_imu_rejects_high_accel_magnitude },
+    { "mahony_update_imu_rejects_nonfinite_accel", test_mahony_update_imu_rejects_nonfinite_accel },
+    { "mahony_update_imu_accepts_valid_accel_magnitude", test_mahony_update_imu_accepts_valid_accel_magnitude },
+    { "mahony_integral_zero_gain_does_not_accumulate", test_mahony_integral_zero_gain_does_not_accumulate },
+    { "mahony_integral_valid_error_accumulates", test_mahony_integral_valid_error_accumulates },
+    { "mahony_integral_disabled_accel_does_not_accumulate", test_mahony_integral_disabled_accel_does_not_accumulate },
+    { "mahony_integral_invalid_accel_does_not_accumulate", test_mahony_integral_invalid_accel_does_not_accumulate },
+    { "mahony_integral_is_limited", test_mahony_integral_is_limited },
+    { "mahony_integral_correction_affects_attitude", test_mahony_integral_correction_affects_attitude },
     };
-
+ 
 TEST_INITIALIZE_TEST("mahony.c", tests);
 
 } /* main */
