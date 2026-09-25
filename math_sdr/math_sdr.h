@@ -67,6 +67,7 @@ typedef struct _VECTOR_3F
 
 /* Constants */
 #define GRAVITY 9.8f
+#define IDENTITY_QUAT ((QUAT) {1.0f, 0.0f, 0.0f, 0.0f })
 
 
 /**

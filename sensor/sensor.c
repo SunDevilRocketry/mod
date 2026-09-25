@@ -356,14 +356,6 @@ void sensor_init
     PRESET_DATA* preset_data
     )
 {
-const QUAT identity =
-    {
-    .w = 1.0f,
-    .x = 0.0f,
-    .y = 0.0f,
-    .z = 0.0f
-    };
-
 float ax = preset_data->imu_offset.accel_x;
 float ay = preset_data->imu_offset.accel_y;
 float az = preset_data->imu_offset.accel_z;
@@ -373,7 +365,7 @@ QUAT initial_attitude = quat_grav_attitude
     ax,
     ay,
     az,
-    identity
+    IDENTITY_QUAT
     );
 
 imu_velo_tick = get_us_tick();
@@ -492,13 +484,11 @@ VECTOR_3F accel_body_m_s2;
 current_tick = get_us_tick();
 imu_tdelta = current_tick - mahony_tick;
 
-delta_time_s =
-    (float)imu_tdelta /
-    (float)MICROSEC_PER_SEC;
+delta_time_s = (float)imu_tdelta / (float)MICROSEC_PER_SEC;
 
-if ( mahony_tick == 0 ||
-     delta_time_s <= 0.0f ||
-     delta_time_s > 1.0f )
+if ( mahony_tick == 0 
+	|| delta_time_s <= 0.0f 
+	|| delta_time_s > 1.0f )
     {
     delta_time_s = 0.01f;
     }
