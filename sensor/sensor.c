@@ -1,24 +1,22 @@
-/*******************************************************************************
-*
-* FILE: 
-* 		sensor.c
-*
-* DESCRIPTION: 
-* 		Contains functions to interface between sdec terminal commands and SDR
-*       sensor APIs
-*
-* COPYRIGHT:                                                                   
-*       Copyright (c) 2025 Sun Devil Rocketry.                                 
-*       All rights reserved.                                                   
-*                                                                              
-*       This software is licensed under terms that can be found in the LICENSE 
-*       file in the root directory of this software component.                 
-*       If no LICENSE file comes with this software, it is covered under the   
-*       BSD-3-Clause.                                                          
-*                                                                              
-*       https://opensource.org/license/bsd-3-clause          
-*
-*******************************************************************************/
+/**
+  ******************************************************************************
+  * @file           : sensor.c
+  * @brief          : Contains functions to interface between SDEC terminal commands and SDR sensor APIs
+  ******************************************************************************
+  * @copyright
+  *
+  * Copyright (c) 2025 Sun Devil Rocketry.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE
+  * file in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is covered under the
+  * BSD-3-Clause.
+  *
+  * https://opensource.org/license/bsd-3-clause
+  *
+  ******************************************************************************
+  */
 
 
 /*------------------------------------------------------------------------------
@@ -135,15 +133,12 @@ static float quat_to_yaw
 ------------------------------------------------------------------------------*/
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_cmd_execute                                                     *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Executes a sensor subcommand                                           *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Executes a sensor subcommand and transmits the requested readings.
+  * @param subcommand Sensor subcommand code.
+  * @return Sensor operation status.
+  */
 SENSOR_STATUS sensor_cmd_execute 
 	(
 	uint8_t subcommand 
@@ -225,15 +220,12 @@ switch ( subcommand )
 } /* sensor_cmd_execute */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_dump                                                            *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       reads from all sensors and fill in the sensor data structure           *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Reads the available sensors and fills the sensor data structure.
+  * @param sensor_data_ptr Pointer to the sensor data structure to fill.
+  * @return Sensor operation status.
+  */
 SENSOR_STATUS sensor_dump 
 	(
     SENSOR_DATA*        sensor_data_ptr /* Pointer to the sensor data struct should 
@@ -342,15 +334,11 @@ else
 } /* sensor_dump */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_init			                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Initialize sensor ticks, velo, and attitude at calibration             *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Initializes sensor timing and resets velocity state.
+  * @param preset_data Pointer to the preset calibration data.
+  */
 void sensor_init
     (
     PRESET_DATA* preset_data
@@ -389,15 +377,12 @@ if ( mahony_status != MAHONY_OK )
 } /* sensor_init */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_conv_imu                                                        *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Conversion of IMU raw chip readouts into 9-axis Accelerometer and Gyro.*
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Converts raw IMU readings into calibrated, remapped sensor data.
+  * @param imu_converted Converted IMU data to fill.
+  * @param imu_raw Raw IMU readouts.
+  */
 void sensor_conv_imu
 	(
 	IMU_CONVERTED* imu_converted, 
@@ -434,39 +419,48 @@ sensor_conv_mag(imu_converted, imu_raw);
 }
 
 
+/**
+ * @brief Get the mount orientation
+ * 
+ * @return The configured mount orientation 
+ */
 MOUNT_ORIENTATION sensor_get_mount_orientation
 	(
 	void
 	)
 {
 return mount_orientation;
-}
+
+} /* get_mount_orientation */
 
 
+/**
+ * @brief Set the mount orientation
+ * 
+ * @param orientation The new mount orientation
+ */
 void sensor_set_mount_orientation
 	(
 	MOUNT_ORIENTATION orientation
 	)
 {
 mount_orientation = orientation;
-}
+
+} /* set_mount_orientation */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_body_state                                                      *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Perform sensor fusion on imu converted data to get body rate           *
-*                                                                              *
-*******************************************************************************/
 
+static uint32_t last_tick = 0;
+/**
+  * @brief Integrates gyro data to update the estimated body attitude and rate.
+  * @param imu_converted Converted IMU data.
+  * @param state_estimate State estimate to update.
+  */
 SENSOR_STATUS sensor_body_state
-    (
-    const IMU_CONVERTED* imu_converted,
-    STATE_ESTIMATION* state_estimate
-    )
+	(
+	const IMU_CONVERTED* imu_converted,
+	STATE_ESTIMATION* state_estimate
+	)
 {
 uint64_t current_tick;
 uint64_t imu_tdelta;
@@ -545,16 +539,13 @@ return SENSOR_OK;
 } /* sensor_body_state */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_axis_remap                                                      *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Remaps sensor xyz readings so +X always points towards the nose in     *
-*       the flight configuration                                               *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Remaps sensor axes according to the flight-computer mounting orientation.
+  * @param x X-axis value to remap.
+  * @param y Y-axis value to remap.
+  * @param z Z-axis value to remap.
+  */
 void sensor_axis_remap
 	(
 	float* x,
@@ -562,21 +553,18 @@ void sensor_axis_remap
 	float* z
 	)
 {
-*x *= mount_orientation;
-(void)z;
-*y *= mount_orientation;
+  *x *= mount_orientation;
+(void)y;
+  *z *= mount_orientation;
 }
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_acc_conv                                                        *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Convert Acc readouts to m/s^2                                          *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Converts a raw accelerometer reading to meters per second squared.
+  * @param readout Raw accelerometer readout.
+  * @return Acceleration in meters per second squared.
+  */
 float sensor_acc_conv
 	(
 	int16_t readout
@@ -589,15 +577,12 @@ return accel_step * readout;
  
 } /* sensor_acc_conv */
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_gyro_conv                                                       *   
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Convert gyro readouts to deg/s                                         *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Converts a raw gyro reading to degrees per second.
+  * @param readout Raw gyro readout.
+  * @return Angular rate in degrees per second.
+  */
 float sensor_gyro_conv
 	(
 	int16_t readout
@@ -609,15 +594,12 @@ return readout / gyro_sens;
 
 } /* sensor_gyro_conv */
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_imu_velo                                                        *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Calculate the velocity depending on accel 							   *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Calculates velocity from converted accelerometer measurements.
+  * @param imu_converted Converted IMU data.
+  * @param state_estimate State estimate to update.
+  */
 void sensor_imu_velo
 	(
 	const IMU_CONVERTED* imu_converted,
@@ -705,15 +687,11 @@ imu_velo_tick = current_tick;
 
 }
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_baro_alt                                                        *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Calculate the altitude from pressure readings 						   *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Calculates altitude from the current barometric pressure and temperature.
+  * @param sen_data Sensor data structure to update.
+  */
 void sensor_baro_alt(SENSOR_DATA* sen_data)
 {
 	float pressure = sen_data->baro_pressure;
@@ -733,15 +711,10 @@ void sensor_baro_alt(SENSOR_DATA* sen_data)
 }
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_reset_velo                                                      *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Reset velocity values to prevent accumulation of drift                 *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Resets accumulated velocity values to prevent drift.
+  */
 void sensor_reset_velo
 	(
 	void
@@ -755,15 +728,12 @@ velo_z_prev = 0;
 
 
 #if defined( A0002_REV2 )
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_start_IT                                                   	   *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Signal IT enabled peripherals to collect data.                         *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Starts interrupt-driven measurements for the enabled sensors.
+  * @param sensor_data_ptr Sensor data structure associated with the readings.
+  * @return Sensor operation status.
+  */
 SENSOR_STATUS sensor_start_IT
 	( 
 	SENSOR_DATA* sensor_data_ptr
@@ -782,16 +752,10 @@ return SENSOR_OK;
 } /* sensor_start_IT */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-*       sensor_mutex_reserve                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-*       Reserve the sensor data struct mutex and disable interrupts            *
-*       to ISRs that will check out the mutex.                                 *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Disables sensor-related interrupts while sensor data is accessed.
+  */
 void sensor_mutex_reserve
     (
     void
@@ -803,16 +767,10 @@ HAL_NVIC_DisableIRQ( GPS_UART_IRQn );
 } /* sensor_mutex_reserve */
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   * 
-*       sensor_mutex_release                                                   *
-*                                                                              *
-* DESCRIPTION:                                                                 * 
-*       Release the sensor data struct mutex and enable interrupts             *
-*       to ISRs that will check out the mutex.                                 *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Re-enables sensor-related interrupts after sensor data access.
+  */
 void sensor_mutex_release
     (
     void
@@ -875,15 +833,12 @@ return atan2f(y, x);
 
 
 #ifdef A0002_REV2
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_get_it_ready                                            *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Ensures baro & mag & imu are ready to be read from.                          *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Waits until the interrupt-driven sensors report ready status.
+  * @param timeout Maximum wait time in milliseconds.
+  * @return Sensor operation status.
+  */
 static SENSOR_STATUS sensor_get_it_ready
 	(
 	uint32_t timeout
@@ -911,55 +866,53 @@ return SENSOR_IT_TIMEOUT;
 }
 
 
-/*******************************************************************************
-*                                                                              *
-* PROCEDURE:                                                                   *
-* 		sensor_conv_mag											           	   *
-*                                                                              *
-* DESCRIPTION:                                                                 *
-*       Convert raw magnetometer values to useful magnetic field data.         *
-*                                                                              *
-* COPYRIGHT:                                                                   *
-*       This function is heavily derived from the official Bosch BMM150        *
-*       driver, which is protected by the BSD-3-Clause license. This function  *
-*		is exempt from any licensing that may be applied to a current/future   * 
-*		Sun Devil Rocketry project. Per the terms of the BSD-3-Clause license, *
-*		the following notice is retained from the source project and applies   *
-*		to the procedure below.                                                *
-*	              							                                   *
-*		Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.		   *
-*																			   *
-*		BSD-3-Clause														   *
-*																			   *
-*		Redistribution and use in source and binary forms, with or without	   *
-*		modification, are permitted provided that the following conditions are *
-*		met:																   *
-*																			   *
-*		1. Redistributions of source code must retain the above copyright      *
-*	    notice, this list of conditions and the following disclaimer.		   *
-*																			   *
-*		2. Redistributions in binary form must reproduce the above copyright   *
-*	    notice, this list of conditions and the following disclaimer in the    *
-*	    documentation and/or other materials provided with the distribution.   *
-*																			   *
-*		3. Neither the name of the copyright holder nor the names of its       *
-*	    contributors may be used to endorse or promote products derived from   *
-*	    this software without specific prior written permission. 			   *
-*																			   *
-*		THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS	   *
-*		"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT	   *
-*		LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS	   *
-*		FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE		   *
-*		COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,   *
-*		INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES			   *
-*		(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR	   *
-*		SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)	   *
-*		HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,	   *
-*		STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  *
-*		IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE	   *
-*		POSSIBILITY OF SUCH DAMAGE.											   *
-*                                                                              *
-*******************************************************************************/
+
+/**
+  * @brief Converts raw magnetometer readings into magnetic field data.
+  * @param imu_converted Converted IMU data to update.
+  * @param imu_raw Raw magnetometer readouts.
+  *
+  * @attention 
+  * 
+  * This function is heavily derived from the official Bosch BMM150
+  * driver, which is protected by the BSD-3-Clause license. This function
+  *	is exempt from any licensing that may be applied to a current/future
+  *	Sun Devil Rocketry project. Per the terms of the BSD-3-Clause license,
+  *	the following notice is retained from the source project and applies
+  *	to the procedure below.
+  *
+  * 	Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.
+  *
+  *		BSD-3-Clause
+  *																			   
+  *		Redistribution and use in source and binary forms, with or without	   
+  *		modification, are permitted provided that the following conditions are 
+  *		met:																   
+  *																			   
+  *		1. Redistributions of source code must retain the above copyright      
+  *	    notice, this list of conditions and the following disclaimer.		   
+  *																			   
+  *		2. Redistributions in binary form must reproduce the above copyright   
+  *	    notice, this list of conditions and the following disclaimer in the    
+  *	    documentation and/or other materials provided with the distribution.   
+  *																			   
+  *		3. Neither the name of the copyright holder nor the names of its       
+  *	    contributors may be used to endorse or promote products derived from   
+  *	    this software without specific prior written permission. 			   
+  *																			   
+  *		THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS	   
+  *		"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT	   
+  *		LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS	   
+  *		FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE		   
+  *		COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,   
+  *		INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES			   
+  *		(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR	   
+  *		SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)	   
+  *		HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,	   
+  *		STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  
+  *		IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE	   
+  *		POSSIBILITY OF SUCH DAMAGE.		
+  */
 static void sensor_conv_mag
 	(
 	IMU_CONVERTED* imu_converted, 
@@ -1020,6 +973,6 @@ imu_converted->mag_z = mag_z;
 #endif
 
 
-/*******************************************************************************
-* END OF FILE                                                                  * 
-*******************************************************************************/
+/**
+  * END OF FILE                                                                  * 
+  */
