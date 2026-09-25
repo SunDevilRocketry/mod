@@ -9,6 +9,7 @@ tests=(
     debug_sdr
     error_sdr
     math_sdr
+    mahony
     sensor
     telemetry
 )
