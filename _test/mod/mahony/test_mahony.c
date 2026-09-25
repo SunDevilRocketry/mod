@@ -35,14 +35,11 @@ static void assert_quat_components
     QUAT expected
     )
 {
-TEST_begin_nested_case(description);
 
 TEST_ASSERT_EQ_FLOAT("Quaternion w component", actual.w, expected.w);
 TEST_ASSERT_EQ_FLOAT("Quaternion x component", actual.x, expected.x);
 TEST_ASSERT_EQ_FLOAT("Quaternion y component", actual.y, expected.y);
 TEST_ASSERT_EQ_FLOAT("Quaternion z component", actual.z, expected.z);
-
-TEST_end_nested_case();
 
 } /* assert_quat_components */
 

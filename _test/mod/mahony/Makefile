@@ -7,7 +7,7 @@
 ################################################################
 # target
 ################################################################
-TARGET = math_sdr
+TARGET = mahony
 
 ################################################################
 # build variables
@@ -18,21 +18,24 @@ OPT = -Og
 ################################################################
 # paths
 ################################################################
+
 BUILD_DIR = build
-ROOT_DIR = ../..
+ROOT_DIR  = ../../../..
+FRAMEWORK_DIR = ../../framework
 
 ################################################################
 # source
 ################################################################
 TEST_SOURCES = \
-test_math_sdr.c
+test_mahony.c
 
 COV_C_SOURCES = \
-$(ROOT_DIR)/math_sdr/math_sdr.c
+$(ROOT_DIR)/mod/mahony/mahony.c \
+$(ROOT_DIR)/mod/math_sdr/math_sdr.c
 
 FRAMEWORK_SOURCES = \
-$(ROOT_DIR)/_test/framework/src/test_assert.c \
-$(ROOT_DIR)/_test/framework/src/test_runner.c
+$(FRAMEWORK_DIR)/src/test_assert.c \
+$(FRAMEWORK_DIR)/src/test_runner.c
 
 C_SOURCES = $(TEST_SOURCES) $(COV_C_SOURCES) $(FRAMEWORK_SOURCES)
 
@@ -46,8 +49,9 @@ CC = gcc
 ################################################################
 C_INCLUDES = \
 -I. \
--I$(ROOT_DIR)/math_sdr \
--I$(ROOT_DIR)/_test/framework/src
+-I$(ROOT_DIR)/mod/mahony \
+-I$(ROOT_DIR)/mod/math_sdr \
+-I$(FRAMEWORK_DIR)/src
 
 C_DEFS = \
 -DUNIT_TEST
@@ -92,7 +96,8 @@ test:
 	tail -n 7 "results.txt"
 	mkdir -p coverage
 	gcovr $(BUILD_DIR) \
-		--filter $(COV_C_SOURCES) \
+		--filter '.*(?<!test_)mahony[.]c$$' \
+		--filter '.*(?<!test_)math_sdr[.]c$$' \
 		--html-details coverage/coverage.html \
 		--json coverage/coverage.json
 
