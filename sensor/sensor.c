@@ -450,7 +450,6 @@ mount_orientation = orientation;
 
 
 
-static uint32_t last_tick = 0;
 /**
   * @brief Integrates gyro data to update the estimated body attitude and rate.
   * @param imu_converted Converted IMU data.
