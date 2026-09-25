@@ -63,8 +63,8 @@ float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
 
 /* Barometer EMA Alphas */
-#define BARO_PRESS_ALPHA 0.7f;
-#define BARO_TEMP_ALPHA 0.7f;
+#define BARO_PRESS_ALPHA (0.7f)
+#define BARO_TEMP_ALPHA (0.7f)
 
 
 /*------------------------------------------------------------------------------
@@ -89,11 +89,9 @@ static void sensor_conv_mag
 	IMU_RAW* imu_raw
 	);
 
-static baro_ema
+static void sensor_baro_ema
 	(
-	SENSOR_DATA* sensor_data_ptr, 
-	float ema_press_prev,
-	float ema_temp_prev
+	SENSOR_DATA* sen_data_ptr
 	);
 
 
@@ -270,7 +268,7 @@ sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_e
 sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
 /* Calculated baro exponential moving average */
-sensor_baro_ema( sensor_data_ptr, ema_press_prev, ema_temp_prev );
+sensor_baro_ema( sensor_data_ptr );
 
 /* Calculated altitude from barometer */
 sensor_baro_alt( sensor_data_ptr );
@@ -848,32 +846,30 @@ imu_converted->mag_z = mag_z;
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
-* 		baro_ema                                          					   *
+* 		sensor_baro_ema                                          					   *
 *                                                                              *
 * DESCRIPTION:                                                                 *
 *       Calculates baro exponential moving average                             *
 *                                                                              *
 *******************************************************************************/
 
-static baro_ema
+static void sensor_baro_ema
 	(
-	SENSOR_DATA* sensor_data_ptr, 
-	float ema_press_prev,
-	float ema_temp_prev
+	SENSOR_DATA* sen_data_ptr
 	)
 {
 if (ema_press_prev == 0.0f || ema_temp_prev == 0.0f)
 	{
-	ema_press_prev = sensor_data_ptr->baro_pressure;
-	ema_temp_prev = sensor_data_ptr->baro_temp;
+	ema_press_prev = sen_data_ptr->baro_pressure;
+	ema_temp_prev = sen_data_ptr->baro_temp;
 	return;
 
 	}
 
-( BARO_PRESS_ALPHA * sensor_data_ptr->baro_pressure) + ( (1-BARO_PRESS_ALPHA) * ema_press_prev);
-( BARO_TEMP_ALPHA * sensor_data_ptr->baro_temp) + ( (1-BARO_TEMP_ALPHA) * ema_temp_prev);
+ema_press_prev = ( BARO_PRESS_ALPHA * sen_data_ptr->baro_pressure) + ( (1-BARO_PRESS_ALPHA) * ema_press_prev);
+ema_temp_prev = ( BARO_TEMP_ALPHA * sen_data_ptr->baro_temp) + ( (1-BARO_TEMP_ALPHA) * ema_temp_prev);
 
-} /* baro_ema*/
+} /* sensor_baro_ema*/
 
 
 /*******************************************************************************
