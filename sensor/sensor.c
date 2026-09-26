@@ -60,12 +60,17 @@ float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
 /* State estimation */
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
 
+/* Barometer EMA Alphas */
+#define BARO_PRESS_ALPHA (0.7f)
+#define BARO_TEMP_ALPHA (0.7f)
+
 
 /*------------------------------------------------------------------------------
  Static Variables 
 ------------------------------------------------------------------------------*/
 static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
-
+static float ema_press_prev = 0.0f;
+static float ema_temp_prev = 0.0f;
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -80,6 +85,11 @@ static void sensor_conv_mag
 	(
 	IMU_CONVERTED* imu_converted, 
 	IMU_RAW* imu_raw
+	);
+
+static void sensor_baro_ema
+	(
+	SENSOR_DATA* sen_data_ptr
 	);
 
 
@@ -248,6 +258,9 @@ sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_e
 
 /* Calculated velocity and position */
 sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
+
+/* Calculated baro exponential moving average */
+sensor_baro_ema( sensor_data_ptr );
 
 /* Calculated altitude from barometer */
 sensor_baro_alt( sensor_data_ptr );
@@ -784,5 +797,27 @@ imu_converted->mag_z = mag_z;
 
 
 /**
-  * END OF FILE                                                                  * 
+  * @brief Updates the barometer exponential moving average (EMA) with the latest sensor readings.
+  * @param sen_data_ptr Pointer to the sensor data structure containing barometer readings.
+  */
+static void sensor_baro_ema
+	(
+	SENSOR_DATA* sen_data_ptr
+	)
+{
+if (ema_press_prev == 0.0f || ema_temp_prev == 0.0f)
+	{
+	ema_press_prev = sen_data_ptr->baro_pressure;
+	ema_temp_prev = sen_data_ptr->baro_temp;
+	return;
+
+	}
+
+ema_press_prev = ( BARO_PRESS_ALPHA * sen_data_ptr->baro_pressure) + ( (1-BARO_PRESS_ALPHA) * ema_press_prev);
+ema_temp_prev = ( BARO_TEMP_ALPHA * sen_data_ptr->baro_temp) + ( (1-BARO_TEMP_ALPHA) * ema_temp_prev);
+
+} /* sensor_baro_ema*/
+
+/**
+  * END OF FILE
   */
