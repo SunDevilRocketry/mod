@@ -69,6 +69,10 @@
 #define SENSOR_MAHONY_KP    1.0f
 #define SENSOR_MAHONY_KI    0.0f
 
+/* Barometer EMA Alphas */
+#define BARO_PRESS_ALPHA (0.7f)
+#define BARO_TEMP_ALPHA (0.7f)
+
 
 /*------------------------------------------------------------------------------
  Global Variables 
@@ -86,10 +90,6 @@ float velo_z_prev = 0.0f;
 
 /* State estimation */
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
-
-/* Barometer EMA Alphas */
-#define BARO_PRESS_ALPHA (0.7f)
-#define BARO_TEMP_ALPHA (0.7f)
 
 
 /*------------------------------------------------------------------------------
@@ -147,8 +147,6 @@ static void sensor_baro_ema
 /*------------------------------------------------------------------------------
  API Functions 
 ------------------------------------------------------------------------------*/
-
-
 
 /**
   * @brief Executes a sensor subcommand and transmits the requested readings.
@@ -353,7 +351,6 @@ else
 } /* sensor_dump */
 
 
-
 /**
   * @brief Initializes sensor timing and resets velocity state.
   * @param preset_data Pointer to the preset calibration data.
@@ -468,7 +465,6 @@ mount_orientation = orientation;
 } /* set_mount_orientation */
 
 
-
 /**
   * @brief Integrates gyro data to update the estimated body attitude and rate.
   * @param imu_converted Converted IMU data.
@@ -490,9 +486,7 @@ bool use_accel;
 VECTOR_3F gyro_body_rad_s;
 VECTOR_3F accel_body_m_s2;
 
-/*
- * Calculate elapsed time between attitude updates using the microsecond timer.
- */
+/* Calculate elapsed time between attitude updates using the microsecond timer. */
 current_tick = get_us_tick();
 imu_tdelta = current_tick - mahony_tick;
 
@@ -572,8 +566,8 @@ void sensor_axis_remap
 	)
 {
 *x *= mount_orientation;
-(void)z;
-*y *= mount_orientation;
+(void)y;
+*z *= mount_orientation;
 }
 
 
@@ -727,7 +721,6 @@ void sensor_baro_alt(SENSOR_DATA* sen_data)
 	sen_data->baro_alt = alt;
 
 }
-
 
 
 /**
