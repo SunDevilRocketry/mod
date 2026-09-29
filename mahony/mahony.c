@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file           : mahony.h
+  * @file           : mahony.c
   * @brief          : Mahony attitude filter interface.
   ******************************************************************************
   * @copyright
@@ -86,14 +86,12 @@ if ( !quat_is_finite(initial_attitude) )
     return MAHONY_INVALID_QUATERNION;
     }
 
-if ( !isfinite(proportional_gain)
-    || !isfinite(integral_gain) )
+if ( !isfinite(proportional_gain) || !isfinite(integral_gain) )
     {
     return MAHONY_NONFINITE_GAIN;
     }
 
-if ( proportional_gain < 0.0f
-     || integral_gain < 0.0f )
+if ( proportional_gain < 0.0f || integral_gain < 0.0f )
     {
     return MAHONY_NEGATIVE_GAIN;
     }
@@ -151,8 +149,7 @@ if ( !vector_is_finite(gyro_body_rad_s) )
     return MAHONY_INVALID_GYRO;
     }
 
-if ( !isfinite(delta_time_s)
-    || delta_time_s <= 0.0f )
+if ( !isfinite(delta_time_s) || delta_time_s <= 0.0f )
     {
     return MAHONY_INVALID_DELTA_TIME;
     }
@@ -233,8 +230,7 @@ if ( !vector_is_finite(gyro_body_rad_s) )
     return MAHONY_INVALID_GYRO;
     }
 
-if ( !isfinite(delta_time_s)
-    || delta_time_s <= 0.0f )
+if ( !isfinite(delta_time_s) || delta_time_s <= 0.0f )
     {
     return MAHONY_INVALID_DELTA_TIME;
     }
@@ -242,9 +238,9 @@ if ( !isfinite(delta_time_s)
 accel_magnitude = vector_magnitude(accel_body);
 
 accel_valid = vector_is_finite(accel_body)
-            && isfinite(accel_magnitude)
-            && accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE
-            && accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
+           && isfinite(accel_magnitude)
+           && accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE
+           && accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
 
 apply_accel = use_accel && accel_valid;
 
@@ -257,10 +253,10 @@ gyro_corrected = gyro_body_rad_s;
 if ( apply_accel && vector_normalize(&accel_body) )
     {
     /*
-        * The attitude quaternion represents the body-to-world rotation.
-        * Rotate the fixed world gravity direction into the body frame to
-        * predict where gravity should appear according to the estimate.
-        */
+    * The attitude quaternion represents the body-to-world rotation.
+    * Rotate the fixed world gravity direction into the body frame to
+    * predict where gravity should appear according to the estimate.
+    */
     gravity_world.w = 0.0f;
     gravity_world.x = 0.0f;
     gravity_world.y = 0.0f;
