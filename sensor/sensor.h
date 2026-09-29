@@ -58,7 +58,6 @@ typedef struct _PRESET_DATA PRESET_DATA; /* From main.h */
 /* General */
 #define NUM_SENSORS         ( 38   )
 #define SENSOR_DATA_SIZE	( 128   )
-#define COMP_ALPHA 			( 0.98f ) /* Used in sensor fusion */
 
 
 /*------------------------------------------------------------------------------
@@ -111,6 +110,15 @@ typedef struct _IMU_CONVERTED
 
 /* State estimation from processed sensors */
 typedef struct _STATE_ESTIMATION {
+    /*
+     * Body-to-world attitude quaternion.
+     *
+     * Body-frame vector to world frame:
+     *     v_world = q * v_body * conjugate(q)
+     *
+     * World-frame vector to body frame:
+     *     v_body = conjugate(q) * v_world * q
+     */	
     QUAT attitude;
 	float roll_rate;
     float velocity;
@@ -193,7 +201,7 @@ void sensor_init
   *
   * @return The configured mount orientation.
   */
-MOUNT_ORIENTATION get_mount_orientation
+MOUNT_ORIENTATION sensor_get_mount_orientation
 	(
 	void
 	);
@@ -203,7 +211,7 @@ MOUNT_ORIENTATION get_mount_orientation
   *
   * @param orientation Mount orientation to use for axis remapping.
   */
-void set_mount_orientation
+void sensor_set_mount_orientation
 	(
 	MOUNT_ORIENTATION orientation
 	);
@@ -222,7 +230,7 @@ void sensor_reset_velo
   * @param imu_converted Converted IMU data.
   * @param state_estimate State estimate to update.
   */
-void sensor_body_state
+SENSOR_STATUS sensor_body_state
 	(
 	const IMU_CONVERTED* imu_converted,
 	STATE_ESTIMATION* state_estimate

@@ -38,16 +38,14 @@ extern "C" {
 #endif
 
 
-/*------------------------------------------------------------------------------
- Includes 
-------------------------------------------------------------------------------*/
-#include <string.h>
+/* Includes ------------------------------------------------------------------*/
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 
-/*------------------------------------------------------------------------------
- Typedefs 
-------------------------------------------------------------------------------*/
+/* Typedefs ------------------------------------------------------------------*/
 
 /* Quaternion */
 typedef struct _QUAT
@@ -55,13 +53,21 @@ typedef struct _QUAT
 	float w, x, y, z;
 	} QUAT;
 
+/**
+ * @brief Three-dimensional floating-point vector.
+ */
+typedef struct _VECTOR_3F
+    {
+    float x;
+    float y;
+    float z;
+    } VECTOR_3F;
 
-/*------------------------------------------------------------------------------
- Macros
-------------------------------------------------------------------------------*/
+/* Macros --------------------------------------------------------------------*/
 
 /* Constants */
 #define GRAVITY 9.8f
+#define IDENTITY_QUAT ((QUAT) {1.0f, 0.0f, 0.0f, 0.0f })
 
 
 /**
@@ -107,14 +113,28 @@ typedef struct _QUAT
   */
 #define array_size( array ) ( sizeof( array ) / sizeof( array[0] ) )
 
-/*------------------------------------------------------------------------------
- Function Prototypes 
-------------------------------------------------------------------------------*/
+/* Function Prototypes -------------------------------------------------------*/
 
 uint32_t crc32
     (
     const uint8_t *data, 
     size_t len
+    );
+
+float clamp_float
+    (
+    float value,
+    float minimum,
+    float maximum
+    );
+
+/* Quaternions ---------------------------------------------------------------*/
+
+QUAT eul_to_quat
+    (
+    float yaw,
+    float pitch,
+    float roll
     );
 
 QUAT quat_mult
@@ -150,7 +170,59 @@ QUAT quat_conj
     (
     QUAT q
     );
-    
+
+QUAT quat_rotate_world_to_body
+    (
+    QUAT attitude,
+    QUAT vector_world
+    );
+
+QUAT quat_rotate_body_to_world
+    (
+    QUAT attitude,
+    QUAT vector_body
+    );
+
+bool quat_is_finite
+    (
+    QUAT quaternion
+    );
+
+/* Vectors -------------------------------------------------------------------*/
+
+bool vector_is_finite
+    (
+    VECTOR_3F vector
+    );
+
+float vector_magnitude
+    (
+    VECTOR_3F vector
+    );
+
+bool vector_normalize
+    (
+    VECTOR_3F *vector
+    );
+
+VECTOR_3F vector_cross
+    (
+    VECTOR_3F a,
+    VECTOR_3F b
+    );
+
+VECTOR_3F vector_add
+    (
+    VECTOR_3F a,
+    VECTOR_3F b
+    );
+
+VECTOR_3F vector_scale
+    (
+    VECTOR_3F vector,
+    float scalar
+    );
+
 #ifdef __cplusplus
 }
 #endif

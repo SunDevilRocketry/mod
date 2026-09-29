@@ -43,6 +43,35 @@
 #include "usb.h"
 #include "sensor.h"
 #include "math_sdr.h"
+#include "mahony.h"
+#include "error_sdr.h"
+#include "debug_sdr.h"
+
+/*------------------------------------------------------------------------------
+ Private Macros
+------------------------------------------------------------------------------*/
+
+/*
+ * Initial Mahony gains for firmware integration.
+ *
+ * Proportional correction is enabled conservatively. Integral correction
+ * remains disabled until the gains are tuned using stationary and flight data.
+ *
+ *
+ * Proportional gain (KP) corrects gyro drift using the accelerometer. It is
+ * deliberately low to reduce overcorrection during flight.
+ *
+ * Integral gain (KI) learns persistent gyro bias over time. It remains
+ * disabled because an untuned integral term can accumulate incorrect
+ * corrections during vibration, launch acceleration, or invalid accelerometer
+ * data.
+ */
+#define SENSOR_MAHONY_KP    1.0f
+#define SENSOR_MAHONY_KI    0.0f
+
+/* Barometer EMA Alphas */
+#define BARO_PRESS_ALPHA (0.7f)
+#define BARO_TEMP_ALPHA (0.7f)
 
 
 /*------------------------------------------------------------------------------
@@ -55,22 +84,31 @@ extern IMU_OFFSET imu_offset;
 uint64_t imu_velo_tick = 0;
 
 /* IMU */
-float velo_x_prev, velo_y_prev, velo_z_prev = 0.0;
+float velo_x_prev = 0.0f;
+float velo_y_prev = 0.0f;
+float velo_z_prev = 0.0f;
 
 /* State estimation */
 QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
-
-/* Barometer EMA Alphas */
-#define BARO_PRESS_ALPHA (0.7f)
-#define BARO_TEMP_ALPHA (0.7f)
 
 
 /*------------------------------------------------------------------------------
  Static Variables 
 ------------------------------------------------------------------------------*/
 static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
+
+/*
+ * Persistent attitude filter state. This instance retains the quaternion and
+ * integral correction between consecutive IMU updates.
+ */
+static MAHONY_FILTER mahony_filter;
+
+/* Timestamp of the previous Mahony update in microseconds. */
+static uint64_t mahony_tick = 0;
+
 static float ema_press_prev = 0.0f;
 static float ema_temp_prev = 0.0f;
+
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -87,6 +125,19 @@ static void sensor_conv_mag
 	IMU_RAW* imu_raw
 	);
 
+static QUAT quat_grav_attitude
+	(
+	float ax,
+	float ay,
+	float az,
+	QUAT attitude
+	);
+
+static float quat_to_yaw
+	(
+	QUAT q
+	);
+
 static void sensor_baro_ema
 	(
 	SENSOR_DATA* sen_data_ptr
@@ -96,8 +147,6 @@ static void sensor_baro_ema
 /*------------------------------------------------------------------------------
  API Functions 
 ------------------------------------------------------------------------------*/
-
-
 
 /**
   * @brief Executes a sensor subcommand and transmits the requested readings.
@@ -201,6 +250,7 @@ SENSOR_STATUS sensor_dump
  Local Variables 
 ------------------------------------------------------------------------------*/
 SENSOR_STATUS parallel_status; 
+SENSOR_STATUS body_state_status;
 IMU_STATUS    imu_status;
 BARO_STATUS   baro_status;
 IMU_RAW       imu_raw;
@@ -208,9 +258,10 @@ IMU_RAW       imu_raw;
 /*------------------------------------------------------------------------------
  Initializations 
 ------------------------------------------------------------------------------*/
-parallel_status = SENSOR_OK;
-imu_status      = IMU_OK;
-baro_status     = BARO_OK;
+parallel_status 	= SENSOR_OK;
+body_state_status 	= SENSOR_OK;
+imu_status      	= IMU_OK;
+baro_status     	= BARO_OK;
 
 /* Poll Sensors  */
 
@@ -254,7 +305,7 @@ baro_status = get_baro_it( &(sensor_data_ptr->baro_pressure), &(sensor_data_ptr-
 sensor_conv_imu( &(sensor_data_ptr->imu_converted), &imu_raw );
 
 /* Calculated to get body state */
-sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
+body_state_status = sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
 /* Calculated velocity and position */
 sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
@@ -281,6 +332,10 @@ if( imu_status != IMU_OK )
 	{
 	return SENSOR_IMU_FAIL;
 	}
+else if ( body_state_status != SENSOR_OK )
+    {
+    return body_state_status;
+    }
 else if ( baro_status != BARO_OK)
 	{
 	return SENSOR_BARO_ERROR;
@@ -296,24 +351,44 @@ else
 } /* sensor_dump */
 
 
-
 /**
   * @brief Initializes sensor timing and resets velocity state.
   * @param preset_data Pointer to the preset calibration data.
   */
 void sensor_init
-	(
-	PRESET_DATA* preset_data
-	)
+    (
+    PRESET_DATA* preset_data
+    )
 {
+float ax = preset_data->imu_offset.accel_x;
+float ay = preset_data->imu_offset.accel_y;
+float az = preset_data->imu_offset.accel_z;
+
+QUAT initial_attitude = quat_grav_attitude
+    (
+    ax,
+    ay,
+    az,
+    IDENTITY_QUAT
+    );
+
 imu_velo_tick = get_us_tick();
+mahony_tick = imu_velo_tick;
 
 sensor_reset_velo();
 
-// NA: deferred to Mahony filter
-// float ax = preset_data->imu_offset.accel_x;
-// float ay = preset_data->imu_offset.accel_y;
-// float az = preset_data->imu_offset.accel_z;
+MAHONY_STATUS mahony_status = mahony_init
+    (
+    &mahony_filter,
+    initial_attitude,
+    SENSOR_MAHONY_KP,
+    SENSOR_MAHONY_KI
+    );
+
+if ( mahony_status != MAHONY_OK )
+    {
+    error_fail_fast( ERROR_SENSOR_CMD_ERROR );
+    }
 
 } /* sensor_init */
 
@@ -365,7 +440,7 @@ sensor_conv_mag(imu_converted, imu_raw);
  * 
  * @return The configured mount orientation 
  */
-MOUNT_ORIENTATION get_mount_orientation
+MOUNT_ORIENTATION sensor_get_mount_orientation
 	(
 	void
 	)
@@ -380,7 +455,7 @@ return mount_orientation;
  * 
  * @param orientation The new mount orientation
  */
-void set_mount_orientation
+void sensor_set_mount_orientation
 	(
 	MOUNT_ORIENTATION orientation
 	)
@@ -390,65 +465,90 @@ mount_orientation = orientation;
 } /* set_mount_orientation */
 
 
-
-static uint32_t last_tick = 0;
 /**
   * @brief Integrates gyro data to update the estimated body attitude and rate.
   * @param imu_converted Converted IMU data.
   * @param state_estimate State estimate to update.
   */
-void sensor_body_state
-	(
-	const IMU_CONVERTED* imu_converted,
-	STATE_ESTIMATION* state_estimate
-	)
+SENSOR_STATUS sensor_body_state
+    (
+    const IMU_CONVERTED* imu_converted,
+    STATE_ESTIMATION* state_estimate
+    )
 {
-/* Determine delta T */
-uint32_t now_tick = HAL_GetTick();
-float dt = (now_tick - last_tick) / 1000.0f;
-if ( dt <= 0.0f || dt > 1.0f ) 
-	{
-	dt = 0.01f;
-	}
-last_tick = now_tick;
+uint64_t current_tick;
+uint64_t imu_tdelta;
 
-/* Copy IMU data for readability */
-// float ax = imu_converted->accel_x;
-// float ay = imu_converted->accel_y;
-// float az = imu_converted->accel_z;
+float delta_time_s;
 
-/* Raw gyro data in deg/s */
-float gx = imu_converted->gyro_x;
-float gy = imu_converted->gyro_y;
-float gz = imu_converted->gyro_z;
+bool use_accel;
 
-/* Convert gyro to pure quaternion */
-QUAT q_gyro; /* Must be in radians */
-q_gyro.w = 0.0f;
-q_gyro.x = deg_to_rad(gx);
-q_gyro.y = deg_to_rad(gy);
-q_gyro.z = deg_to_rad(gz);
+VECTOR_3F gyro_body_rad_s;
+VECTOR_3F accel_body_m_s2;
 
-/* q_rate = 0.5 * attitude * q_gyro */
-QUAT q_rate = quat_mult(attitude, q_gyro);
-q_rate = quat_scale(q_rate, 0.5f);
+/* Calculate elapsed time between attitude updates using the microsecond timer. */
+current_tick = get_us_tick();
+imu_tdelta = current_tick - mahony_tick;
 
-/* Dead reckoing orientation by integrating gyro */
-/* attitude += dt * q_rate */
-QUAT rate_dt = quat_scale(q_rate, dt);
-attitude = quat_add(attitude, rate_dt);
+delta_time_s = (float)imu_tdelta / (float)MICROSEC_PER_SEC;
 
-/* Sensor fuson with gravity if not in flight */
-// NA: sensor fusion deferred to Mahony filter
+if ( mahony_tick == 0 
+	|| delta_time_s <= 0.0f 
+	|| delta_time_s > 1.0f )
+    {
+    delta_time_s = 0.01f;
+    }
 
-/* Scale back to unit quaternion to avoid drift */
-attitude = quat_normalize(attitude);
+mahony_tick = current_tick;
 
-/* Store results */
-state_estimate->attitude = attitude;
-state_estimate->roll_rate = gx; 	    /* Rate in deg/s */
+/*
+ * Converted gyro data is in degrees per second. Mahony requires radians per
+ * second.
+ */
+gyro_body_rad_s.x = deg_to_rad(imu_converted->gyro_x);
+gyro_body_rad_s.y = deg_to_rad(imu_converted->gyro_y);
+gyro_body_rad_s.z = deg_to_rad(imu_converted->gyro_z);
 
-}
+/*
+ * Converted accelerometer data is already in meters per second squared.
+ */
+accel_body_m_s2.x = imu_converted->accel_x;
+accel_body_m_s2.y = imu_converted->accel_y;
+accel_body_m_s2.z = imu_converted->accel_z;
+
+/*
+ * Permit accelerometer correction only before powered flight. The Mahony
+ * filter still performs its own magnitude and finite-value checks.
+ */
+use_accel = get_fc_state() <= FC_STATE_LAUNCH_DETECT;
+
+MAHONY_STATUS mahony_status = mahony_update_imu
+    (
+    &mahony_filter,
+    gyro_body_rad_s,
+    accel_body_m_s2,
+    delta_time_s,
+    use_accel
+    );
+
+if ( mahony_status != MAHONY_OK )
+    {
+    return SENSOR_IMU_FAIL;
+    }
+
+/*
+ * Store the filter's body-to-world quaternion as the system attitude estimate.
+ */
+state_estimate->attitude = mahony_filter.attitude;
+
+/*
+ * Preserve the existing public roll-rate units of degrees per second.
+ */
+state_estimate->roll_rate = imu_converted->gyro_x;
+
+return SENSOR_OK;
+
+} /* sensor_body_state */
 
 
 
@@ -465,9 +565,9 @@ void sensor_axis_remap
 	float* z
 	)
 {
-  *x *= mount_orientation;
+*x *= mount_orientation;
 (void)y;
-  *z *= mount_orientation;
+*z *= mount_orientation;
 }
 
 
@@ -520,23 +620,68 @@ void sensor_imu_velo
 {
 float velo_x, velo_y, velo_z, velocity;
 
-float accel_x = imu_converted->accel_x;
-float accel_y = imu_converted->accel_y;
-float accel_z = imu_converted->accel_z;
+/*
+ * The world frame uses North-East-Down (NED) coordinates,
+ * so gravity points in the world-frame +Z direction.
+ */
+const QUAT gravity_world =
+    {
+    .w = 0.0f,
+    .x = 0.0f,
+    .y = 0.0f,
+    .z = -GRAVITY
+    };
+
+/*
+ * The attitude quaternion is body-to-world, so rotate world gravity
+ * into the body frame before subtracting it from the accelerometer.
+ */
+QUAT gravity_body = quat_rotate_world_to_body
+    (
+    state_estimate->attitude,
+    gravity_world
+    );
+
+QUAT linear_accel_body =
+    {
+    .w = 0.0f,
+    .x = imu_converted->accel_x - gravity_body.x,
+    .y = imu_converted->accel_y - gravity_body.y,
+    .z = imu_converted->accel_z - gravity_body.z
+    };
+
+/*
+ * Rotate gravity-compensated acceleration into the world frame so the
+ * integrated velocity components remain in a fixed coordinate frame.
+ */
+QUAT linear_accel_world = quat_rotate_body_to_world
+    (
+    state_estimate->attitude,
+    linear_accel_body
+    );
+
+float accel_world_x = linear_accel_world.x;
+float accel_world_y = linear_accel_world.y;
+float accel_world_z = linear_accel_world.z;
 
 float ts_delta;
 
 uint64_t current_tick = get_us_tick();
 uint64_t imu_tdelta = current_tick - imu_velo_tick;
-ts_delta = imu_tdelta / MICROSEC_PER_SEC;
+ts_delta = (float) imu_tdelta / (float) MICROSEC_PER_SEC;
 
 // Calculate 3 velocity vectors using motion equations
-velo_x = velo_x_prev + accel_x*ts_delta;
-velo_y = velo_y_prev + accel_y*ts_delta;
-velo_z = velo_z_prev + accel_z*ts_delta;
+velo_x = velo_x_prev + accel_world_x * ts_delta;
+velo_y = velo_y_prev + accel_world_y * ts_delta;
+velo_z = velo_z_prev + accel_world_z * ts_delta;
 
 // Calculate the velocity scalar
-velocity = sqrtf(powf(velo_x, 2.0) + powf(velo_y, 2.0) + powf(velo_z, 2.0));
+velocity = sqrtf
+    (
+    velo_x * velo_x +
+    velo_y * velo_y +
+    velo_z * velo_z
+    );
 
 /* Update state estimations*/
 state_estimate->velo_x = velo_x;
@@ -576,7 +721,6 @@ void sensor_baro_alt(SENSOR_DATA* sen_data)
 	sen_data->baro_alt = alt;
 
 }
-
 
 
 /**
@@ -654,6 +798,49 @@ HAL_NVIC_EnableIRQ( GPS_UART_IRQn );
 /*------------------------------------------------------------------------------
  Internal procedures 
 ------------------------------------------------------------------------------*/
+
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
+* 		quat_grav_attitude                                                     *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Computes quaternion attitude from static accelerometer data            *
+*       Experiences gimbal lock at pitch = +/- 90 degrees                      *
+*                                                                              *
+*******************************************************************************/
+static QUAT quat_grav_attitude
+	(
+	float ax,
+	float ay,
+	float az,
+	QUAT attitude
+	)
+{
+/* Compute pitch/roll from accelerometer */
+float grav_pitch = atan2f(ax, sqrtf(ay * ay + az * az));
+float grav_roll  = atan2f(ay, az);
+
+float yaw = quat_to_yaw(attitude);
+
+return eul_to_quat(yaw, grav_pitch, grav_roll);
+
+}
+
+/* Comment deferred until mod#132 
+ Formula in https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles */
+static float quat_to_yaw
+	(
+	QUAT q
+	)
+{
+float y = 2.0f * (q.w * q.z + q.x * q.y);
+float x = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
+
+return atan2f(y, x);
+}
 
 #ifdef A0002_REV2
 
