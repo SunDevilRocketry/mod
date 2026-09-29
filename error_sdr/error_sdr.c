@@ -32,7 +32,7 @@
 #include "math_sdr.h"
 #include "error_sdr.h"
 
-#ifdef STM32H750xx
+#if defined( STM32H750xx ) || defined( STM32H733xx )
 #include "stm32h7xx_hal.h"
 #include "led.h"
 #elif defined( F1_TESTBED )
