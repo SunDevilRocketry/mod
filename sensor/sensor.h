@@ -256,10 +256,9 @@ void sensor_axis_remap
   * @param imu_converted Converted IMU data.
   * @param state_estimate State estimate to update.
   */
-void sensor_imu_velo
+void sensor_alt_velo
 	(
-	const IMU_CONVERTED* imu_converted,
-	STATE_ESTIMATION* state_estimate
+	SENSOR_DATA* sen_data
 	);
 
 /**

@@ -149,7 +149,7 @@ STATE_ESTIMATION estimate = { 0 };
 stubs_reset();
 sensor_reset_velo();
 set_us_tick( 1000000 );
-sensor_imu_velo( &converted, &estimate );
+sensor_alt_velo( &converted, &estimate ); // this needs to be fixed
 TEST_ASSERT_EQ_FLOAT( "Velocity integrates acceleration over elapsed time.", estimate.velocity, 2.0f );
 
 } /* test_sensor_velocity */

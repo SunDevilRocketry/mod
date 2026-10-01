@@ -46,6 +46,7 @@
 #include "mahony.h"
 #include "error_sdr.h"
 #include "debug_sdr.h"
+#include "kalman.h"
 
 /*------------------------------------------------------------------------------
  Private Macros
@@ -308,13 +309,13 @@ sensor_conv_imu( &(sensor_data_ptr->imu_converted), &imu_raw );
 body_state_status = sensor_body_state( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
 
 /* Calculated velocity and position */
-sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_estimate) );
+sensor_alt_velo( sensor_data_ptr );
 
 /* Calculated baro exponential moving average */
-sensor_baro_ema( sensor_data_ptr );
+// sensor_baro_ema( sensor_data_ptr );
 
 /* Calculated altitude from barometer */
-sensor_baro_alt( sensor_data_ptr );
+// sensor_baro_alt( sensor_data_ptr );
 
 /* CRITICAL SECTION END */
 
@@ -389,6 +390,8 @@ if ( mahony_status != MAHONY_OK )
     {
     error_fail_fast( ERROR_SENSOR_CMD_ERROR );
     }
+
+kalman_init(10.0f, 1.0f, 0.5f);
 
 } /* sensor_init */
 
@@ -612,14 +615,31 @@ return readout / gyro_sens;
   * @param imu_converted Converted IMU data.
   * @param state_estimate State estimate to update.
   */
-void sensor_imu_velo
+void sensor_alt_velo
 	(
-	const IMU_CONVERTED* imu_converted,
-	STATE_ESTIMATION* state_estimate
+	SENSOR_DATA* sen_data
 	)
 {
+/* Local Variables -----------------------------------------------------------*/
 float velo_x, velo_y, velo_z, velocity;
+float ts_delta;
+KALMAN_OUTPUT kalman_output;
 
+float pressure = sen_data->baro_pressure;
+float temp = sen_data->baro_temp;
+// conv pressure to pascal for equation
+// pressure *= 6894.76;
+
+// calc altitude
+float PRESSURE_SEA_LEVEL = 101325;
+float EXP = 0.190294958;
+float TEMP_LAPSE_RATE = 0.0065;
+
+/* Baro alt ------------------------------------------------------------------*/
+float alt = (pow(PRESSURE_SEA_LEVEL / pressure, EXP) - 1) * (temp + 273.15) / TEMP_LAPSE_RATE;
+
+
+/* Calculate World Acceleration ----------------------------------------------*/
 /*
  * The world frame uses North-East-Down (NED) coordinates,
  * so gravity points in the world-frame +Z direction.
@@ -636,44 +656,39 @@ const QUAT gravity_world =
  * The attitude quaternion is body-to-world, so rotate world gravity
  * into the body frame before subtracting it from the accelerometer.
  */
-QUAT gravity_body = quat_rotate_world_to_body
-    (
-    state_estimate->attitude,
-    gravity_world
-    );
+QUAT gravity_body = quat_rotate_world_to_body(sen_data->state_estimate.attitude, gravity_world);
 
 QUAT linear_accel_body =
     {
     .w = 0.0f,
-    .x = imu_converted->accel_x - gravity_body.x,
-    .y = imu_converted->accel_y - gravity_body.y,
-    .z = imu_converted->accel_z - gravity_body.z
+    .x = sen_data->imu_converted.accel_x - gravity_body.x,
+    .y = sen_data->imu_converted.accel_y - gravity_body.y,
+    .z = sen_data->imu_converted.accel_z - gravity_body.z
     };
 
 /*
  * Rotate gravity-compensated acceleration into the world frame so the
  * integrated velocity components remain in a fixed coordinate frame.
  */
-QUAT linear_accel_world = quat_rotate_body_to_world
-    (
-    state_estimate->attitude,
-    linear_accel_body
-    );
+QUAT linear_accel_world = quat_rotate_body_to_world(sen_data->state_estimate.attitude, linear_accel_body);
 
 float accel_world_x = linear_accel_world.x;
 float accel_world_y = linear_accel_world.y;
 float accel_world_z = linear_accel_world.z;
 
-float ts_delta;
-
 uint64_t current_tick = get_us_tick();
 uint64_t imu_tdelta = current_tick - imu_velo_tick;
 ts_delta = (float) imu_tdelta / (float) MICROSEC_PER_SEC;
 
+/* Step kalman */
+kalman_output = kalman_step(alt, accel_world_z, ts_delta);
+
+sen_data->baro_alt = kalman_output.alt;
+
 // Calculate 3 velocity vectors using motion equations
 velo_x = velo_x_prev + accel_world_x * ts_delta;
 velo_y = velo_y_prev + accel_world_y * ts_delta;
-velo_z = velo_z_prev + accel_world_z * ts_delta;
+velo_z = kalman_output.velo;
 
 // Calculate the velocity scalar
 velocity = sqrtf
@@ -684,11 +699,11 @@ velocity = sqrtf
     );
 
 /* Update state estimations*/
-state_estimate->velo_x = velo_x;
-state_estimate->velo_y = velo_y;
-state_estimate->velo_z = velo_z;
+sen_data->state_estimate.velo_x = velo_x;
+sen_data->state_estimate.velo_y = velo_y;
+sen_data->state_estimate.velo_z = velo_z;
 
-state_estimate->velocity = velocity;
+sen_data->state_estimate.velocity = velocity;
 
 // Save current velocity for next computation
 velo_x_prev = velo_x;
