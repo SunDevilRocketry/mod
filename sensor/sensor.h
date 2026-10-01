@@ -191,7 +191,7 @@ SENSOR_STATUS sensor_dump
   *
   * @param preset_data Pointer to the preset calibration data.
   */
-void sensor_init
+SENSOR_STATUS sensor_init
 	(
 	PRESET_DATA* preset_data
 	);

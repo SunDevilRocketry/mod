@@ -1,10 +1,10 @@
-<!-- next traceable tag: RQ.MOD.00035 -->
+<!-- next traceable tag: RQ.MOD.00040 -->
 <!-- This req doc is written and updated manually and checked in along with source code -->
 <!-- Desired behaviors are expected to be specified by human engineers. No AI assistance allowed for requirement specification -->
 # SDR "mod" Library Software Requirements Document
 
 ### QA level: Safety Critical
-### Part Number: A0013-XXX
+### Part Number: A0015-XXX
 
 ## 1. Structural
 
@@ -82,7 +82,7 @@ The library shall provide the following IMU and magnetometer utilities:
 
     RQ.MOD.00027 - Conversion of raw IMU data to floating point values
 
-    RQ.MOD.00028 - Integration of acceleration data to yield velocity
+    RQ.MOD.00028 - Integration of acceleration data and body state to yield velocity
 
     RQ.MOD.00029 - Re-mapping raw IMU data based on orientation
 
@@ -101,3 +101,15 @@ The library shall provide a method to construct each of the following messages:
     RQ.MOD.00034 - A packet containing vehicle identification information
 
     RQ.MOD.00035 - A packet containing vehicle calibration information
+
+### 2.7. Mahony
+
+RQ.MOD.00036 - The library shall provide a Mahony filter to fuse accelerometer and gyroscope data to return an attitude estimate.
+
+RQ.MOD.00037 - The library shall report vehicle orientation with a unit quaternion.
+
+The library shall disable accelerometer fusion in the following cases:
+
+    RQ.MOD.00038 - The project disables fusion.
+
+    RQ.MOD.00039 - The provided parameters for accelerometer fusion are invalid.

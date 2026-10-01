@@ -355,7 +355,7 @@ else
   * @brief Initializes sensor timing and resets velocity state.
   * @param preset_data Pointer to the preset calibration data.
   */
-void sensor_init
+SENSOR_STATUS sensor_init
     (
     PRESET_DATA* preset_data
     )
@@ -387,8 +387,10 @@ MAHONY_STATUS mahony_status = mahony_init
 
 if ( mahony_status != MAHONY_OK )
     {
-    error_fail_fast( ERROR_SENSOR_CMD_ERROR );
+    return( SENSOR_FAIL );
     }
+
+return( SENSOR_OK );
 
 } /* sensor_init */
 

@@ -124,25 +124,7 @@ USB_STATUS usb_transmit(void* tx_data_ptr, size_t tx_data_size, uint32_t timeout
     return USB_OK;
 }
 
-QUAT quat_mult(QUAT a, QUAT b)
+int get_fc_state()
 {
-    (void)b;
-    return a;
-}
-
-QUAT quat_scale(QUAT q, float s)
-{
-    (void)s;
-    return q;
-}
-
-QUAT quat_add(QUAT a, QUAT b)
-{
-    (void)b;
-    return a;
-}
-
-QUAT quat_normalize(QUAT q)
-{
-    return q;
+return 0;
 }

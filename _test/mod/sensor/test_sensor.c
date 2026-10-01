@@ -116,9 +116,9 @@ void test_sensor_mount_orientation
 	void
 	)
 {
-set_mount_orientation( MOUNT_ORIENTATION_IMU_INVERTED );
-TEST_ASSERT_EQ_SINT( "Mount orientation can be set and read.", get_mount_orientation(), MOUNT_ORIENTATION_IMU_INVERTED );
-set_mount_orientation( MOUNT_ORIENTATION_IMU_NORMAL );
+sensor_set_mount_orientation( MOUNT_ORIENTATION_IMU_INVERTED );
+TEST_ASSERT_EQ_SINT( "Mount orientation can be set and read.", sensor_get_mount_orientation(), MOUNT_ORIENTATION_IMU_INVERTED );
+sensor_set_mount_orientation( MOUNT_ORIENTATION_IMU_NORMAL );
 
 } /* test_sensor_mount_orientation */
 
@@ -143,8 +143,13 @@ void test_sensor_velocity
 	void
 	)
 {
-IMU_CONVERTED converted = { 2.0f, 0.0f, 0.0f };
+IMU_CONVERTED converted =
+	{
+	.accel_x = 2.0f,
+	.accel_z = -GRAVITY
+	};
 STATE_ESTIMATION estimate = { 0 };
+estimate.attitude = IDENTITY_QUAT;
 
 stubs_reset();
 sensor_reset_velo();
@@ -164,12 +169,12 @@ float x = 1.0f;
 float y = -2.0f;
 float z = 3.0f;
 
-set_mount_orientation( MOUNT_ORIENTATION_IMU_INVERTED );
+sensor_set_mount_orientation( MOUNT_ORIENTATION_IMU_INVERTED );
 sensor_axis_remap( &x, &y, &z );
 TEST_ASSERT_EQ_FLOAT( "Inverted mounting remaps the x axis.", x, -1.0f );
 TEST_ASSERT_EQ_FLOAT( "Leave the y axis intact.", y, -2.0f );
 TEST_ASSERT_EQ_FLOAT( "Inverted mounting remaps the z axis.", z, -3.0f );
-set_mount_orientation( MOUNT_ORIENTATION_IMU_NORMAL );
+sensor_set_mount_orientation( MOUNT_ORIENTATION_IMU_NORMAL );
 
 } /* test_sensor_axis_remap */
 
