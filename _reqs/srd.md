@@ -52,6 +52,8 @@ RQ.MOD.00015 - The error handler shall provide an overridable default error call
 
 RQ.MOD.00016 - The library shall provide a method to compute a Castagnoli 32-bit cyclic redundancy check.
 
+RQ.MOD.00040 - The library shall provide a method to clamp a float within a specified range.
+
 The library shall provide all of the following quaternion operations:
 
     RQ.MOD.00017 - Hamilton Product (multiplication)
@@ -65,6 +67,28 @@ The library shall provide all of the following quaternion operations:
     RQ.MOD.00021 - Unit normalization
 
     RQ.MOD.00022 - Conjugation
+
+    RQ.MOD.00047 - Creation from euler angles
+
+    RQ.MOD.00048 - Determine whether quat is finite
+
+    RQ.MOD.00049 - Body-to-world frame transition
+
+    RQ.MOD.00050 - World-to-body frame transition
+
+The library shall provide all of the following 3-element vector operations:
+
+    RQ.MOD.00041 - Addition
+
+    RQ.MOD.00042 - Cross Product
+
+    RQ.MOD.00043 - Determine whether vector is finite
+
+    RQ.MOD.00044 - Determine magnitude
+
+    RQ.MOD.00045 - Normalization
+
+    RQ.MOD.00046 - Scalar Multiplication
 
 ### 2.5. Sensor
 
