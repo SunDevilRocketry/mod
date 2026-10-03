@@ -149,9 +149,17 @@ switch( message_type )
           * the event of a hardfault and enables it to offload
           * FHA requirements to the project that integrates it,
           * if needed.
+          * 
+          * GCOVR_EXCL_START
+          *
+          * A coverage hole is reported here because the debug-mode
+          * emulator tests have an actual function call here while
+          * release does not. This branch *is* tested in the release
+          * configuration.
           */
         debug_assert( false, ERROR_RECORD_FLIGHT_EVENTS_ERROR );
         break;
+        /* GCOVR_EXCL_STOP */
         }
     }
 
