@@ -13,6 +13,7 @@
 Standard Includes
 ------------------------------------------------------------------------------*/
 #include <stdint.h>
+#include <math.h>
 
 /*------------------------------------------------------------------------------
 Project Includes
@@ -31,6 +32,37 @@ IMU_OFFSET imu_offset;
 /*------------------------------------------------------------------------------
 Procedures: Tests
 ------------------------------------------------------------------------------*/
+
+void test_sensor_init
+	(
+	void
+	)
+{
+/*------------------------------------------------------------------------------
+Case 1: Nominal Initialization
+------------------------------------------------------------------------------*/
+PRESET_DATA test_presets = { 0 };
+SENSOR_STATUS sensor_status = SENSOR_OK;
+
+/*------------------------------------------------------------------------------
+Call FUT and verify
+------------------------------------------------------------------------------*/
+sensor_status = sensor_init(&test_presets);
+TEST_ASSERT_EQ_UINT( "Verify that sensor initialized normally.", sensor_status, SENSOR_OK );
+
+/*------------------------------------------------------------------------------
+Case 2: Bad offsets
+------------------------------------------------------------------------------*/
+test_presets.imu_offset.accel_y = NAN;
+
+/*------------------------------------------------------------------------------
+Call FUT and verify
+------------------------------------------------------------------------------*/
+sensor_status = sensor_init(&test_presets);
+TEST_ASSERT_NE_UINT( "Verify that sensor init failed due to mahony.", sensor_status, SENSOR_OK );
+
+} /* test_sensor_init */
+
 
 /*******************************************************************************
 *                                                                              *
@@ -228,6 +260,7 @@ Test Cases
 ------------------------------------------------------------------------------*/
 unit_test tests[] =
 	{
+	{ "Sensor: Test initialization", test_sensor_init },
 	{ "Sensor: Start IT Error Handling", test_sensor_start_it, "RQ.MOD.00023" },
 	{ "Sensor: Dump Cycle", test_sensor_dump, "RQ.MOD.00024" },
 	{ "Sensor: Dump Command", test_sensor_command_dump, "RQ.MOD.00025" },
@@ -242,6 +275,7 @@ unit_test tests[] =
 /*------------------------------------------------------------------------------
 Call the framework
 ------------------------------------------------------------------------------*/
+TEST_set_type( TEST_TYPE_SW_INTEGRATION );
 TEST_INITIALIZE_TEST( "sensor", tests );
 
 } /* main */
