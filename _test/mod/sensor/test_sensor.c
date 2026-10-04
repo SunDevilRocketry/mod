@@ -13,6 +13,7 @@
 Standard Includes
 ------------------------------------------------------------------------------*/
 #include <stdint.h>
+#include <math.h>
 
 /*------------------------------------------------------------------------------
 Project Includes
@@ -31,6 +32,37 @@ IMU_OFFSET imu_offset;
 /*------------------------------------------------------------------------------
 Procedures: Tests
 ------------------------------------------------------------------------------*/
+
+void test_sensor_init
+	(
+	void
+	)
+{
+/*------------------------------------------------------------------------------
+Case 1: Nominal Initialization
+------------------------------------------------------------------------------*/
+PRESET_DATA test_presets = { 0 };
+SENSOR_STATUS sensor_status = SENSOR_OK;
+
+/*------------------------------------------------------------------------------
+Call FUT and verify
+------------------------------------------------------------------------------*/
+sensor_status = sensor_init(&test_presets);
+TEST_ASSERT_EQ_UINT( "Verify that sensor initialized normally.", sensor_status, SENSOR_OK );
+
+/*------------------------------------------------------------------------------
+Case 2: Bad offsets
+------------------------------------------------------------------------------*/
+test_presets.imu_offset.accel_y = NAN;
+
+/*------------------------------------------------------------------------------
+Call FUT and verify
+------------------------------------------------------------------------------*/
+sensor_status = sensor_init(&test_presets);
+TEST_ASSERT_NE_UINT( "Verify that sensor init failed due to mahony.", sensor_status, SENSOR_OK );
+
+} /* test_sensor_init */
+
 
 /*******************************************************************************
 *                                                                              *
@@ -116,9 +148,9 @@ void test_sensor_mount_orientation
 	void
 	)
 {
-set_mount_orientation( MOUNT_ORIENTATION_IMU_INVERTED );
-TEST_ASSERT_EQ_SINT( "Mount orientation can be set and read.", get_mount_orientation(), MOUNT_ORIENTATION_IMU_INVERTED );
-set_mount_orientation( MOUNT_ORIENTATION_IMU_NORMAL );
+sensor_set_mount_orientation( MOUNT_ORIENTATION_IMU_INVERTED );
+TEST_ASSERT_EQ_SINT( "Mount orientation can be set and read.", sensor_get_mount_orientation(), MOUNT_ORIENTATION_IMU_INVERTED );
+sensor_set_mount_orientation( MOUNT_ORIENTATION_IMU_NORMAL );
 
 } /* test_sensor_mount_orientation */
 
@@ -143,8 +175,13 @@ void test_sensor_velocity
 	void
 	)
 {
-IMU_CONVERTED converted = { 2.0f, 0.0f, 0.0f };
+IMU_CONVERTED converted =
+	{
+	.accel_x = 2.0f,
+	.accel_z = -GRAVITY
+	};
 STATE_ESTIMATION estimate = { 0 };
+estimate.attitude = IDENTITY_QUAT;
 
 stubs_reset();
 sensor_reset_velo();
@@ -164,12 +201,12 @@ float x = 1.0f;
 float y = -2.0f;
 float z = 3.0f;
 
-set_mount_orientation( MOUNT_ORIENTATION_IMU_INVERTED );
+sensor_set_mount_orientation( MOUNT_ORIENTATION_IMU_INVERTED );
 sensor_axis_remap( &x, &y, &z );
 TEST_ASSERT_EQ_FLOAT( "Inverted mounting remaps the x axis.", x, -1.0f );
 TEST_ASSERT_EQ_FLOAT( "Leave the y axis intact.", y, -2.0f );
 TEST_ASSERT_EQ_FLOAT( "Inverted mounting remaps the z axis.", z, -3.0f );
-set_mount_orientation( MOUNT_ORIENTATION_IMU_NORMAL );
+sensor_set_mount_orientation( MOUNT_ORIENTATION_IMU_NORMAL );
 
 } /* test_sensor_axis_remap */
 
@@ -223,6 +260,7 @@ Test Cases
 ------------------------------------------------------------------------------*/
 unit_test tests[] =
 	{
+	{ "Sensor: Test initialization", test_sensor_init },
 	{ "Sensor: Start IT Error Handling", test_sensor_start_it, "RQ.MOD.00023" },
 	{ "Sensor: Dump Cycle", test_sensor_dump, "RQ.MOD.00024" },
 	{ "Sensor: Dump Command", test_sensor_command_dump, "RQ.MOD.00025" },
@@ -237,6 +275,7 @@ unit_test tests[] =
 /*------------------------------------------------------------------------------
 Call the framework
 ------------------------------------------------------------------------------*/
+TEST_set_type( TEST_TYPE_SW_INTEGRATION );
 TEST_INITIALIZE_TEST( "sensor", tests );
 
 } /* main */

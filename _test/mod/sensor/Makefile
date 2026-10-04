@@ -33,7 +33,9 @@ test_sensor.c \
 mock/test_sensor_stubs.c
 
 COV_C_SOURCES = \
-$(ROOT_DIR)/mod/sensor/sensor.c
+$(ROOT_DIR)/mod/sensor/sensor.c \
+$(ROOT_DIR)/mod/math_sdr/math_sdr.c \
+$(ROOT_DIR)/mod/mahony/mahony.c
 
 FRAMEWORK_SOURCES = \
 $(FRAMEWORK_DIR)/src/test_assert.c \
