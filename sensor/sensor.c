@@ -948,30 +948,31 @@ mag_trim = imu_get_mag_trim();
 float rhall = (imu_raw->mag_hall == 0) ? mag_trim.dig_xyz1 : imu_raw->mag_hall;
 
 /* ---- X compensation ---- */
-float process_comp_x0 = ((float)mag_trim.dig_xyz1) * 16384.0f / rhall;
-float process_comp_x1 = process_comp_x0 - 16384.0f;
-float process_comp_x2 = ((float)mag_trim.dig_xy2) * (process_comp_x1 * process_comp_x1 / 268435456.0f);
-float process_comp_x3 = process_comp_x2 + process_comp_x1 * ((float)mag_trim.dig_xy1) / 16384.0f;
-float process_comp_x4 = ((float)mag_trim.dig_x2) + 160.0f;
-float process_comp_x5 = ((float)imu_raw->mag_x) * (((process_comp_x3 + 256.0f) * process_comp_x4) / 8192.0f);
-mag_x = (process_comp_x5 / 16.0f) / 10.0f;  // µT
+float process_comp_x0 = (((float)mag_trim.dig_xyz1) * 16384.0f / rhall);
+mag_x = (process_comp_x0 - 16384.0f);
+float process_comp_x1 = ((float)mag_trim.dig_xy2) * (mag_x * mag_x / 268435456.0f);
+float process_comp_x2 = process_comp_x1 + mag_x * ((float)mag_trim.dig_xy1) / 16384.0f;
+float process_comp_x3 = ((float)mag_trim.dig_x2) + 160.0f;
+float process_comp_x4 = ((float)imu_raw->mag_x) * ((process_comp_x2 + 256.0f) * process_comp_x3);
+mag_x = ((process_comp_x4 / 8192.0f) + (((float)mag_trim.dig_x1) * 8.0f)) / 16.0f; /* µT */
 
 /* ---- Y compensation ---- */
 float process_comp_y0 = ((float)mag_trim.dig_xyz1) * 16384.0f / rhall;
-float process_comp_y1 = process_comp_y0 - 16384.0f;
-float process_comp_y2 = ((float)mag_trim.dig_xy2) * (process_comp_y1 * process_comp_y1 / 268435456.0f);
-float process_comp_y3 = process_comp_y2 + process_comp_y1 * ((float)mag_trim.dig_xy1) / 16384.0f;
-float process_comp_y4 = ((float)mag_trim.dig_y2) + 160.0f;
-float process_comp_y5 = ((float)imu_raw->mag_y) * (((process_comp_y3 + 256.0f) * process_comp_y4) / 8192.0f);
-mag_y = (process_comp_y5 / 16.0f) / 10.0f;  // µT
+mag_y = process_comp_y0 - 16384.0f;
+float process_comp_y1 = ((float)mag_trim.dig_xy2) * (mag_y * mag_y / 268435456.0f);
+float process_comp_y2 = process_comp_y1 + mag_y * ((float)mag_trim.dig_xy1) / 16384.0f;
+float process_comp_y3 = ((float)mag_trim.dig_y2) + 160.0f;
+float process_comp_y4 = ((float)imu_raw->mag_y) * (((process_comp_y2) + 256.0f) * process_comp_y3);
+mag_y = ((process_comp_y4 / 8192.0f) + (((float)mag_trim.dig_y1) * 8.0f)) / 16.0f; /* µT */
 
 /* ---- Z compensation ---- */
-float process_comp_z0 = ((float)imu_raw->mag_z) - ((float)mag_trim.dig_z4) * 128.0f;
-float process_comp_z1 = ((float)mag_trim.dig_z3) * (rhall - ((float)mag_trim.dig_xyz1)) / 4.0f;
-float process_comp_z2 = (mag_trim.dig_z2 == 0) ? 0.0f :
-    (((process_comp_z0 - process_comp_z1) * ((float)mag_trim.dig_z1)) /
-     (((float)mag_trim.dig_z2) + ((float)mag_trim.dig_z1) * (rhall - (float)mag_trim.dig_xyz1) / 32768.0f));
-mag_z = process_comp_z2 / 4.0f / 10.0f;  // µT
+float process_comp_z0 = ((float)imu_raw->mag_z) - ((float)mag_trim.dig_z4);
+float process_comp_z1 = ((float)rhall) - ((float)mag_trim.dig_xyz1);
+float process_comp_z2 = (((float)mag_trim.dig_z3) * process_comp_z1);
+float process_comp_z3 = ((float)mag_trim.dig_z1) * ((float)rhall) / 32768.0f;
+float process_comp_z4 = ((float)mag_trim.dig_z2) + process_comp_z3;
+float process_comp_z5 = (process_comp_z0 * 131072.0f) - process_comp_z2;
+mag_z = (process_comp_z5 / ((process_comp_z4) * 4.0f)) / 16.0f; /* µT */
 
 /*------------------------------------------------------------------------------
  Store converted field data
