@@ -8,8 +8,9 @@ tests=(
     commands
     debug_sdr
     error_sdr
-    math_sdr
+    isa
     mahony
+    math_sdr
     sensor
     telemetry
 )

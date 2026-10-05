@@ -46,6 +46,7 @@
 #include "mahony.h"
 #include "error_sdr.h"
 #include "debug_sdr.h"
+#include "isa.h"
 
 /*------------------------------------------------------------------------------
  Private Macros
@@ -314,7 +315,7 @@ sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_est
 sensor_baro_ema( sensor_data_ptr );
 
 /* Calculated altitude from barometer */
-sensor_baro_alt( sensor_data_ptr );
+sensor_data_ptr->baro_alt = isa_get_altitude_qnh(sensor_data_ptr->baro_pressure, sensor_data_ptr->baro_temp);
 
 /* CRITICAL SECTION END */
 
@@ -698,29 +699,6 @@ velo_y_prev = velo_y;
 velo_z_prev = velo_z;
 
 imu_velo_tick = current_tick;
-
-}
-
-
-/**
-  * @brief Calculates altitude from the current barometric pressure and temperature.
-  * @param sen_data Sensor data structure to update.
-  */
-void sensor_baro_alt(SENSOR_DATA* sen_data)
-{
-	float pressure = sen_data->baro_pressure;
-	float temp = sen_data->baro_temp;
-	// conv pressure to pascal for equation
-	// pressure *= 6894.76;
-
-	// calc altitude
-	float PRESSURE_SEA_LEVEL = 101325;
-    float EXP = 0.190294958;
-    float TEMP_LAPSE_RATE = 0.0065;
-
-    float alt = (pow(PRESSURE_SEA_LEVEL / pressure, EXP) - 1) * (temp + 273.15) / TEMP_LAPSE_RATE;
-
-	sen_data->baro_alt = alt;
 
 }
 
