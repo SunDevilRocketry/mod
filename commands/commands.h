@@ -26,12 +26,6 @@
 extern "C" {
 #endif
 
-/* platform specific includes */
-#if defined( A0002_REV2 ) || defined( A0005_REV1 )
-#include "imu.h"
-#include "usb.h"
-#endif
-
 #include "math_sdr.h"
 
 /*------------------------------------------------------------------------------
@@ -108,11 +102,7 @@ extern "C" {
   */
 void ping
 	(
-	#ifndef VALVE_CONTROLLER
-		void
-	#else
-		CMD_SOURCE cmd_source
-	#endif
+	void
 	);
 
 #ifdef __cplusplus

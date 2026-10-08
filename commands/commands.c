@@ -28,15 +28,8 @@
 /*------------------------------------------------------------------------------
  Project Includes                                                               
 ------------------------------------------------------------------------------*/
-#include "main.h"
 #include "commands.h"
 #include "usb.h"
-#include "sensor.h"
-
-/*------------------------------------------------------------------------------
- Globals 
-------------------------------------------------------------------------------*/
-extern SENSOR_DATA sensor_data;
 
 /*------------------------------------------------------------------------------
  Procedures 
@@ -64,7 +57,7 @@ response = PING_RESPONSE_CODE; /* Code specific to board and revision */
 /*------------------------------------------------------------------------------
  Command Implementation                                                         
 ------------------------------------------------------------------------------*/
-usb_transmit( &response, sizeof( response ), HAL_DEFAULT_TIMEOUT );
+usb_transmit( &response, sizeof( response ), USB_DEFAULT_TIMEOUT );
 
 } /* ping */
 

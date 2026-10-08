@@ -20,7 +20,6 @@ Project Includes
 ------------------------------------------------------------------------------*/
 #include "sdrtf_pub.h"
 #include "commands.h"
-#include "main.h"
 #include "test_commands_stubs.h"
 
 /*------------------------------------------------------------------------------
