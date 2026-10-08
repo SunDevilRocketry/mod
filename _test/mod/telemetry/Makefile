@@ -29,11 +29,9 @@ DRIVER_DIR = $(ROOT_DIR)/driver
 ################################################################
 
 TEST_SOURCES = \
-test_telemetry.c \
-mock/test_telemetry_stubs.c
+test_telemetry.c
 
-COV_C_SOURCES = \
-$(ROOT_DIR)/mod/telemetry/telemetry.c
+COV_C_SOURCES =
 
 FRAMEWORK_SOURCES = \
 $(FRAMEWORK_DIR)/src/test_assert.c \

@@ -96,20 +96,6 @@ extern "C" {
 /* Firmware Identifier Code - GS */
 #define FIRMWARE_RECEIVER	    ( 0x11 ) /* Reciever Firmware 	 */
 
-/* Other macros */
-#define DASHBOARD_DUMP_SIZE	( 36 )
-
-typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
-	{
-	QUAT attitude;
-	float alt;
-	float latitude;
-	float longitude;
-	float acc_x;
-	float roll_rate;
-	} DASHBOARD_DUMP_TYPE;
-	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == DASHBOARD_DUMP_SIZE, "DASHBOARD_DUMP_TYPE size invalid.");
-
 /*------------------------------------------------------------------------------
  Function Prototypes 
 ------------------------------------------------------------------------------*/
@@ -128,29 +114,6 @@ void ping
 		CMD_SOURCE cmd_source
 	#endif
 	);
-
-#ifdef A0002_REV2
-/**
-  * @brief Sends the data required by the dashboard.
-  *
-  * @return USB transmission status.
-  */
-USB_STATUS dashboard_dump
-    (
-    void
-    );
-
-/**
-  * @brief Fill the buffer with the dashboard dump.
-  *
-  * @param buffer Pointer to the dashboard dump buffer. Must be
-  *        DASHBOARD_DUMP_SIZE.
-  */
-void dashboard_construct_dump
-    (
-    DASHBOARD_DUMP_TYPE* buffer /* must be DASHBOARD_DUMP_SIZE */
-    );
-#endif
 
 #ifdef __cplusplus
 }
