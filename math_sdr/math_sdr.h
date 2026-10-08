@@ -113,6 +113,23 @@ typedef struct _VECTOR_3F
   */
 #define array_size( array ) ( sizeof( array ) / sizeof( array[0] ) )
 
+/* Inline Functions ----------------------------------------------------------*/
+inline uint16_t flip_endianness
+    (
+    uint16_t value
+    )
+{
+return ( (value & 0x0F) << 8 ) | ( (value & 0xF0) >> 8 );
+}
+
+inline uint32_t flip_endianness
+    (
+    uint32_t value
+    )
+{
+return ( (value & 0x00FF) << 16 ) | ( (value & 0xFF00) >> 16 );
+}
+
 /* Function Prototypes -------------------------------------------------------*/
 
 uint32_t crc32
