@@ -119,12 +119,6 @@ static SENSOR_STATUS sensor_get_it_ready
 	uint32_t timeout
 	);
 
-static void sensor_conv_mag
-	(
-	IMU_CONVERTED* imu_converted, 
-	IMU_RAW* imu_raw
-	);
-
 static QUAT quat_grav_attitude
 	(
 	float ax,
@@ -433,7 +427,8 @@ imu_converted->gyro_z -= imu_offset.gyro_z;
 
 sensor_axis_remap( &(imu_converted->gyro_x), &(imu_converted->gyro_y), &(imu_converted->gyro_z) );
 
-sensor_conv_mag(imu_converted, imu_raw);
+// TODO
+mag_conv_raw(imu_converted, imu_raw);
 }
 
 
@@ -876,120 +871,6 @@ while( curr_time <= starting_time + timeout )
 return SENSOR_IT_TIMEOUT;
 
 }
-
-
-
-/**
-  * @brief Converts raw magnetometer readings into magnetic field data.
-  * @param imu_converted Converted IMU data to update.
-  * @param imu_raw Raw magnetometer readouts.
-  *
-  * @attention 
-  * 
-  * This function is heavily derived from the official Bosch BMM150
-  * driver, which is protected by the BSD-3-Clause license. This function
-  *	is exempt from any licensing that may be applied to a current/future
-  *	Sun Devil Rocketry project. Per the terms of the BSD-3-Clause license,
-  *	the following notice is retained from the source project and applies
-  *	to the procedure below.
-  *
-  * 	Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.
-  *
-  *		BSD-3-Clause
-  *																			   
-  *		Redistribution and use in source and binary forms, with or without	   
-  *		modification, are permitted provided that the following conditions are 
-  *		met:																   
-  *																			   
-  *		1. Redistributions of source code must retain the above copyright      
-  *	    notice, this list of conditions and the following disclaimer.		   
-  *																			   
-  *		2. Redistributions in binary form must reproduce the above copyright   
-  *	    notice, this list of conditions and the following disclaimer in the    
-  *	    documentation and/or other materials provided with the distribution.   
-  *																			   
-  *		3. Neither the name of the copyright holder nor the names of its       
-  *	    contributors may be used to endorse or promote products derived from   
-  *	    this software without specific prior written permission. 			   
-  *																			   
-  *		THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS	   
-  *		"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT	   
-  *		LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS	   
-  *		FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE		   
-  *		COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,   
-  *		INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES			   
-  *		(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR	   
-  *		SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)	   
-  *		HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,	   
-  *		STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  
-  *		IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE	   
-  *		POSSIBILITY OF SUCH DAMAGE.		
-  */
-static void sensor_conv_mag
-	(
-	IMU_CONVERTED* imu_converted, 
-	IMU_RAW* imu_raw
-	)
-{
-/*------------------------------------------------------------------------------
- Local Variables  
-------------------------------------------------------------------------------*/
-MAG_TRIM mag_trim;
-float mag_x;
-float mag_y;
-float mag_z;
-
-/*------------------------------------------------------------------------------
- Initializations 
-------------------------------------------------------------------------------*/
-mag_trim = imu_get_mag_trim();
-
-/*------------------------------------------------------------------------------
- Apply Bosch compensation using factory trim values
-------------------------------------------------------------------------------*/
-float rhall = imu_raw->mag_hall;
-if ( (rhall != 0) && (mag_trim.dig_xyz1 != 0) )
-    {
-    /* ---- X compensation ---- */
-    float process_comp_x0 = (((float)mag_trim.dig_xyz1) * 16384.0f / rhall);
-    mag_x = (process_comp_x0 - 16384.0f);
-    float process_comp_x1 = ((float)mag_trim.dig_xy2) * (mag_x * mag_x / 268435456.0f);
-    float process_comp_x2 = process_comp_x1 + mag_x * ((float)mag_trim.dig_xy1) / 16384.0f;
-    float process_comp_x3 = ((float)mag_trim.dig_x2) + 160.0f;
-    float process_comp_x4 = ((float)imu_raw->mag_x) * ((process_comp_x2 + 256.0f) * process_comp_x3);
-    mag_x = ((process_comp_x4 / 8192.0f) + (((float)mag_trim.dig_x1) * 8.0f)) / 16.0f; /* µT */
-
-    /* ---- Y compensation ---- */
-    float process_comp_y0 = ((float)mag_trim.dig_xyz1) * 16384.0f / rhall;
-    mag_y = process_comp_y0 - 16384.0f;
-    float process_comp_y1 = ((float)mag_trim.dig_xy2) * (mag_y * mag_y / 268435456.0f);
-    float process_comp_y2 = process_comp_y1 + mag_y * ((float)mag_trim.dig_xy1) / 16384.0f;
-    float process_comp_y3 = ((float)mag_trim.dig_y2) + 160.0f;
-    float process_comp_y4 = ((float)imu_raw->mag_y) * (((process_comp_y2) + 256.0f) * process_comp_y3);
-    mag_y = ((process_comp_y4 / 8192.0f) + (((float)mag_trim.dig_y1) * 8.0f)) / 16.0f; /* µT */
-
-    /* ---- Z compensation ---- */
-    float process_comp_z0 = ((float)imu_raw->mag_z) - ((float)mag_trim.dig_z4);
-    float process_comp_z1 = ((float)rhall) - ((float)mag_trim.dig_xyz1);
-    float process_comp_z2 = (((float)mag_trim.dig_z3) * process_comp_z1);
-    float process_comp_z3 = ((float)mag_trim.dig_z1) * ((float)rhall) / 32768.0f;
-    float process_comp_z4 = ((float)mag_trim.dig_z2) + process_comp_z3;
-    float process_comp_z5 = (process_comp_z0 * 131072.0f) - process_comp_z2;
-    mag_z = (process_comp_z5 / ((process_comp_z4) * 4.0f)) / 16.0f; /* µT */
-    }
-else /* Data is invalid */
-    {
-    mag_x = 0.0f;
-    mag_y = 0.0f;
-    mag_z = 0.0f;
-    }
-/*------------------------------------------------------------------------------
- Store converted field data
-------------------------------------------------------------------------------*/
-imu_converted->mag_x = mag_x;
-imu_converted->mag_y = mag_y;
-imu_converted->mag_z = mag_z;
-} /* sensor_conv_mag */
 #endif
 
 

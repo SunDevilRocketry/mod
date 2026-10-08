@@ -28,6 +28,7 @@ extern "C" {
 
 #include "stm32h7xx_hal.h"
 #include "imu.h"
+#include "mag.h"
 #include "gps.h"
 
 /*------------------------------------------------------------------------------
@@ -91,7 +92,7 @@ typedef enum
 	MOUNT_ORIENTATION_IMU_NORMAL   = 1 		/* Antenna pointing down */
 	} MOUNT_ORIENTATION;
 
-/** @brief Physical-unit converted accel/gyro/mag data 
+/** @brief Physical-unit converted accel/gyro data 
   *
   *  @note Migrated from imu.h/imu_legacy.h to avoid recursive include issues
   */
@@ -103,9 +104,6 @@ typedef struct _IMU_CONVERTED
     float gyro_x ;
     float gyro_y ;
     float gyro_z ;
-    float mag_x ;
-    float mag_y ;
-    float mag_z ;
     } IMU_CONVERTED;
 
 /* State estimation from processed sensors */
@@ -138,6 +136,7 @@ typedef struct _IMU_DATA
 typedef struct SENSOR_DATA 
 	{
 	IMU_CONVERTED imu_converted;
+    MAG_CONVERTED mag_converted;
     STATE_ESTIMATION state_estimate;
 	float    baro_pressure; 
 	float    baro_temp;	
