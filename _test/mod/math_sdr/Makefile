@@ -98,7 +98,7 @@ test:
 	tail -n 7 "results.txt"
 	mkdir -p coverage
 	gcovr $(BUILD_DIR) \
-		--filter '.*(?<!test_)math_sdr[.]c$$' \
+		--filter '.*(?<!test_)$(TARGET)[.]c$$' \
 		--html-details coverage/coverage.html \
 		--json coverage/coverage.json
 

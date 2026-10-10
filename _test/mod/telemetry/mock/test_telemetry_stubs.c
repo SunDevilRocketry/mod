@@ -65,8 +65,3 @@ void dashboard_construct_dump(DASHBOARD_DUMP_TYPE* dump_buffer_ptr)
 {
     (void)dump_buffer_ptr;
 }
-
-void sensor_baro_alt(SENSOR_DATA* sensor_data_ptr)
-{
-    (void)sensor_data_ptr;
-}
