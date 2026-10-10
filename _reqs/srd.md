@@ -114,15 +114,7 @@ The library shall provide the following IMU and magnetometer utilities:
 
 ### 2.6. Telemetry
 
-RQ.MOD.00032 - The library shall provide a method to determine the next message for the flight computer to send.
-
-The library shall provide a method to construct each of the following messages:
-
-    RQ.MOD.00033 - A packet containing vehicle position and orientation information
-
-    RQ.MOD.00034 - A packet containing vehicle identification information
-
-    RQ.MOD.00035 - A packet containing vehicle calibration information
+RQ.MOD.00051 - The library shall control Sun Devil Rocketry's one-way telemetry interface by defining the authoritative version in a header for projects to integrate.
 
 ### 2.7. Mahony
 

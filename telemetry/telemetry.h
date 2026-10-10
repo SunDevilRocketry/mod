@@ -34,14 +34,7 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Project Includes  
 ------------------------------------------------------------------------------*/
-#include "error_sdr.h"
 #include "commands.h"
-#include "main.h"
-
-#ifndef F1_TESTBED
-#include "stm32h7xx_hal.h"
-#include "sensor.h"
-#endif
 
 /*------------------------------------------------------------------------------
  Constants
@@ -49,30 +42,41 @@ extern "C" {
 #define LORA_INTERNAL_HEADER_SIZE 8U
 #define LORA_PAYLOAD_SIZE 40U
 #define TELEMETRY_MESSAGE_SIZE (LORA_INTERNAL_HEADER_SIZE + LORA_PAYLOAD_SIZE)
+#define DASHBOARD_DUMP_SIZE 36U
 
 /*------------------------------------------------------------------------------
  Typedefs
 ------------------------------------------------------------------------------*/
 
-/* Aliased types if it doesn't exist on this platform */
-#ifndef FLIGHT_COMPUTER
-typedef uint8_t FLIGHT_COMP_STATE_TYPE;
+/* Aliased types for platform independence */
+typedef uint8_t FLIGHT_COMP_STATE_TYPE_OPAQUE;
 
-/* opaque structs to allow FC dependencies to be used on non-FC platforms*/
-#ifdef F1_TESTBED
+/* Opaque structs to allow FC dependencies to be used on non-FC platforms*/
 typedef struct {
     float imu_offset[ 6 ];
-} IMU_OFFSET;
+} IMU_OFFSET_OPAQUE;
 
 typedef struct {
     float baro_preset[ 2 ];
-} BARO_PRESET;
+} BARO_PRESET_OPAQUE;
 
 typedef struct {
     uint8_t servo_preset[ 4 ];
-} SERVO_PRESET;
-#endif /* F1_TESTBED */
-#endif
+} SERVO_PRESET_OPAQUE;
+
+/* Dashboard dump data structure */
+typedef struct __attribute__((packed)) _DASHBOARD_DUMP_TYPE
+	{
+	QUAT attitude;
+	float alt;
+	float latitude;
+	float longitude;
+	float acc_x;
+	float roll_rate;
+	} DASHBOARD_DUMP_TYPE;
+	_Static_assert( sizeof(DASHBOARD_DUMP_TYPE) == DASHBOARD_DUMP_SIZE, "DASHBOARD_DUMP_TYPE size invalid.");
+
+/* Telemetry type definitions */
 
 typedef uint32_t VERSION_INFO_TYPE; /* hw version : fw version : fw patch : fw prerelease */
 									/* msb									lsb			  */
@@ -105,7 +109,7 @@ typedef struct __attribute__((packed)) _LORA_INTERNAL_HEADER_TYPE
 
 typedef struct __attribute((packed)) _TELEMETRY_MSG_VEHICLE_ID_TYPE
     {
-    ST_UID_TYPE uid; /* unique identifier per stm32 MCU */
+    uint32_t uid[3]; /* unique identifier per stm32 MCU */
     uint8_t hw_opcode; /* hardware identifier as defined by connect command */
 	uint8_t fw_opcode; /* firmware identifier as defined by connect command */
 	VERSION_INFO_TYPE version; /* version string defined above */
@@ -116,7 +120,7 @@ typedef struct __attribute((packed)) _TELEMETRY_MSG_VEHICLE_ID_TYPE
 
 typedef struct __attribute__((packed)) _TELEMETRY_MSG_DASHBOARD_DUMP_TYPE
     {
-    FLIGHT_COMP_STATE_TYPE fsm_state; /* current state of the flight computer */
+    uint8_t fsm_state; /* current state of the flight computer */
     DASHBOARD_DUMP_TYPE data; /* the data used by the dashboard for location/orientation */
     uint8_t explicit_padding[3]; /* pad the end of this struct so the union behaves as expected */
     } TELEMETRY_MSG_DASHBOARD_DUMP_TYPE;
@@ -124,10 +128,10 @@ typedef struct __attribute__((packed)) _TELEMETRY_MSG_DASHBOARD_DUMP_TYPE
 
 typedef struct __attribute__((packed)) _TELEMETRY_MSG_CALIBRATION_TYPE
     {
-    IMU_OFFSET imu_offset;
-    BARO_PRESET baro_preset;
-    float       qfe_elevation;
-    SERVO_PRESET servo_preset;
+    float imu_offset[6];
+    float baro_preset[2];
+    float qfe_elevation;
+    uint8_t servo_preset[4];
     } TELEMETRY_MSG_CALIBRATION_TYPE;
     _Static_assert( sizeof(TELEMETRY_MSG_CALIBRATION_TYPE) == LORA_PAYLOAD_SIZE, "TELEMETRY_MSG_CALIBRATION size invalid." );
 
@@ -144,32 +148,12 @@ typedef struct __attribute__((packed)) _TELEMETRY_MESSAGE
 	} TELEMETRY_MESSAGE;
 	_Static_assert( sizeof(TELEMETRY_MESSAGE) == TELEMETRY_MESSAGE_SIZE, "LORA_PAYLOAD size invalid.");
 
-/*------------------------------------------------------------------------------
- Inlines                                             
-------------------------------------------------------------------------------*/
-
-/**
- * @brief Get the UID from the HAL.
- * 
- * @param uid_buffer A 12-byte buffer to store the UID in.
- */
-static inline void get_uid
-    (
-    ST_UID_TYPE* uid_buffer
-    )
-{
-uint32_t uid[3];
-uid[0] = HAL_GetUIDw0();
-uid[1] = HAL_GetUIDw1();
-uid[2] = HAL_GetUIDw2();
-
-memcpy( uid_buffer, uid, sizeof( ST_UID_TYPE ) );
-
-} /* get_uid */
-
 
 /*------------------------------------------------------------------------------
- Function prototypes                                             
+ Wireless Transmission: Contract Functions
+ 
+ The project must provide an implementation of the function prototypes defined
+ below.
 ------------------------------------------------------------------------------*/
 
 /**
@@ -201,6 +185,6 @@ void telemetry_build_payload
 #endif /* __TELEM_H */
 
 
-/*******************************************************************************
-  * END OF FILE                                                                  *
+/**
+  * END OF FILE
   */
