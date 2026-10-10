@@ -1,4 +1,4 @@
-<!-- next traceable tag: RQ.MOD.00040 -->
+<!-- next traceable tag: RQ.MOD.00052 -->
 <!-- This req doc is written and updated manually and checked in along with source code -->
 <!-- Desired behaviors are expected to be specified by human engineers. No AI assistance allowed for requirement specification -->
 # SDR "mod" Library Software Requirements Document
@@ -112,8 +112,6 @@ The library shall provide the following IMU and magnetometer utilities:
 
     RQ.MOD.00030 - Fusion of raw IMU data to yield a unit quaternion orientation estimate
 
-RQ.MOD.00031 - The library shall provide a method to convert a barometric pressure and temperature reading to an ISA altitude.
-
 ### 2.6. Telemetry
 
 RQ.MOD.00032 - The library shall provide a method to determine the next message for the flight computer to send.
@@ -137,3 +135,9 @@ The library shall disable accelerometer fusion in the following cases:
     RQ.MOD.00038 - The project disables fusion.
 
     RQ.MOD.00039 - The provided parameters for accelerometer fusion are invalid.
+
+### 2.8. ISA
+
+RQ.MOD.00031 - The library shall provide a method to convert a barometric pressure and temperature reading to an ISA altitude.
+
+RQ.MOD.00051 - The library shall provide a method to retrieve a ground reference elevation from current and calibrated pressure and temperature.

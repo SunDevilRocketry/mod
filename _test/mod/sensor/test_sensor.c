@@ -226,21 +226,6 @@ TEST_ASSERT_EQ_FLOAT( "Body state stores the roll rate.", estimate.roll_rate, 10
 } /* test_sensor_body_state */
 
 
-void test_sensor_baro_altitude
-	(
-	void
-	)
-{
-SENSOR_DATA sensor_data = { 0 };
-sensor_data.baro_pressure = 101325.0f;
-sensor_data.baro_temp = 15.0f;
-
-sensor_baro_alt( &sensor_data );
-TEST_ASSERT_EQ_FLOAT( "Sea-level pressure produces zero altitude.", sensor_data.baro_alt, 0.0f );
-
-} /* test_sensor_baro_altitude */
-
-
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
@@ -269,7 +254,6 @@ unit_test tests[] =
 	{ "Sensor: Velocity Integration", test_sensor_velocity, "RQ.MOD.00028" },
 	{ "Sensor: Axis Remap", test_sensor_axis_remap, "RQ.MOD.00029" },
 	{ "Sensor: Body State", test_sensor_body_state, "RQ.MOD.00030" },
-	{ "Sensor: Barometric Altitude", test_sensor_baro_altitude, "RQ.MOD.00031" }
 	};
 
 /*------------------------------------------------------------------------------

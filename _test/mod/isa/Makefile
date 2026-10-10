@@ -1,10 +1,10 @@
 ################################################################
 #
-# sensor.c unit tests (based on gcc)
+# isa.c unit tests (based on gcc)
 #
 ################################################################
 
-TARGET = sensor
+TARGET = isa
 
 ################################################################
 # build variables
@@ -29,13 +29,9 @@ DRIVER_DIR = $(ROOT_DIR)/driver
 ################################################################
 
 TEST_SOURCES = \
-test_sensor.c \
-mock/test_sensor_stubs.c
+test_isa.c
 
 COV_C_SOURCES = \
-$(ROOT_DIR)/mod/sensor/sensor.c \
-$(ROOT_DIR)/mod/math_sdr/math_sdr.c \
-$(ROOT_DIR)/mod/mahony/mahony.c \
 $(ROOT_DIR)/mod/isa/isa.c
 
 FRAMEWORK_SOURCES = \
@@ -56,29 +52,8 @@ CC = gcc
 
 C_INCLUDES = \
 -I. \
--I./mock \
--I$(ROOT_DIR)/app/rev2 \
--I$(ROOT_DIR)/mod/sensor \
 -I$(ROOT_DIR)/mod/math_sdr \
--I$(ROOT_DIR)/mod/error_sdr \
--I$(ROOT_DIR)/mod/debug_sdr \
 -I$(ROOT_DIR)/mod/isa \
--I$(ROOT_DIR)/mod/mahony \
--I$(ROOT_DIR)/driver/imu \
--I$(ROOT_DIR)/driver/baro \
--I$(ROOT_DIR)/driver/gps \
--I$(ROOT_DIR)/driver/timer \
--I$(ROOT_DIR)/driver/usb \
--I$(ROOT_DIR)/driver/flash \
--I$(ROOT_DIR)/driver/lora \
--I$(ROOT_DIR)/driver/servo \
--I$(ROOT_DIR)/driver/led \
--I$(LIB_DIR) \
--I$(LIB_DIR)/Drivers/STM32H7xx_HAL_Driver/Inc \
--I$(LIB_DIR)/Drivers/STM32H7xx_HAL_Driver/Inc/Legacy \
--I$(LIB_DIR)/Drivers/CMSIS/Device/ST/STM32H7xx/Include \
--I$(LIB_DIR)/Drivers/CMSIS/Include \
--I$(ROOT_DIR)/init/rev2/config/Inc \
 -I$(FRAMEWORK_DIR)/src
 
 C_DEFS = \
@@ -136,7 +111,7 @@ test:
 	tail -n 7 "results.txt"
 	mkdir -p coverage
 	gcovr $(BUILD_DIR) \
-		--filter '.*(?<!test_)sensor[.]c$$' \
+		--filter '.*(?<!test_)$(TARGET)[.]c$$' \
 		--html-details coverage/coverage.html \
 		--json coverage/coverage.json
 

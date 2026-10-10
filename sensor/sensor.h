@@ -296,16 +296,6 @@ float sensor_gyro_conv
 	int16_t readout
 	);
 
-/**
-  * @brief Calculates altitude from pressure readings.
-  *
-  * @param sensor_data_ptr Sensor data structure to update.
-  */
-void sensor_baro_alt
-	(
-	SENSOR_DATA* sensor_data_ptr
-	);
-
 #ifdef A0002_REV2 
 /**
   * @brief Signals interrupt-enabled peripherals to collect data.
