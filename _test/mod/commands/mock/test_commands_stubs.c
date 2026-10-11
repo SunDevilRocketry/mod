@@ -2,7 +2,6 @@
 
 #include "test_commands_stubs.h"
 
-static SENSOR_STATUS sensor_dump_status;
 static USB_STATUS usb_transmit_status;
 static uint8_t usb_transmit_buffer[256];
 static size_t usb_transmit_size;
@@ -11,17 +10,11 @@ static unsigned int usb_transmit_calls;
 
 void stubs_reset(void)
 {
-    sensor_dump_status = SENSOR_OK;
     usb_transmit_status = USB_OK;
     memset(usb_transmit_buffer, 0, sizeof(usb_transmit_buffer));
     usb_transmit_size = 0;
     usb_transmit_timeout = 0;
     usb_transmit_calls = 0;
-}
-
-void set_sensor_dump_status(SENSOR_STATUS status)
-{
-    sensor_dump_status = status;
 }
 
 void set_usb_transmit_status(USB_STATUS status)
@@ -47,12 +40,6 @@ unsigned int get_usb_transmit_calls(void)
 void* get_usb_transmit_buffer(void)
 {
     return usb_transmit_buffer;
-}
-
-SENSOR_STATUS sensor_dump(SENSOR_DATA* sensor_data_ptr)
-{
-    (void)sensor_data_ptr;
-    return sensor_dump_status;
 }
 
 USB_STATUS usb_transmit(void* tx_data_ptr, size_t tx_data_size, uint32_t timeout)
