@@ -90,16 +90,6 @@ typedef enum _TELEMETRY_MESSAGE_TYPES
     } TELEMETRY_MESSAGE_TYPES;
     _Static_assert( sizeof(TELEMETRY_MESSAGE_TYPES) == 4, "TELEMETRY_MESSAGE_TYPES size invalid.");
 
-/* UID serial number (packed struct inhibits padding) */
-typedef struct __attribute__((packed)) _ST_UID_TYPE 
-    {
-    uint32_t wafer_coords;
-    char lot_num_1[3];
-    uint8_t wafer_num;
-    char lot_num_2[4];
-    } ST_UID_TYPE;
-_Static_assert( sizeof(ST_UID_TYPE) == 12, "ST_UID_TYPE packing incorrect." );
-
 typedef struct __attribute__((packed)) _LORA_INTERNAL_HEADER_TYPE
     {
     TELEMETRY_MESSAGE_TYPES mid; /* message identifier -- currently 32 bits but will reserve command/control bits later*/
