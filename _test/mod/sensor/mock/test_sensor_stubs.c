@@ -66,7 +66,7 @@ uint32_t HAL_GetTick(void)
     return 0;
 }
 
-bool imu_get_imu_data_ready(void)
+bool imu_get_data_ready(void)
 {
     return true;
 }

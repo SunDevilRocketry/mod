@@ -39,6 +39,7 @@
 #include "main.h"
 #include "imu.h"
 #include "baro.h"
+#include "mag.h"
 #include "timer.h"
 #include "usb.h"
 #include "sensor.h"
@@ -857,8 +858,8 @@ uint32_t curr_time = HAL_GetTick();
 while( curr_time <= starting_time + timeout )
 	{
 	/* Ensure both the IMU and barometer are ready to be read */                
-	if ( imu_get_imu_data_ready() 
-	  && imu_get_mag_data_ready() 
+	if ( imu_get_data_ready() 
+	  && mag_get_data_ready() 
 	  && baro_get_baro_data_ready() ) 
 		{
 		return SENSOR_OK;
