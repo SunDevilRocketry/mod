@@ -43,7 +43,7 @@
 #include "usb.h"
 #include "sensor.h"
 #include "math_sdr.h"
-#include "mahony.h"
+#include "ahrs.h"
 #include "error_sdr.h"
 #include "debug_sdr.h"
 #include "isa.h"
@@ -52,27 +52,15 @@
  Private Macros
 ------------------------------------------------------------------------------*/
 
-/*
- * Initial Mahony gains for firmware integration.
- *
- * Proportional correction is enabled conservatively. Integral correction
- * remains disabled until the gains are tuned using stationary and flight data.
- *
- *
- * Proportional gain (KP) corrects gyro drift using the accelerometer. It is
- * deliberately low to reduce overcorrection during flight.
- *
- * Integral gain (KI) learns persistent gyro bias over time. It remains
- * disabled because an untuned integral term can accumulate incorrect
- * corrections during vibration, launch acceleration, or invalid accelerometer
- * data.
- */
-#define SENSOR_MAHONY_KP    1.0f
-#define SENSOR_MAHONY_KI    0.0f
-
 /* Barometer EMA Alphas */
 #define BARO_PRESS_ALPHA (0.7f)
 #define BARO_TEMP_ALPHA (0.7f)
+
+/** @brief AHRS sample rate in ms */
+#define AHRS_SAMPLE_RATE (20)
+
+/** @brief AHRS period in microseconds */
+#define AHRS_US_PERIOD   ((uint64_t)( ( 1.0f / AHRS_SAMPLE_RATE ) * MICROSEC_PER_SEC ))
 
 
 /*------------------------------------------------------------------------------
@@ -98,14 +86,8 @@ QUAT attitude = { 1.0f, 0.0f, 0.0f, 0.0f };
 ------------------------------------------------------------------------------*/
 static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
 
-/*
- * Persistent attitude filter state. This instance retains the quaternion and
- * integral correction between consecutive IMU updates.
- */
-static MAHONY_FILTER mahony_filter;
-
-/* Timestamp of the previous Mahony update in microseconds. */
-static uint64_t mahony_tick = 0;
+static FC_AHRS ahrs_filter;
+static uint64_t last_ahrs_tick;
 
 static float ema_press_prev = 0.0f;
 static float ema_temp_prev = 0.0f;
@@ -361,37 +343,12 @@ SENSOR_STATUS sensor_init
     PRESET_DATA* preset_data
     )
 {
-float ax = preset_data->imu_offset.accel_x;
-float ay = preset_data->imu_offset.accel_y;
-float az = preset_data->imu_offset.accel_z;
-
-QUAT initial_attitude = quat_grav_attitude
-    (
-    ax,
-    ay,
-    az,
-    IDENTITY_QUAT
-    );
-
 imu_velo_tick = get_us_tick();
-mahony_tick = imu_velo_tick;
+ahrs_init(&ahrs_filter, AHRS_SAMPLE_RATE);
 
 sensor_reset_velo();
 
-MAHONY_STATUS mahony_status = mahony_init
-    (
-    &mahony_filter,
-    initial_attitude,
-    SENSOR_MAHONY_KP,
-    SENSOR_MAHONY_KI
-    );
-
-if ( mahony_status != MAHONY_OK )
-    {
-    return( SENSOR_FAIL );
-    }
-
-return( SENSOR_OK );
+return SENSOR_OK;
 
 } /* sensor_init */
 
@@ -479,75 +436,50 @@ SENSOR_STATUS sensor_body_state
     STATE_ESTIMATION* state_estimate
     )
 {
+/* Local variables*/
 uint64_t current_tick;
-uint64_t imu_tdelta;
+uint64_t tdelta_us;
 
-float delta_time_s;
+VECTOR_3F gyro_body;
+VECTOR_3F accel_body;
+VECTOR_3F mag_uT;
 
-bool use_accel;
+/* Output */
+static VECTOR_3F angular_velo = { 0 }; 
 
-VECTOR_3F gyro_body_rad_s;
-VECTOR_3F accel_body_m_s2;
+/* Step AHRS if enough time passed */
 
-/* Calculate elapsed time between attitude updates using the microsecond timer. */
+/* Calculate elapsed time since last AHRS update */
 current_tick = get_us_tick();
-imu_tdelta = current_tick - mahony_tick;
+tdelta_us = current_tick - last_ahrs_tick;
 
-delta_time_s = (float)imu_tdelta / (float)MICROSEC_PER_SEC;
-
-if ( mahony_tick == 0 
-	|| delta_time_s <= 0.0f 
-	|| delta_time_s > 1.0f )
+if ( tdelta_us >= AHRS_US_PERIOD )
     {
-    delta_time_s = 0.01f;
+    /* Convert data to vectors and appropriate units */
+    
+    /* Gyro (rad/s) */
+    gyro_body.x = deg_to_rad(imu_converted->gyro_x);
+    gyro_body.y = deg_to_rad(imu_converted->gyro_y);
+    gyro_body.z = deg_to_rad(imu_converted->gyro_z);
+    
+    /* Accelerometer (m/s) */
+    accel_body.x = imu_converted->accel_x;
+    accel_body.y = imu_converted->accel_y;
+    accel_body.z = imu_converted->accel_z;
+
+    /* Magnetometer (uT) */
+    mag_uT.x = imu_converted->mag_x;
+    mag_uT.y = imu_converted->mag_y;
+    mag_uT.z = imu_converted->mag_z;
+
+    ahrs_step(&ahrs_filter, &accel_body, &gyro_body, &mag_uT, &state_estimate->attitude, &angular_velo);
+
+    last_ahrs_tick = current_tick;
     }
 
-mahony_tick = current_tick;
+/* This will preserve the previous state otherwise */
 
-/*
- * Converted gyro data is in degrees per second. Mahony requires radians per
- * second.
- */
-gyro_body_rad_s.x = deg_to_rad(imu_converted->gyro_x);
-gyro_body_rad_s.y = deg_to_rad(imu_converted->gyro_y);
-gyro_body_rad_s.z = deg_to_rad(imu_converted->gyro_z);
-
-/*
- * Converted accelerometer data is already in meters per second squared.
- */
-accel_body_m_s2.x = imu_converted->accel_x;
-accel_body_m_s2.y = imu_converted->accel_y;
-accel_body_m_s2.z = imu_converted->accel_z;
-
-/*
- * Permit accelerometer correction only before powered flight. The Mahony
- * filter still performs its own magnitude and finite-value checks.
- */
-use_accel = get_fc_state() <= FC_STATE_LAUNCH_DETECT;
-
-MAHONY_STATUS mahony_status = mahony_update_imu
-    (
-    &mahony_filter,
-    gyro_body_rad_s,
-    accel_body_m_s2,
-    delta_time_s,
-    use_accel
-    );
-
-if ( mahony_status != MAHONY_OK )
-    {
-    return SENSOR_IMU_FAIL;
-    }
-
-/*
- * Store the filter's body-to-world quaternion as the system attitude estimate.
- */
-state_estimate->attitude = mahony_filter.attitude;
-
-/*
- * Preserve the existing public roll-rate units of degrees per second.
- */
-state_estimate->roll_rate = imu_converted->gyro_x;
+state_estimate->roll_rate = angular_velo.x;
 
 return SENSOR_OK;
 
