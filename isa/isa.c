@@ -78,7 +78,7 @@ if ( baro_pres <= 0.0f )
     }
 if ( baro_temp == INFINITY )
     {
-    baro_temp = isa_get_temp()
+    baro_temp = isa_get_temp( baro_pres );
     }
 
 if( baro_pres < ISA_TROPOPAUSE_PRES ) 
