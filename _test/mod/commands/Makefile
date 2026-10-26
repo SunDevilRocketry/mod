@@ -54,22 +54,10 @@ CC = gcc
 C_INCLUDES = \
 -I. \
 -I./mock \
--I$(ROOT_DIR)/app/rev2 \
 -I$(ROOT_DIR)/mod/commands \
--I$(ROOT_DIR)/mod/sensor \
 -I$(ROOT_DIR)/mod/math_sdr \
 -I$(ROOT_DIR)/driver/usb \
--I$(ROOT_DIR)/driver/imu \
--I$(ROOT_DIR)/driver/gps \
--I$(ROOT_DIR)/driver/servo \
--I$(ROOT_DIR)/driver/flash \
--I$(ROOT_DIR)/driver/lora \
--I$(LIB_DIR) \
--I$(LIB_DIR)/Drivers/STM32H7xx_HAL_Driver/Inc \
--I$(LIB_DIR)/Drivers/STM32H7xx_HAL_Driver/Inc/Legacy \
--I$(LIB_DIR)/Drivers/CMSIS/Device/ST/STM32H7xx/Include \
--I$(LIB_DIR)/Drivers/CMSIS/Include \
--I$(ROOT_DIR)/init/rev2/config/Inc \
+-I$(ROOT_DIR)/mod/_test/utilities \
 -I$(FRAMEWORK_DIR)/src
 
 C_DEFS = \
