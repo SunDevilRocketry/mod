@@ -314,8 +314,8 @@ sensor_imu_velo( &(sensor_data_ptr->imu_converted), &(sensor_data_ptr->state_est
 /* Calculated baro exponential moving average */
 sensor_baro_ema( sensor_data_ptr );
 
-/* Calculated altitude from barometer */
-sensor_data_ptr->baro_alt = isa_get_altitude_qnh(sensor_data_ptr->baro_pressure, sensor_data_ptr->baro_temp);
+/* Calculated altitude from barometer. Do not use OAT since it doesn't change fast enough. */
+sensor_data_ptr->baro_alt = isa_get_altitude_qnh(sensor_data_ptr->baro_pressure, isa_get_temp(sensor_data_ptr->baro_pressure));
 
 /* CRITICAL SECTION END */
 

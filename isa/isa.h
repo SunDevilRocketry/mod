@@ -67,6 +67,18 @@ float isa_get_altitude_qfe
     float reference_temp
     );
 
+    
+/**
+  * @brief Calculate the ISA temperature at the given barometric pressure.
+  * 
+  * @param baro_pres The barometric pressure
+  * @return The ISA temperature
+  */
+float isa_get_temp
+    (
+    float baro_pres
+    )
+
 #ifdef __cplusplus
 }
 #endif

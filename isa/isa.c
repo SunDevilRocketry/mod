@@ -36,13 +36,15 @@
 /*------------------------------------------------------------------------------
  Constants                                                                   
 ------------------------------------------------------------------------------*/
-#define ISA_PRESSURE_SEA_LEVEL  ( (float)101325.0f )    /* Pa */
-#define ISA_EXP                 ( (float)0.190294958f ) /* Unitless */
-#define ISA_TEMP_LAPSE_RATE     ( (float)0.0065 )       /* K/m */
-#define ISA_TROPOPAUSE_PRES     ( (float)22632.06f )    /* Pa, pressure at 11,000 m */
-#define ISA_TROPOPAUSE_ALT      ( (float)11000.0f )     /* m */
-#define ISA_STRATO_SCALE_H      ( (float)6341.62f )     /* m, R*216.65/g0 */
-#define KELVIN_OFFSET           ( (float)273.15f)       /* K */
+#define ISA_PRESSURE_SEA_LEVEL  ( (float)101325.0f )                /* Pa */
+#define ISA_EXP                 ( (float)0.190294958f )             /* Unitless */
+#define ISA_TEMP_LAPSE_RATE     ( (float)0.0065 )                   /* K/m */
+#define ISA_TROPOPAUSE_PRES     ( (float)22632.06f )                /* Pa, pressure at 11,000 m */
+#define ISA_TROPOPAUSE_ALT      ( (float)11000.0f )                 /* m */
+#define ISA_STRATO_SCALE_H      ( (float)6341.62f )                 /* m, R*216.65/g0 */
+#define KELVIN_OFFSET           ( (float)273.15f)                   /* K */
+#define ISA_SEA_LEVEL_TEMP_K    ( (float)(15.0f + KELVIN_OFFSET) )  /* 288.15 K */
+#define ISA_TROPOPAUSE_TEMP_C   ( (float)-56.5f )                   /* Constant temp in lower stratosphere */
 
 /*------------------------------------------------------------------------------
  API Functions 
@@ -51,7 +53,7 @@
 /**
   * @brief Calculates altitude (relative to sea level).
   * @param baro_pres Barometric pressure in Pa.
-  * @param baro_temp Barometric temperature in C.
+  * @param baro_temp Barometric temperature in C. Use INFINITY to use ISA temp.
   * 
   * @details
   * \latexonly
@@ -73,6 +75,10 @@ if ( baro_pres <= 0.0f )
     {
     /* allow error handling */
     return INFINITY;
+    }
+if ( baro_temp == INFINITY )
+    {
+    baro_temp = isa_get_temp()
     }
 
 if( baro_pres < ISA_TROPOPAUSE_PRES ) 
@@ -113,6 +119,37 @@ float reference_alt = isa_get_altitude_qnh(reference_pres, reference_temp);
 return( current_alt - reference_alt );
 
 } /* isa_get_altitude_qfe */
+
+
+/**
+  * @brief Calculate the ISA temperature at the given barometric pressure.
+  * 
+  * @param baro_pres The barometric pressure
+  * @return The ISA temperature
+  */
+float isa_get_temp
+    (
+    float baro_pres
+    )
+{
+/* Local Variables */
+float temp_k;
+
+/* Above the tropopause, return the constant */
+if ( baro_pres < ISA_TROPOPAUSE_PRES ) 
+    {
+    return ISA_TROPOPAUSE_TEMP_C;
+    }
+/* Below the tropopause, reverse the ISA equation to find the altitude 
+   at the given pressure at ISA temp, then calculate the ISA temp from there */
+else
+    {
+    temp_k = ISA_SEA_LEVEL_TEMP_K 
+           * powf( (baro_pres / ISA_PRESSURE_SEA_LEVEL), ISA_EXP );
+    return temp_k - KELVIN_OFFSET;
+    }
+
+} /* isa_get_temp */
 
 /**
   * END OF FILE
