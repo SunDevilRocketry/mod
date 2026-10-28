@@ -1,11 +1,12 @@
 /**
   ******************************************************************************
-  * @file           : mahony.c
-  * @brief          : Mahony attitude filter interface.
+  * @file           : nav_mahony.c
+  * @brief          : Navigation & sensor fusion library's attitude filter 
+  *                   interface.
   ******************************************************************************
   * @copyright
   *
-  * Copyright (c) 2025 Sun Devil Rocketry.
+  * Copyright (c) 2026 Sun Devil Rocketry.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -36,7 +37,7 @@
 #include <stddef.h>
 
 /* Project Includes ----------------------------------------------------------*/
-#include "mahony.h"
+#include "nav_prv.h"
 
 /* Private Macros ------------------------------------------------------------*/
 
@@ -59,6 +60,7 @@
 
 /**
  * @brief Initializes a Mahony attitude filter.
+ * @note Assumes state reserved by the caller.
  *
  * @param filter Filter instance to initialize.
  * @param initial_attitude Initial body-to-world attitude quaternion.
@@ -68,48 +70,61 @@
  * @return MAHONY_OK when initialization succeeds; otherwise a Mahony status
  *         code describing the failure.
  */
-MAHONY_STATUS mahony_init
+NAV_STATUS _nav_mahony_init
     (
-    MAHONY_FILTER *filter,
-    QUAT initial_attitude,
-    float proportional_gain,
-    float integral_gain
+    NAV_PRIVATE_STATE* prv_state
     )
 {
-if ( filter == NULL )
-    {
-    return MAHONY_NULL_POINTER;
-    }
+nav_nullchk( prv_state );
+
+/* Local Variables */
+QUAT initial_attitude;
+
+/* Initialize Locals */
+initial_attitude = _nav_quat_grav_attitude
+    (
+    IDENTITY_QUAT,
+    prv_state->cal_data.accel
+    );
+
 
 if ( !quat_is_finite(initial_attitude) )
     {
-    return MAHONY_INVALID_QUATERNION;
+    _nav_debug_error( "Invalid initial attitude quaternion" );
+    return NAV_INVALID_PARAMS;
     }
 
-if ( !isfinite(proportional_gain) || !isfinite(integral_gain) )
+if ( !isfinite(prv_state->saved_configs.mahony_kp) 
+  || !isfinite(prv_state->saved_configs.mahony_ki) )
     {
-    return MAHONY_NONFINITE_GAIN;
+    _nav_debug_error( "Invalid mahony gains" );
+    return NAV_INVALID_PARAMS;
     }
 
-if ( proportional_gain < 0.0f || integral_gain < 0.0f )
+if ( prv_state->saved_configs.mahony_kp < 0.0f || prv_state->saved_configs.mahony_ki < 0.0f )
     {
-    return MAHONY_NEGATIVE_GAIN;
+    _nav_debug_error( "Invalid mahony gains" );
+    return NAV_INVALID_PARAMS;
     }
 
-filter->attitude = quat_normalize(initial_attitude);
-filter->integral_error.x = 0.0f;
-filter->integral_error.y = 0.0f;
-filter->integral_error.z = 0.0f;
-filter->proportional_gain = proportional_gain;
-filter->integral_gain = integral_gain;
+/* Initialize mahony state */
+prv_state->mahony_state.attitude = quat_normalize(initial_attitude);
+prv_state->mahony_state.integral_error.x = 0.0f;
+prv_state->mahony_state.integral_error.y = 0.0f;
+prv_state->mahony_state.integral_error.z = 0.0f;
+prv_state->mahony_state.proportional_gain = prv_state->saved_configs.mahony_kp;
+prv_state->mahony_state.integral_gain = prv_state->saved_configs.mahony_ki;
 
-return MAHONY_OK;
-} /* mahony_init */
+return NAV_OK;
+
+} /* _nav_mahony_init */
 
 
 /**
  * @brief Propagates attitude using body-frame gyroscope measurements.
+ * @note Assumes state reserved by the caller.
  *
+ * @details
  * Verify the filter, gyro, and timestep are valid.
  * Convert the body-frame angular velocity into a pure quaternion.
  * Use the quaternion differential equation to calculate how quickly the
@@ -120,12 +135,12 @@ return MAHONY_OK;
  * @param gyro_body_rad_s Body-frame angular velocity in radians per second.
  * @param delta_time_s Elapsed time in seconds.
  *
- * @return MAHONY_OK when initialization succeeds; otherwise a Mahony status
+ * @return NAV_OK when succeeds; otherwise a Mahony status
            code describing the failure.
  */
-MAHONY_STATUS mahony_update_gyro
+NAV_STATUS _nav_mahony_update_gyro
     (
-    MAHONY_FILTER *filter,
+    NAV_MAHONY_FILTER *filter,
     VECTOR_3F gyro_body_rad_s,
     float delta_time_s
     )
@@ -136,22 +151,26 @@ QUAT attitude_delta;
 
 if ( filter == NULL )
     {
-    return MAHONY_NULL_POINTER;
+    _nav_debug_error( "Null mahony filter state provided" );
+    return NAV_NULLPTR;
     }
 
 if ( !quat_is_finite(filter->attitude) )
     {
-    return MAHONY_INVALID_QUATERNION;
+    _nav_debug_error( "Bad mahony filter attitude provided" );
+    return NAV_INVALID_PARAMS;
     }
 
 if ( !vector_is_finite(gyro_body_rad_s) )
     {
-    return MAHONY_INVALID_GYRO;
+    _nav_debug_error( "Bad mahony filter gyro state provided" );
+    return NAV_INVALID_PARAMS;
     }
 
 if ( !isfinite(delta_time_s) || delta_time_s <= 0.0f )
     {
-    return MAHONY_INVALID_DELTA_TIME;
+    _nav_debug_error( "Bad mahony time delta provided" );
+    return NAV_INVALID_PARAMS;
     }
 
 /*
@@ -172,15 +191,17 @@ attitude_delta = quat_scale(attitude_derivative, delta_time_s);
 filter->attitude = quat_add(filter->attitude, attitude_delta);
 filter->attitude = quat_normalize(filter->attitude);
 
-return MAHONY_OK;
+return NAV_OK;
 
-} /* mahony_update_gyro */
+} /* _nav_mahony_update_gyro */
 
 
 /**
  * @brief Updates attitude using gyroscope propagation and accelerometer
  *        proportional feedback.
- *
+ * @note Assumes state reserved by the caller.
+ * 
+ * @details
  * The gyroscope must be expressed in the body frame in radians per second.
  * The accelerometer must be expressed in the body frame. Its magnitude is
  * removed internally because the filter uses only its measured direction.
@@ -195,12 +216,12 @@ return MAHONY_OK;
  * @param delta_time_s Elapsed time in seconds.
  * @param use_accel Whether accelerometer feedback should be applied.
  *
- * @return MAHONY_OK when the attitude was updated; otherwise a Mahony status
+ * @return NAV_OK when the attitude was updated; otherwise a Mahony status
         code describing the failure.
  */
-MAHONY_STATUS mahony_update_imu
+NAV_STATUS _nav_mahony_update_imu
     (
-    MAHONY_FILTER *filter,
+    NAV_MAHONY_FILTER *filter,
     VECTOR_3F gyro_body_rad_s,
     VECTOR_3F accel_body,
     float delta_time_s,
@@ -222,17 +243,32 @@ bool apply_accel;
 
 if ( filter == NULL )
     {
-    return MAHONY_NULL_POINTER;
+    _nav_debug_error( "Null mahony filter state provided" );
+    return NAV_NULLPTR;
+    }
+
+if ( !quat_is_finite(filter->attitude) )
+    {
+    _nav_debug_error( "Bad mahony filter attitude provided" );
+    return NAV_INVALID_PARAMS;
     }
 
 if ( !vector_is_finite(gyro_body_rad_s) )
     {
-    return MAHONY_INVALID_GYRO;
+    _nav_debug_error( "Bad mahony filter gyro state provided" );
+    return NAV_INVALID_PARAMS;
+    }
+
+if ( !vector_is_finite(accel_body) )
+    {
+    _nav_debug_error( "Bad mahony filter accel state provided" );
+    return NAV_INVALID_PARAMS;
     }
 
 if ( !isfinite(delta_time_s) || delta_time_s <= 0.0f )
     {
-    return MAHONY_INVALID_DELTA_TIME;
+    _nav_debug_error( "Bad mahony time delta provided" );
+    return NAV_INVALID_PARAMS;
     }
 
 accel_magnitude = vector_magnitude(accel_body);
@@ -298,9 +334,9 @@ if ( apply_accel && vector_normalize(&accel_body) )
     gyro_corrected = vector_add(gyro_corrected, filter->integral_error);
     }
 
-return mahony_update_gyro(filter, gyro_corrected, delta_time_s);
+return _nav_mahony_update_gyro(filter, gyro_corrected, delta_time_s);
     
-} /* mahony_update_imu */
+} /* _nav_mahony_update_imu */
 
 /*******************************************************************************
  * END OF FILE

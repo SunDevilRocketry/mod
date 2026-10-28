@@ -37,6 +37,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "main.h"
 
