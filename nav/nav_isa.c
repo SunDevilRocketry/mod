@@ -1,8 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : isa.c
-  * @brief          : Contains functions to compute vehicle dynamics
-  *                   information at different altitudes and speeds.
+  * @file           : nav_isa.c
+  * @brief          : Navigation & sensor fusion library's ISA model.
   ******************************************************************************
   * @copyright
   *
@@ -30,7 +29,7 @@
 /*------------------------------------------------------------------------------
  Project Includes                                                                     
 ------------------------------------------------------------------------------*/
-#include "isa.h"
+#include "nav_prv.h"
 #include "math_sdr.h"
 
 /*------------------------------------------------------------------------------
@@ -64,7 +63,7 @@
   * 
   * @return Calculated ISA altitude above sea level.
   */
-float isa_get_altitude_qnh
+float _nav_isa_get_altitude_qnh
     (
     float baro_pres, 
     float baro_temp
@@ -78,7 +77,7 @@ if ( baro_pres <= 0.0f )
     }
 if ( baro_temp == INFINITY )
     {
-    baro_temp = isa_get_temp( baro_pres );
+    baro_temp = _nav_isa_get_temp( baro_pres );
     }
 
 if( baro_pres < ISA_TROPOPAUSE_PRES ) 
@@ -93,7 +92,7 @@ else
 
 return( altitude );
 
-} /* isa_get_altitude_qnh */
+} /* _nav_isa_get_altitude_qnh */
 
 
 /**
@@ -105,7 +104,7 @@ return( altitude );
   * 
   * @return Calculated ISA altitude above ground reference.
   */
-float isa_get_altitude_qfe
+float _nav_isa_get_altitude_qfe
     (
     float curr_pres, 
     float curr_temp,
@@ -113,12 +112,12 @@ float isa_get_altitude_qfe
     float reference_temp
     )
 {
-float current_alt = isa_get_altitude_qnh(curr_pres, curr_temp);
-float reference_alt = isa_get_altitude_qnh(reference_pres, reference_temp);
+float current_alt = _nav_isa_get_altitude_qnh(curr_pres, curr_temp);
+float reference_alt = _nav_isa_get_altitude_qnh(reference_pres, reference_temp);
 
 return( current_alt - reference_alt );
 
-} /* isa_get_altitude_qfe */
+} /* _nav_isa_get_altitude_qfe */
 
 
 /**
@@ -127,7 +126,7 @@ return( current_alt - reference_alt );
   * @param baro_pres The barometric pressure
   * @return The ISA temperature
   */
-float isa_get_temp
+float _nav_isa_get_temp
     (
     float baro_pres
     )
@@ -149,7 +148,7 @@ else
     return temp_k - KELVIN_OFFSET;
     }
 
-} /* isa_get_temp */
+} /* _nav_isa_get_temp */
 
 /**
   * END OF FILE
