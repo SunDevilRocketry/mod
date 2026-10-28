@@ -1,4 +1,4 @@
-<!-- next traceable tag: RQ.MOD.00052 -->
+<!-- next traceable tag: RQ.MOD.00053 -->
 <!-- This req doc is written and updated manually and checked in along with source code -->
 <!-- Desired behaviors are expected to be specified by human engineers. No AI assistance allowed for requirement specification -->
 # SDR "mod" Library Software Requirements Document
@@ -133,3 +133,5 @@ The library shall disable accelerometer fusion in the following cases:
 RQ.MOD.00031 - The library shall provide a method to convert a barometric pressure and temperature reading to an ISA altitude.
 
 RQ.MOD.00051 - The library shall provide a method to retrieve a ground reference elevation from current and calibrated pressure and temperature.
+
+RQ.MOD.00052 - The library shall provide a method to retrieve the ISA temperature given a barometric pressure reading.

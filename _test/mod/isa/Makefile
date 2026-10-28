@@ -111,7 +111,7 @@ test:
 	tail -n 7 "results.txt"
 	mkdir -p coverage
 	gcovr $(BUILD_DIR) \
-		--filter '.*(?<!test_)$(TARGET)[.]c$$' \
+		--filter '.*(?<!test_)isa[.]c$$' \
 		--html-details coverage/coverage.html \
 		--json coverage/coverage.json
 

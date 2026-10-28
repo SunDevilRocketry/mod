@@ -43,11 +43,12 @@ struct test_case cases[] =
     {
     /*  description                                                         pressure    temp    alt         */
     {   "Test sea-level pressure altitude.",                                101325.0f,  15.0f,  0.0f        },
-    {   "Test ISA table entry @ 20,000 ft.",                                46563.2f,   -24.6f, 6096.0f     },
+    {   "Test ISA table entry @ 20,000 ft.",                                46563.2f,   -24.62f, 6096.0f     },
     {   "Test ISA table entry @ 40,000 ft.",                                18754.0f,   -56.5f, 12192.0f    },
     {   "Continuity: Test ISA table entry immediately below tropopause.",   22632.1f,   -56.5f, 11000.0f    },
     {   "Continuity: Test ISA table entry immediately above tropopause.",   22632.0f,   -56.5f, 11000.0f    },
-    {   "Robustness: Test negative pressure.",                              -1.0f,      15.0f,  INFINITY    }
+    {   "Robustness: Test negative pressure.",                              -1.0f,      15.0f,  INFINITY    },
+    {   "Robustness: Test infinite temp.",                                  101325.0f,  INFINITY, 0.0f      }
     };
 
 for( int i = 0; i < array_size( cases ); i++ )
@@ -62,6 +63,17 @@ for( int i = 0; i < array_size( cases ); i++ )
         TEST_ASSERT_LE_FLOAT( cases[i].description, 
                             altitude, 
                             cases[i].altitude + (cases[i].altitude * 0.0005) );
+        if( cases[i].temperature != INFINITY )
+            {
+            float temperature = isa_get_temp( cases[i].pressure );
+
+            TEST_ASSERT_GE_FLOAT( "Test that the ISA temp function returns the ISA temp for that altitude",
+                                  temperature,                  
+                                  cases[i].temperature - fabsf(cases[i].temperature * 0.001 ) );
+            TEST_ASSERT_LE_FLOAT( "Test that the ISA temp function returns the ISA temp for that altitude",
+                                  temperature,                  
+                                  cases[i].temperature + fabsf(cases[i].temperature * 0.001 ) );
+            }
         }
     else
         {
@@ -118,7 +130,7 @@ Test Cases
 ------------------------------------------------------------------------------*/
 unit_test tests[] =
 	{
-	{ "ISA: QNH", test_isa_altitudes, "RQ.MOD.00031" },
+	{ "ISA: QNH", test_isa_altitudes, "RQ.MOD.00031, RQ.MOD.00052" },
     { "ISA: QFE", test_isa_qfe, "RQ.MOD.00051" }
 	};
 
