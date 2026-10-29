@@ -86,28 +86,6 @@ The library shall provide all of the following 3-element vector operations:
 
     RQ.MOD.00046 - Scalar Multiplication
 
-### 2.5. Sensor
-
-RQ.MOD.00023 - The library shall provide a method to start retrieval of sensor data
-
-RQ.MOD.00024 - The library shall provide a method to retrieve sensor data from the last cycle and start retrieval of sensor data
-
-The library shall provide a method to execute the following sensor commands and subcommands:
-
-    RQ.MOD.00025 - Dump: Transmit the contents of the last sensor data cycle over USB.
-
-RQ.MOD.00026 - The library shall provide methods to get and set the starting orientation of the flight computer.
-
-The library shall provide the following IMU and magnetometer utilities:
-
-    RQ.MOD.00027 - Conversion of raw IMU data to floating point values
-
-    RQ.MOD.00028 - Integration of acceleration data and body state to yield velocity
-
-    RQ.MOD.00029 - Re-mapping raw IMU data based on orientation
-
-    RQ.MOD.00030 - Fusion of raw IMU data to yield a unit quaternion orientation estimate
-
 ### 2.5. Telemetry
 
 RQ.MOD.00051 - The library shall control Sun Devil Rocketry's one-way telemetry interface by defining the authoritative version in a header for projects to integrate.

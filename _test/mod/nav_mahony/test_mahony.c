@@ -478,7 +478,7 @@ TEST_ASSERT_EQ_UINT
     (
     "Negative proportional gain is rejected",
     _nav_mahony_init(&state),
-    NAV_INVALID_PARAMS
+    NAV_INVALID_CONFIG
     );
 
 state.saved_configs.mahony_kp = 1.0f;
@@ -487,7 +487,7 @@ TEST_ASSERT_EQ_UINT
     (
     "Negative integral gain is rejected",
     _nav_mahony_init(&state),
-    NAV_INVALID_PARAMS
+    NAV_INVALID_CONFIG
     );
 
 } /* test_mahony_init_rejects_negative_gain */

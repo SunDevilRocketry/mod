@@ -98,13 +98,13 @@ if ( !isfinite(prv_state->saved_configs.mahony_kp)
   || !isfinite(prv_state->saved_configs.mahony_ki) )
     {
     _nav_debug_error( "Invalid mahony gains" );
-    return NAV_INVALID_PARAMS;
+    return NAV_INVALID_CONFIG;
     }
 
 if ( prv_state->saved_configs.mahony_kp < 0.0f || prv_state->saved_configs.mahony_ki < 0.0f )
     {
     _nav_debug_error( "Invalid mahony gains" );
-    return NAV_INVALID_PARAMS;
+    return NAV_INVALID_CONFIG;
     }
 
 /* Initialize mahony state */
