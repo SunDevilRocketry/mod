@@ -293,7 +293,7 @@ static bool detect_launch
  *    OR
  * 2. Launch detect is baro based AND there is baro data to fuse
  */
-if( !( prv_state->saved_configs.launch_detect_accel_enabled && vector_is_finite( sensors->accel ) )
+if( !( prv_state->saved_configs.launch_detect_accel_enabled && math_vector_is_finite( sensors->accel ) )
  && !( prv_state->saved_configs.launch_detect_baro_enabled && isfinite( sensors->baro_pres ) ) )
     {
     /* do not update the internal state, we will try again on the next cycle */
@@ -357,7 +357,7 @@ static bool detect_coast
     )
 {
 /* Only check coast if there is valid accel data */
-if( !vector_is_finite( sensors->accel ) )
+if( !math_vector_is_finite( sensors->accel ) )
     {
     /* do not update the internal state, we will try again on the next cycle */
     return false;

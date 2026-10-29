@@ -163,7 +163,7 @@ float grav_roll  = atan2f(accel.y, accel.z);
 
 float yaw = _nav_quat_to_yaw(attitude);
 
-return eul_to_quat(yaw, grav_pitch, grav_roll);
+return math_eul_to_quat(yaw, grav_pitch, grav_roll);
 
 } /* _nav_quat_grav_attitude */
 
@@ -226,7 +226,7 @@ const QUAT gravity_world =
  * The attitude quaternion is body-to-world, so rotate world gravity
  * into the body frame before subtracting it from the accelerometer.
  */
-QUAT gravity_body = quat_rotate_world_to_body
+QUAT gravity_body = math_quat_rotate_world_to_body
     (
     outputs->orientation,
     gravity_world
@@ -244,7 +244,7 @@ QUAT linear_accel_body =
  * Rotate gravity-compensated acceleration into the world frame so the
  * integrated velocity components remain in a fixed coordinate frame.
  */
-QUAT linear_accel_world = quat_rotate_body_to_world
+QUAT linear_accel_world = math_quat_rotate_body_to_world
     (
     outputs->orientation,
     linear_accel_body

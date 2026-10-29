@@ -107,7 +107,7 @@ float sin_pitch;
 float sin_yaw_cos_pitch;
 float cos_yaw_cos_pitch;
 
-attitude = quat_normalize(attitude);
+attitude = math_quat_normalize(attitude);
 
 sin_roll_cos_pitch =
     2.0f *
@@ -131,7 +131,7 @@ sin_pitch =
     attitude.z * attitude.x
     );
 
-sin_pitch = clamp_float
+sin_pitch = math_clamp_float
     (
     sin_pitch,
     -1.0f,
@@ -345,7 +345,7 @@ void test_mahony_init_uses_accel_calibration
     )
 {
 NAV_PRIVATE_STATE state = { 0 };
-QUAT expected = eul_to_quat(0.0f, 0.5f * TEST_PI, 0.0f);
+QUAT expected = math_eul_to_quat(0.0f, 0.5f * TEST_PI, 0.0f);
 
 state.saved_configs.mahony_kp = 1.0f;
 state.cal_data.accel.x = GRAVITY;
@@ -653,7 +653,7 @@ TEST_ASSERT_EQ_FLOAT
     sinf(0.25f * TEST_PI)
     );
 
-QUAT world_vector = quat_rotate_body_to_world
+QUAT world_vector = math_quat_rotate_body_to_world
     (
     filter.attitude,
     body_x
@@ -851,7 +851,7 @@ NAV_MAHONY_FILTER filter;
 
 const float initial_roll_rad = deg_to_rad(10.0f);
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     0.0f,
     0.0f,
@@ -880,7 +880,7 @@ QUAT body_z =
     .z = 1.0f
     };
 
-QUAT initial_world_z = quat_rotate_body_to_world
+QUAT initial_world_z = math_quat_rotate_body_to_world
     (
     initial_attitude,
     body_z
@@ -918,7 +918,7 @@ TEST_ASSERT_EQ_UINT
     NAV_OK
     );
 
-QUAT corrected_world_z = quat_rotate_body_to_world
+QUAT corrected_world_z = math_quat_rotate_body_to_world
     (
     filter.attitude,
     body_z
@@ -962,7 +962,7 @@ NAV_MAHONY_FILTER filter;
 
 const float initial_pitch_rad = deg_to_rad(10.0f);
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     0.0f,
     initial_pitch_rad,
@@ -991,7 +991,7 @@ QUAT body_z =
     .z = 1.0f
     };
 
-QUAT initial_world_z = quat_rotate_body_to_world
+QUAT initial_world_z = math_quat_rotate_body_to_world
     (
     initial_attitude,
     body_z
@@ -1029,7 +1029,7 @@ TEST_ASSERT_EQ_UINT
     NAV_OK
     );
 
-QUAT corrected_world_z = quat_rotate_body_to_world
+QUAT corrected_world_z = math_quat_rotate_body_to_world
     (
     filter.attitude,
     body_z
@@ -1073,7 +1073,7 @@ NAV_MAHONY_FILTER filter;
 
 const float initial_yaw_rad = deg_to_rad(20.0f);
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     initial_yaw_rad,
     0.0f,
@@ -1102,7 +1102,7 @@ QUAT body_x =
     .z = 0.0f
     };
 
-QUAT initial_world_x = quat_rotate_body_to_world
+QUAT initial_world_x = math_quat_rotate_body_to_world
     (
     initial_attitude,
     body_x
@@ -1140,7 +1140,7 @@ TEST_ASSERT_EQ_UINT
     NAV_OK
     );
 
-QUAT final_world_x = quat_rotate_body_to_world
+QUAT final_world_x = math_quat_rotate_body_to_world
     (
     filter.attitude,
     body_x
@@ -1538,7 +1538,7 @@ const float delta_time_s = 0.1f;
 
 NAV_MAHONY_FILTER filter;
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     deg_to_rad(20.0f),
     deg_to_rad(-10.0f),
@@ -1571,7 +1571,7 @@ QUAT body_z =
     .z = 1.0f
     };
 
-QUAT initial_world_z = quat_rotate_body_to_world
+QUAT initial_world_z = math_quat_rotate_body_to_world
     (
     initial_attitude,
     body_z
@@ -1628,7 +1628,7 @@ TEST_ASSERT_EQ_UINT
     NAV_OK
     );
 
-QUAT final_world_z = quat_rotate_body_to_world
+QUAT final_world_z = math_quat_rotate_body_to_world
     (
     filter.attitude,
     body_z
@@ -1879,7 +1879,7 @@ NAV_STATUS status = NAV_OK;
 
 NAV_MAHONY_FILTER filter;
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     0.0f,
     0.0f,
@@ -1908,7 +1908,7 @@ QUAT body_z =
     .z = 1.0f
     };
 
-QUAT initial_world_z = quat_rotate_body_to_world
+QUAT initial_world_z = math_quat_rotate_body_to_world
     (
     initial_attitude,
     body_z
@@ -1946,7 +1946,7 @@ TEST_ASSERT_EQ_UINT
     NAV_OK
     );
 
-QUAT corrected_world_z = quat_rotate_body_to_world
+QUAT corrected_world_z = math_quat_rotate_body_to_world
     (
     filter.attitude,
     body_z
@@ -2091,7 +2091,7 @@ NAV_MAHONY_FILTER filter;
 
 NAV_STATUS status = NAV_OK;
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     0.0f,
     0.0f,
@@ -2180,7 +2180,7 @@ void test_mahony_integral_valid_error_accumulates
 {
 NAV_MAHONY_FILTER filter;
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     0.0f,
     0.0f,
@@ -2265,7 +2265,7 @@ NAV_MAHONY_FILTER filter;
 
 NAV_STATUS status = NAV_OK;
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     0.0f,
     0.0f,
@@ -2358,7 +2358,7 @@ NAV_STATUS status = NAV_OK;
 
 NAV_MAHONY_FILTER filter;
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     0.0f,
     0.0f,
@@ -2449,7 +2449,7 @@ const float expected_limit_rad_s = 0.25f;
 
 NAV_MAHONY_FILTER filter;
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     0.0f,
     0.0f,
@@ -2546,7 +2546,7 @@ void test_mahony_integral_correction_affects_attitude
 NAV_MAHONY_FILTER no_integral_filter;
 NAV_MAHONY_FILTER integral_filter;
 
-QUAT initial_attitude = eul_to_quat
+QUAT initial_attitude = math_eul_to_quat
     (
     0.0f,
     0.0f,
