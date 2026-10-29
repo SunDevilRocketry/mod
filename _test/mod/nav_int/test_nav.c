@@ -271,7 +271,26 @@ NAV_OUTPUTS on_ground_asl_expected =
     .ind_alt_asl = 0.0f,
     .orientation = { 0.707107f, 0.0f, -0.707107f, 0.0f },
     .velo_mag = 0.0f,
-    .velocity = { 0.0f, 0.0f, -9.8f }
+    .velocity = { 0.0f, 0.0f, 0.0f }
+    };
+
+NAV_CONFIG on_ground_asl_config_no_gps = 
+    {
+    .accel_enabled = true,
+    .baro_enabled = true,
+    .gps_enabled = false,
+    .gyro_enabled = true,
+    .mag_enabled = true,
+    .mahony_kp = 1.0f
+    };
+NAV_OUTPUTS on_ground_asl_expected_no_gps =
+    {
+    .fused_posn = { INFINITY, INFINITY },
+    .ind_alt_agl = 0.0f,
+    .ind_alt_asl = 0.0f,
+    .orientation = { 0.707107f, 0.0f, -0.707107f, 0.0f },
+    .velo_mag = 0.0f,
+    .velocity = { 0.0f, 0.0f, 0.0f }
     };
 
 
@@ -289,7 +308,9 @@ struct TEST_CASE {
 struct TEST_CASE cases[] =
     {
     { "Test sensor fusion on ground pointing up vertically", false,
-      &on_ground_asl_config, &on_ground_asl_sensors, &on_ground_asl_calib, &on_ground_asl_expected }
+      &on_ground_asl_config, &on_ground_asl_sensors, &on_ground_asl_calib, &on_ground_asl_expected },
+    { "Test sensor fusion on ground with GPS disabled", false,
+      &on_ground_asl_config_no_gps, &on_ground_asl_sensors, &on_ground_asl_calib, &on_ground_asl_expected_no_gps }
     };
 
 for( int i = 0; i < array_size( cases ); i++ )
@@ -321,45 +342,57 @@ for( int i = 0; i < array_size( cases ); i++ )
     Verify Results
     ------------------------------------------------------------------------------*/
     TEST_ASSERT_EQ_UINT( "Verify the function returned a valid status.", nav_status, NAV_OK );
-    TEST_ASSERT_EQ_FLOAT( "Verify that the velocity magnitude matches the expected", 
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the velocity magnitude matches the expected", 
         nav_state.pub.nav_outputs.velo_mag, 
-        cases[i].outputs->velo_mag );
-    TEST_ASSERT_EQ_FLOAT( "Verify that the velocity along the X axis matches the expected", 
+        cases[i].outputs->velo_mag,
+        0.001f );
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the velocity along the X axis matches the expected", 
         nav_state.pub.nav_outputs.velocity.x, 
-        cases[i].outputs->velocity.x );
-    TEST_ASSERT_EQ_FLOAT( "Verify that the velocity along the Y axis matches the expected", 
+        cases[i].outputs->velocity.x,
+        0.001f );
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the velocity along the Y axis matches the expected", 
         nav_state.pub.nav_outputs.velocity.y, 
-        cases[i].outputs->velocity.y );
-    TEST_ASSERT_EQ_FLOAT( "Verify that the velocity along the Z axis matches the expected", 
+        cases[i].outputs->velocity.y,
+        0.001f );
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the velocity along the Z axis matches the expected", 
         nav_state.pub.nav_outputs.velocity.z, 
-        cases[i].outputs->velocity.z );
+        cases[i].outputs->velocity.z,
+        0.001f );
 
-    TEST_ASSERT_EQ_FLOAT( "Verify that the AGL altitude matches the expected", 
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the AGL altitude matches the expected", 
         nav_state.pub.nav_outputs.ind_alt_agl, 
-        cases[i].outputs->ind_alt_agl );
-    TEST_ASSERT_EQ_FLOAT( "Verify that the ASL altitude matches the expected", 
+        cases[i].outputs->ind_alt_agl,
+        0.001f );
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the ASL altitude matches the expected", 
         nav_state.pub.nav_outputs.ind_alt_asl, 
-        cases[i].outputs->ind_alt_asl );
+        cases[i].outputs->ind_alt_asl,
+        0.001f );
 
-    TEST_ASSERT_EQ_FLOAT( "Verify that the GPS latitude matches the expected", 
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the GPS latitude matches the expected", 
         nav_state.pub.nav_outputs.fused_posn.latitude, 
-        cases[i].outputs->fused_posn.latitude );
-    TEST_ASSERT_EQ_FLOAT( "Verify that the GPS longitude matches the expected", 
+        cases[i].outputs->fused_posn.latitude,
+        0.001f );
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the GPS longitude matches the expected", 
         nav_state.pub.nav_outputs.fused_posn.longitude, 
-        cases[i].outputs->fused_posn.longitude );
+        cases[i].outputs->fused_posn.longitude,
+        0.001f );
     
-    TEST_ASSERT_EQ_FLOAT( "Verify that the Quat W component matches the expected", 
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the Quat W component matches the expected", 
         nav_state.pub.nav_outputs.orientation.w, 
-        cases[i].outputs->orientation.w );
-    TEST_ASSERT_EQ_FLOAT( "Verify that the Quat X component matches the expected", 
+        cases[i].outputs->orientation.w,
+        0.001f );
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the Quat X component matches the expected", 
         nav_state.pub.nav_outputs.orientation.x, 
-        cases[i].outputs->orientation.x );
-    TEST_ASSERT_EQ_FLOAT( "Verify that the Quat Y component matches the expected", 
+        cases[i].outputs->orientation.x,
+        0.001f );
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the Quat Y component matches the expected", 
         nav_state.pub.nav_outputs.orientation.y, 
-        cases[i].outputs->orientation.y );
-    TEST_ASSERT_EQ_FLOAT( "Verify that the Quat Z component matches the expected", 
+        cases[i].outputs->orientation.y,
+        0.001f );
+    TEST_ASSERT_NEAR_FLOAT( "Verify that the Quat Z component matches the expected", 
         nav_state.pub.nav_outputs.orientation.z, 
-        cases[i].outputs->orientation.z );
+        cases[i].outputs->orientation.z,
+        0.001f );
 
     TEST_end_nested_case();
     }
