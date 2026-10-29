@@ -36,7 +36,6 @@ jobs:
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
-
       - name: Build and run the tests
         run: |
           cd Flight-Computer-Firmware/mod/_test

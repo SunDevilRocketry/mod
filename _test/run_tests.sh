@@ -11,6 +11,7 @@ tests=(
     nav_isa
     nav_int
     nav_mahony
+    nav_pof
     math_sdr
     telemetry
 )
