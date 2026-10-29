@@ -27,10 +27,12 @@ FRAMEWORK_DIR = ../../framework
 # source
 ################################################################
 TEST_SOURCES = \
-test_mahony.c
+test_mahony.c \
+
 
 COV_C_SOURCES = \
 $(ROOT_DIR)/mod/nav/nav_mahony.c \
+$(ROOT_DIR)/mod/nav/nav_utl.c \
 $(ROOT_DIR)/mod/math_sdr/math_sdr.c
 
 FRAMEWORK_SOURCES = \
@@ -49,7 +51,9 @@ CC = gcc
 ################################################################
 C_INCLUDES = \
 -I. \
+-I./mock \
 -I$(ROOT_DIR)/mod/nav \
+-I$(ROOT_DIR)/mod/debug_sdr \
 -I$(ROOT_DIR)/mod/math_sdr \
 -I$(FRAMEWORK_DIR)/src
 
@@ -57,6 +61,7 @@ C_DEFS = \
 -DUNIT_TEST
 
 CFLAGS = $(C_INCLUDES) $(C_DEFS) $(OPT) -Wall -g
+CFLAGS += -ffunction-sections
 
 CFLAGS += -Wno-unused-function
 CFLAGS += -Wno-unused-variable
@@ -80,7 +85,7 @@ $(BUILD_DIR)/%.o: %.c $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/$(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $@ -lgcov -lm
+	$(CC) $(OBJECTS) -o $@ -Wl,--gc-sections -lgcov -lm
 
 $(BUILD_DIR):
 	mkdir $@

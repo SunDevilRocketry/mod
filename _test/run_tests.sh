@@ -10,7 +10,7 @@ tests=(
     error_sdr
     nav_isa
     nav_int
-    mahony
+    nav_mahony
     math_sdr
     telemetry
 )
