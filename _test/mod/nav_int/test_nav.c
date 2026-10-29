@@ -48,6 +48,7 @@ Case 1: Nominal Initialization
 ------------------------------------------------------------------------------*/
 NAV_STATUS nav_status = NAV_OK;
 NAV_CONFIG nav_config;
+nav_get_default_config( &nav_config );
 NAV_SENSORS calib;
 
 nav_config.accel_enabled = true;
