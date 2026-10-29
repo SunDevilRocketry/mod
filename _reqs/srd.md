@@ -8,10 +8,6 @@
 
 ## 1. Structural
 
-RQ.MOD.00001 - The library shall be designed to interface with the Sun Devil Rocketry "driver" library.
-
-    > Test plan: For the purposes of verifying the library, tests will assume these modules are used on A0002-2XX Flight Computer. This does not require the flight computer to release at the same time, however library integration is tested via the flight computer. Thus, the required coverage burden will only be achieved if the flight computer provides much of it.
-
 RQ.MOD.00002 - The library shall be organized into self-contained modules with header files organized next to source files.
 
 RQ.MOD.00003 - The library shall be designed to be compiled with GNU GCC for the desired target architecture.
