@@ -88,7 +88,7 @@ initial_attitude = _nav_quat_grav_attitude
     );
 
 
-if ( !quat_is_finite(initial_attitude) )
+if ( !math_quat_is_finite(initial_attitude) )
     {
     _nav_debug_error( "Invalid initial attitude quaternion" );
     return NAV_INVALID_PARAMS;
@@ -108,7 +108,7 @@ if ( prv_state->saved_configs.mahony_kp < 0.0f || prv_state->saved_configs.mahon
     }
 
 /* Initialize mahony state */
-prv_state->mahony_state.attitude = quat_normalize(initial_attitude);
+prv_state->mahony_state.attitude = math_quat_normalize(initial_attitude);
 prv_state->mahony_state.integral_error.x = 0.0f;
 prv_state->mahony_state.integral_error.y = 0.0f;
 prv_state->mahony_state.integral_error.z = 0.0f;
@@ -155,13 +155,13 @@ if ( filter == NULL )
     return NAV_NULLPTR;
     }
 
-if ( !quat_is_finite(filter->attitude) )
+if ( !math_quat_is_finite(filter->attitude) )
     {
     _nav_debug_error( "Bad mahony filter attitude provided" );
     return NAV_INVALID_PARAMS;
     }
 
-if ( !vector_is_finite(gyro_body_rad_s) )
+if ( !math_vector_is_finite(gyro_body_rad_s) )
     {
     _nav_debug_error( "Bad mahony filter gyro state provided" );
     return NAV_INVALID_PARAMS;
@@ -183,13 +183,13 @@ angular_velocity.y = gyro_body_rad_s.y;
 angular_velocity.z = gyro_body_rad_s.z;
 
 /* q_dot = 0.5 * q * omega_body */
-attitude_derivative = quat_mult(filter->attitude, angular_velocity);
-attitude_derivative = quat_scale(attitude_derivative, 0.5f);
+attitude_derivative = math_quat_mult(filter->attitude, angular_velocity);
+attitude_derivative = math_quat_scale(attitude_derivative, 0.5f);
 
 /* Scale q_dot by delta_t, add to attitude, and normalize*/
-attitude_delta = quat_scale(attitude_derivative, delta_time_s);
-filter->attitude = quat_add(filter->attitude, attitude_delta);
-filter->attitude = quat_normalize(filter->attitude);
+attitude_delta = math_quat_scale(attitude_derivative, delta_time_s);
+filter->attitude = math_quat_add(filter->attitude, attitude_delta);
+filter->attitude = math_quat_normalize(filter->attitude);
 
 return NAV_OK;
 
@@ -247,19 +247,19 @@ if ( filter == NULL )
     return NAV_NULLPTR;
     }
 
-if ( !quat_is_finite(filter->attitude) )
+if ( !math_quat_is_finite(filter->attitude) )
     {
     _nav_debug_error( "Bad mahony filter attitude provided" );
     return NAV_INVALID_PARAMS;
     }
 
-if ( !vector_is_finite(gyro_body_rad_s) )
+if ( !math_vector_is_finite(gyro_body_rad_s) )
     {
     _nav_debug_error( "Bad mahony filter gyro state provided" );
     return NAV_INVALID_PARAMS;
     }
 
-if ( !vector_is_finite(accel_body) )
+if ( !math_vector_is_finite(accel_body) )
     {
     _nav_debug_error( "Bad mahony filter accel state provided. In release mode, this will continue." );
     }
@@ -270,9 +270,9 @@ if ( !isfinite(delta_time_s) || delta_time_s <= 0.0f )
     return NAV_INVALID_PARAMS;
     }
 
-accel_magnitude = vector_magnitude(accel_body);
+accel_magnitude = math_vector_magnitude(accel_body);
 
-accel_valid = vector_is_finite(accel_body)
+accel_valid = math_vector_is_finite(accel_body)
            && isfinite(accel_magnitude)
            && accel_magnitude >= MAHONY_ACCEL_MIN_MAGNITUDE
            && accel_magnitude <= MAHONY_ACCEL_MAX_MAGNITUDE;
@@ -285,7 +285,7 @@ gyro_corrected = gyro_body_rad_s;
  * Accelerometer feedback is optional. If the measurement is invalid or has
  * zero magnitude, continue with gyroscope-only propagation.
  */
-if ( apply_accel && vector_normalize(&accel_body) )
+if ( apply_accel && math_vector_normalize(&accel_body) )
     {
     /*
     * The attitude quaternion represents the body-to-world rotation.
@@ -297,7 +297,7 @@ if ( apply_accel && vector_normalize(&accel_body) )
     gravity_world.y = 0.0f;
     gravity_world.z = -1.0f;
 
-    gravity_body_quat = quat_rotate_world_to_body(filter->attitude, gravity_world);
+    gravity_body_quat = math_quat_rotate_world_to_body(filter->attitude, gravity_world);
 
     gravity_estimated_body.x = gravity_body_quat.x;
     gravity_estimated_body.y = gravity_body_quat.y;
@@ -307,7 +307,7 @@ if ( apply_accel && vector_normalize(&accel_body) )
     * measured x estimated produces a correction that drives the
     * estimated gravity direction toward the measured direction.
     */
-    attitude_error = vector_cross(accel_body, gravity_estimated_body);
+    attitude_error = math_vector_cross(accel_body, gravity_estimated_body);
 
     /*
     * Accumulate persistent attitude error as a gyro-rate correction. Integral
@@ -322,15 +322,15 @@ if ( apply_accel && vector_normalize(&accel_body) )
         /* The filter has no yaw reference, so avoid accumulating drift on the z axis */
         /* filter->integral_error.z += filter->integral_gain * attitude_error.z * delta_time_s; */
 
-        filter->integral_error.x = clamp_float(filter->integral_error.x, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
-        filter->integral_error.y = clamp_float(filter->integral_error.y, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
+        filter->integral_error.x = math_clamp_float(filter->integral_error.x, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
+        filter->integral_error.y = math_clamp_float(filter->integral_error.y, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S);
         /* filter->integral_error.z = clamp_float(filter->integral_error.z, -MAHONY_INTEGRAL_LIMIT_RAD_S, MAHONY_INTEGRAL_LIMIT_RAD_S); */
         }
 
-    proportional_correction = vector_scale(attitude_error, filter->proportional_gain);
+    proportional_correction = math_vector_scale(attitude_error, filter->proportional_gain);
 
-    gyro_corrected = vector_add(gyro_corrected, proportional_correction);
-    gyro_corrected = vector_add(gyro_corrected, filter->integral_error);
+    gyro_corrected = math_vector_add(gyro_corrected, proportional_correction);
+    gyro_corrected = math_vector_add(gyro_corrected, filter->integral_error);
     }
 
 return _nav_mahony_update_gyro(filter, gyro_corrected, delta_time_s);

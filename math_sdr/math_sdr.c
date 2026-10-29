@@ -35,7 +35,7 @@
   *
   * @return The 32-bit CRC checksum of the input data.
   */
-uint32_t crc32
+uint32_t math_crc32
     (
     const uint8_t *data,
     size_t len
@@ -50,7 +50,7 @@ while (len--)
     }
 return ~crc;
 
-} /* crc32 */
+} /* math_crc32 */
 
 /**
  * @brief Clamps a floating-point value between minimum and maximum bounds.
@@ -59,7 +59,7 @@ return ~crc;
  * @param minimum Minimum value.
  * @param maximum Maximum value.
  */
-float clamp_float
+float math_clamp_float
     (
     float value,
     float minimum,
@@ -78,7 +78,7 @@ if ( value > maximum )
 
 return value;
 
-} /* clamp_float */
+} /* math_clamp_float */
 
 /* Quaternions ---------------------------------------------------------------*/
 
@@ -95,7 +95,7 @@ return value;
   *
   * @return The quaternion representing the rotation.
   */
-QUAT eul_to_quat
+QUAT math_eul_to_quat
     (
     float yaw,
     float pitch,
@@ -118,7 +118,7 @@ q.z = cos_roll * cos_pitch * sin_yaw - sin_roll * sin_pitch * cos_yaw;
 
 return q;
 
-} /* eul_to_quat */
+} /* math_eul_to_quat */
 
 
 /**
@@ -131,7 +131,7 @@ return q;
   *
   * @return The quaternion product a * b.
   */
-QUAT quat_mult
+QUAT math_quat_mult
     (
     QUAT a,
     QUAT b
@@ -146,7 +146,7 @@ result.z = (a.w * b.z) + (a.x * b.y) - (a.y * b.x) + (a.z * b.w);
 
 return result;
 
-} /* quat_mult */
+} /* math_quat_mult */
 
 
 /**
@@ -159,7 +159,7 @@ return result;
   *
   * @return The quaternion scalar product a . b
   */
-float quat_dot
+float math_quat_dot
     (
     QUAT a,
     QUAT b
@@ -170,7 +170,7 @@ return( a.w * b.w +
         a.y * b.y +
         a.z * b.z );
         
-} /* quat_mult */
+} /* math_quat_mult */
 
 
 /**
@@ -181,7 +181,7 @@ return( a.w * b.w +
   *
   * @return The quaternion sum a + b.
   */
-QUAT quat_add
+QUAT math_quat_add
     (
     QUAT a,
     QUAT b
@@ -196,7 +196,7 @@ result.z = a.z + b.z;
 
 return result;
 
-} /* quat_add */
+} /* math_quat_add */
 
 
 /**
@@ -207,7 +207,7 @@ return result;
   *
   * @return The quaternion @p q scaled by @p s (q * s).
   */
-QUAT quat_scale
+QUAT math_quat_scale
     (
     QUAT q,
     float s
@@ -222,7 +222,7 @@ result.z = q.z * s;
 
 return result;
 
-} /* quat_scale */
+} /* math_quat_scale */
 
 
 /**
@@ -238,7 +238,7 @@ return result;
   * but not equal to zero are divided normally and may exhibit 
   * floating-point roundoff.
   */
-QUAT quat_normalize
+QUAT math_quat_normalize
     (
     QUAT q
     )
@@ -265,7 +265,7 @@ else
 
 return result;
 
-} /* quat_normalize */
+} /* math_quat_normalize */
 
 
 /**
@@ -275,7 +275,7 @@ return result;
   *
   * @return The conjugate quaternion (w, -x, -y, -z).
   */
-QUAT quat_conj
+QUAT math_quat_conj
     (
     QUAT q
     )
@@ -283,7 +283,7 @@ QUAT quat_conj
 QUAT result = { q.w, -q.x, -q.y, -q.z };
 return result;
 
-} /* quat_conj */
+} /* math_quat_conj */
 
 /**
   * @brief Rotates a vector from the world frame into the body frame.
@@ -297,21 +297,21 @@ return result;
   *
   * @return Pure quaternion containing the body-frame vector.
   */
-QUAT quat_rotate_world_to_body
+QUAT math_quat_rotate_world_to_body
     (
     QUAT attitude,
     QUAT vector_world
     )
 {
-QUAT attitude_conj = quat_conj(attitude);
+QUAT attitude_conj = math_quat_conj(attitude);
 
-return quat_mult
+return math_quat_mult
     (
-    quat_mult(attitude_conj, vector_world),
+    math_quat_mult(attitude_conj, vector_world),
     attitude
     );
 
-} /* quat_rotate_world_to_body */
+} /* math_quat_rotate_world_to_body */
 
 
 /**
@@ -326,26 +326,26 @@ return quat_mult
   *
   * @return Pure quaternion containing the world-frame vector.
   */
-QUAT quat_rotate_body_to_world
+QUAT math_quat_rotate_body_to_world
     (
     QUAT attitude,
     QUAT vector_body
     )
 {
-QUAT attitude_conj = quat_conj(attitude);
+QUAT attitude_conj = math_quat_conj(attitude);
 
-return quat_mult
+return math_quat_mult
     (
-    quat_mult(attitude, vector_body),
+    math_quat_mult(attitude, vector_body),
     attitude_conj
     );
 
-} /* quat_rotate_body_to_world */
+} /* math_quat_rotate_body_to_world */
 
 /**
  * @brief Determines whether every quaternion component is finite.
  */
-bool quat_is_finite
+bool math_quat_is_finite
     (
     QUAT quaternion
     )
@@ -358,14 +358,14 @@ return
     && isfinite(quaternion.z)
     );
 
-} /* quat_is_finite */
+} /* math_quat_is_finite */
 
 /* Vectors -------------------------------------------------------------------*/
 
 /**
  * @brief Determines whether every vector component is finite.
  */
-bool vector_is_finite
+bool math_vector_is_finite
     (
     VECTOR_3F vector
     )
@@ -377,12 +377,12 @@ return
     && isfinite(vector.z)
     );
 
-} /* vector_is_finite */
+} /* math_vector_is_finite */
 
 /**
  * @brief Calculates the magnitude of a three-dimensional vector.
  */
-float vector_magnitude
+float math_vector_magnitude
     (
     VECTOR_3F vector
     )
@@ -394,12 +394,12 @@ return sqrtf
     vector.z * vector.z
     );
 
-} /* vector_magnitude */
+} /* math_vector_magnitude */
 
 /**
  * @brief Normalizes a three-dimensional vector in place.
  */
-bool vector_normalize
+bool math_vector_normalize
     (
     VECTOR_3F *vector
     )
@@ -411,12 +411,12 @@ if ( vector == NULL )
     return false;
     }
 
-if ( !vector_is_finite(*vector) )
+if ( !math_vector_is_finite(*vector) )
     {
     return false;
     }
 
-magnitude = vector_magnitude(*vector);
+magnitude = math_vector_magnitude(*vector);
 
 if ( magnitude <= 0.0f || !isfinite(magnitude) )
     {
@@ -429,13 +429,13 @@ vector->z /= magnitude;
 
 return true;
 
-} /* vector_normalize */
+} /* math_vector_normalize */
 
 
 /**
  * @brief Calculates the cross product of two three-dimensional vectors.
  */
-VECTOR_3F vector_cross
+VECTOR_3F math_vector_cross
     (
     VECTOR_3F a,
     VECTOR_3F b
@@ -449,13 +449,13 @@ result.z = a.x * b.y - a.y * b.x;
 
 return result;
 
-} /* vector_cross */
+} /* math_vector_cross */
 
 
 /**
  * @brief Adds two three-dimensional vectors.
  */
-VECTOR_3F vector_add
+VECTOR_3F math_vector_add
     (
     VECTOR_3F a,
     VECTOR_3F b
@@ -469,13 +469,13 @@ result.z = a.z + b.z;
 
 return result;
 
-} /* vector_add */
+} /* math_vector_add */
 
 
 /**
  * @brief Scales a three-dimensional vector by a scalar.
  */
-VECTOR_3F vector_scale
+VECTOR_3F math_vector_scale
     (
     VECTOR_3F vector,
     float scalar
@@ -489,7 +489,7 @@ result.z = vector.z * scalar;
 
 return result;
 
-} /* vector_scale */
+} /* math_vector_scale */
 
 /*******************************************************************************
 * END OF FILE                                                                  *

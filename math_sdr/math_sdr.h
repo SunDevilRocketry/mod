@@ -115,13 +115,13 @@ typedef struct _VECTOR_3F
 
 /* Function Prototypes -------------------------------------------------------*/
 
-uint32_t crc32
+uint32_t math_crc32
     (
     const uint8_t *data, 
     size_t len
     );
 
-float clamp_float
+float math_clamp_float
     (
     float value,
     float minimum,
@@ -130,94 +130,94 @@ float clamp_float
 
 /* Quaternions ---------------------------------------------------------------*/
 
-QUAT eul_to_quat
+QUAT math_eul_to_quat
     (
     float yaw,
     float pitch,
     float roll
     );
 
-QUAT quat_mult
+QUAT math_quat_mult
     (
     QUAT a,
     QUAT b
     );
 
-float quat_dot
+float math_quat_dot
     (
     QUAT a,
     QUAT b
     );
 
-QUAT quat_add
+QUAT math_quat_add
     (
     QUAT a,
     QUAT b
     );
 
-QUAT quat_scale
+QUAT math_quat_scale
     (
     QUAT q,
     float s
     );
 
-QUAT quat_normalize
+QUAT math_quat_normalize
     (
     QUAT q
     );
 
-QUAT quat_conj
+QUAT math_quat_conj
     (
     QUAT q
     );
 
-QUAT quat_rotate_world_to_body
+QUAT math_quat_rotate_world_to_body
     (
     QUAT attitude,
     QUAT vector_world
     );
 
-QUAT quat_rotate_body_to_world
+QUAT math_quat_rotate_body_to_world
     (
     QUAT attitude,
     QUAT vector_body
     );
 
-bool quat_is_finite
+bool math_quat_is_finite
     (
     QUAT quaternion
     );
 
 /* Vectors -------------------------------------------------------------------*/
 
-bool vector_is_finite
+bool math_vector_is_finite
     (
     VECTOR_3F vector
     );
 
-float vector_magnitude
+float math_vector_magnitude
     (
     VECTOR_3F vector
     );
 
-bool vector_normalize
+bool math_vector_normalize
     (
     VECTOR_3F *vector
     );
 
-VECTOR_3F vector_cross
+VECTOR_3F math_vector_cross
     (
     VECTOR_3F a,
     VECTOR_3F b
     );
 
-VECTOR_3F vector_add
+VECTOR_3F math_vector_add
     (
     VECTOR_3F a,
     VECTOR_3F b
     );
 
-VECTOR_3F vector_scale
+VECTOR_3F math_vector_scale
     (
     VECTOR_3F vector,
     float scalar
