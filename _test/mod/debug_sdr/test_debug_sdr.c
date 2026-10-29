@@ -83,7 +83,7 @@ void test_debug_sdr_overflow
 	void
 	)
 {
-char message[ 50 ];
+char message[ 64 ];
 memset( message, 'o', sizeof( message ) );
 
 stubs_reset();

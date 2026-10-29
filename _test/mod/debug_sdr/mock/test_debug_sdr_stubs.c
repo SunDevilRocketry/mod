@@ -1,7 +1,6 @@
 #include <string.h>
 
 #include "test_debug_sdr_stubs.h"
-#include "timer.h"
 
 static unsigned int write_calls;
 static unsigned int write_callback_limit;
