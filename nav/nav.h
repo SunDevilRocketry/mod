@@ -49,7 +49,7 @@ extern "C"
 
 
 /* Private Constants ---------------------------------------------------------*/
-#define _PRIVATE_STATE_SIZE ( 164u )
+#define _PRIVATE_STATE_SIZE ( 168u )
 
 /* Typedefs ------------------------------------------------------------------*/
 
@@ -76,9 +76,9 @@ typedef enum
 typedef struct _NAV_CONFIG
     {
     /* pof transitions */
-    float coast_detect_threshold;
-    float launch_detect_accel_threshold;
-    float launch_detect_baro_threshold;
+    float coast_detect_threshold;           /* u: g-force */
+    float launch_detect_accel_threshold;    /* u: g-force */
+    float launch_detect_baro_threshold;     /* u: Pa */
     uint16_t launch_detect_accel_counts;
     uint16_t launch_detect_baro_counts;
     uint16_t apogee_decreasing_counts;
@@ -243,6 +243,18 @@ NAV_STATUS nav_pof_set
 NAV_STATUS nav_reset_velo
 	(
 	NAV_PUBLIC_STATE* nav_state
+	);
+
+/**
+  * @brief Constructs a default configuration structure for nav.
+  * 
+  * @param[out] cfg_buffer The generated configs
+  * 
+  * @return The status of this operation.
+  */
+NAV_STATUS nav_get_default_config
+	(
+	NAV_CONFIG* cfg_buffer
 	);
 
 /* Undefine Private Constants ------------------------------------------------*/

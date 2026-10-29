@@ -59,6 +59,7 @@ static DEBUG_HANDLE debug_handle; /* This module may be conditionally compiled
 /* Private function prototypes -----------------------------------------------*/
 static void default_overflow_handler(const char* trigger_msg, size_t len);
 static DEBUG_STATUS start_tx(void);
+static SYSTEM_TIME get_time(void);
 
 /* Procedures ----------------------------------------------------------------*/
 
@@ -157,7 +158,7 @@ assert_return( message, DEBUG_FAIL ); /* exit if nullptr */
 assert_return( len <= DEBUG_MSG_USER_MAX_LEN, DEBUG_FAIL ); /* exit if msg too long */
 
 /* Construct the message to be logged */
-SYSTEM_TIME time = get_system_time();
+SYSTEM_TIME time = get_time();
 true_len = snprintf(temp_msg, DEBUG_MSG_MAX_LEN, "[%02d:%02d:%02d.%03d ", (time.hours % 24), time.mins, time.secs, time.millis);
 switch( log_level )
     {
@@ -312,3 +313,24 @@ debug_clear();
 debug_log(msg, strlen( msg ), LOG_LVL_WARN);
 
 } /* default_overflow_handler */
+
+
+/**
+ * @brief Gets the current time since epoch (startup).
+ */
+static SYSTEM_TIME get_time
+    (
+    void
+    )
+{
+uint32_t systick = HAL_GetTick();
+SYSTEM_TIME retval;
+
+retval.millis = (uint16_t)(systick % 1000);
+retval.secs = (uint8_t)((systick / 1000) % 60);
+retval.mins = (uint8_t)((systick / (1000 * 60)) % 60);
+retval.hours = (uint16_t)((systick / (1000 * 60 * 60)));
+
+return retval;
+
+} /* get_time */

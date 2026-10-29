@@ -75,6 +75,50 @@ return( status );
 
 } /* nav_reset_velo */
 
+
+/**
+  * @brief Constructs a default configuration structure for nav.
+  * 
+  * @param[out] cfg_buffer The generated configs
+  * 
+  * @return The status of this operation.
+  */
+NAV_STATUS nav_get_default_config
+	(
+	NAV_CONFIG* cfg_buffer
+	)
+{
+nav_nullchk( cfg_buffer );
+
+memset( cfg_buffer, 0, sizeof( NAV_CONFIG ) );
+*cfg_buffer = (NAV_CONFIG){
+    /* POF Configuration */
+    .launch_detect_accel_enabled = true,
+    .launch_detect_accel_counts = 4,
+    .launch_detect_accel_threshold = 7.0f,
+    .launch_detect_baro_enabled = false,
+    .launch_detect_baro_counts = 4,
+    .launch_detect_baro_threshold = 300.0f,
+    .coast_detect_threshold = 0.75f,
+    .coast_detect_counts = 5,
+    .apogee_decreasing_counts = 7,
+
+    /* Sensor Fusion Configuration */
+    .accel_enabled = true,
+    .gyro_enabled = true,
+    .baro_enabled = true,
+    .mag_enabled = false,
+    .gps_enabled = false,
+    
+    /* Filter Configuration */
+    .mahony_kp = 1.0f,
+    .mahony_ki = 0.0f
+    };
+
+return( NAV_OK );
+
+} /* nav_get_default_config */
+
 /*------------------------------------------------------------------------------
  Private Functions 
 ------------------------------------------------------------------------------*/

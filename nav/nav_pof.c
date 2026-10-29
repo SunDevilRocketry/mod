@@ -35,6 +35,31 @@
 #include "nav_prv.h"
 
 /*------------------------------------------------------------------------------
+ Static Procedure Definitions
+------------------------------------------------------------------------------*/
+
+static bool detect_launch
+    (
+    NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs
+    );
+
+static bool detect_coast
+    (
+    NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs
+    );
+
+static bool detect_apogee
+    (
+    NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs
+    );
+
+/*------------------------------------------------------------------------------
  API Functions 
 ------------------------------------------------------------------------------*/
 
@@ -121,6 +146,12 @@ return( status );
  Private Functions 
 ------------------------------------------------------------------------------*/
 
+/**
+ * @brief Initialize the phase of flight module
+ * 
+ * @param prv_state The nav library state
+ * @return NAV_STATUS 
+ */
 NAV_STATUS _nav_pof_init
     (
     NAV_PRIVATE_STATE* prv_state
@@ -171,20 +202,111 @@ return( NAV_OK );
 } /* _nav_pof_init */
 
 
-bool _nav_pof_detect_launch
+/**
+ * @brief Update the POF state.
+ * 
+ * @param prv_state The navigation library state
+ * @param sensors The inputs to the library
+ * @param outputs The library's computed outputs so far
+ * @return The status of the navigation library
+ */
+NAV_STATUS _nav_pof_update
     (
     NAV_PRIVATE_STATE* prv_state,
     const NAV_SENSORS* sensors,
     NAV_OUTPUTS* outputs
     )
 {
+NAV_POF starting_state = prv_state->pof;
+switch( starting_state )
+    {
+    case NAV_ON_GROUND:
+        if( detect_launch( prv_state, sensors, outputs ) )
+            {
+            prv_state->pof = NAV_POWERED_ASCENT;
+            nav_pof_transition_event( (NAV_PUBLIC_STATE*)prv_state, starting_state, prv_state->pof );
+            }
+        break;
+    case NAV_POWERED_ASCENT:
+        if( detect_coast( prv_state, sensors, outputs ) )
+            {
+            prv_state->pof = NAV_UNPOWERED_ASCENT;
+            nav_pof_transition_event( (NAV_PUBLIC_STATE*)prv_state, starting_state, prv_state->pof );
+            }
+        else if( detect_apogee( prv_state, sensors, outputs ) )
+            {
+            prv_state->pof = NAV_DESCENT;
+            nav_pof_transition_event( (NAV_PUBLIC_STATE*)prv_state, starting_state, prv_state->pof );
+            }
+        break;
+    case NAV_UNPOWERED_ASCENT:
+        if( detect_apogee( prv_state, sensors, outputs ) )
+            {
+            prv_state->pof = NAV_DESCENT;
+            nav_pof_transition_event( (NAV_PUBLIC_STATE*)prv_state, starting_state, prv_state->pof );
+            }
+        break;
+
+    case NAV_DESCENT:
+    case NAV_LANDED:
+        /* no applicable transitions; do nothing */
+        break;
+    /**
+      * GCOVR_EXCL_START
+      *
+      * This branch is tested, but gcovr doesn't see this statement in
+      * release mode so it reports a coverage hole on SDR's simulator builds.
+      */
+    default:
+        _nav_debug_error( "Invalid state transition detected" );
+        return( NAV_FAIL );
+     /**
+      * GCOVR_EXCL_STOP
+      */
+    }
+
+return( NAV_OK );
+
+} /* _nav_pof_update */
+
+/*------------------------------------------------------------------------------
+ Static Functions 
+------------------------------------------------------------------------------*/
+
+/**
+ * @brief Detect if launch has occurred.
+ * 
+ * @param prv_state The navigation library state
+ * @param sensors The inputs to the library
+ * @param outputs The library's computed outputs so far
+ * @return t: launch has occurred
+ */
+static bool detect_launch
+    (
+    NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs
+    )
+{
+/* Only check launch detect if:
+ * 1. Launch detect is accel based AND there is accel data to fuse
+ *    OR
+ * 2. Launch detect is baro based AND there is baro data to fuse
+ */
+if( !( prv_state->saved_configs.launch_detect_accel_enabled && vector_is_finite( sensors->accel ) )
+ && !( prv_state->saved_configs.launch_detect_baro_enabled && isfinite( sensors->baro_pres ) ) )
+    {
+    /* do not update the internal state, we will try again on the next cycle */
+    return false;
+    }
+
 float accX = sensors->accel.x;
 float pressure = sensors->baro_pres;
 float acc_scalar = fabsf(accX);
 
 if ( prv_state->saved_configs.launch_detect_accel_enabled )
     {
-    if ( acc_scalar > (float)prv_state->saved_configs.launch_detect_accel_threshold * 9.81f )
+    if ( acc_scalar > (float)prv_state->saved_configs.launch_detect_accel_threshold * GRAVITY )
         {
         prv_state->pof_state.ld_accel_counts++;
         } 
@@ -216,7 +338,102 @@ else
     return false;
     }
 
-} /* _nav_detect_launch */
+} /* detect_launch */
+
+
+/**
+ * @brief Detect if coast has occurred.
+ * 
+ * @param prv_state The navigation library state
+ * @param sensors The inputs to the library
+ * @param outputs The library's computed outputs so far
+ * @return t: coast has occurred
+ */
+static bool detect_coast
+    (
+    NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs
+    )
+{
+/* Only check coast if there is valid accel data */
+if( !vector_is_finite( sensors->accel ) )
+    {
+    /* do not update the internal state, we will try again on the next cycle */
+    return false;
+    }
+
+/* check if accel is sufficiently low */
+if ( sensors->accel.x < prv_state->saved_configs.coast_detect_threshold * GRAVITY )
+    {
+    prv_state->pof_state.coast_detect_counts++;
+    }
+else
+    {
+    prv_state->pof_state.coast_detect_counts = 0;
+    }
+
+/* check if we've hit our sample threshold */
+if( prv_state->pof_state.coast_detect_counts >= prv_state->saved_configs.coast_detect_counts )
+    {
+    return true;
+    }
+else
+    {
+    return false;
+    }
+
+} /* detect_coast */
+
+
+/**
+ * @brief Detect if apogee has occurred.
+ * 
+ * @param prv_state The navigation library state
+ * @param sensors The inputs to the library
+ * @param outputs The library's computed outputs so far
+ * @return t: apogee has occurred
+ */
+static bool detect_apogee
+    (
+    NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs
+    )
+{
+/* Only check coast if there is a valid altitude estimate */
+if( !isfinite( outputs->ind_alt_asl ) )
+    {
+    /* do not update the internal state, we will try again on the next cycle */
+    return false;
+    }
+
+float curr_alt = outputs->ind_alt_asl;
+
+if( prv_state->pof_state.apogee_last_sample != 0.0f )
+    {
+    if( curr_alt < prv_state->pof_state.apogee_last_sample )
+        {
+        prv_state->pof_state.apogee_decreasing_counts++;
+        }
+    else
+        {
+        prv_state->pof_state.apogee_decreasing_counts = 0;
+        }
+    }
+
+prv_state->pof_state.apogee_last_sample = curr_alt;
+
+if( prv_state->pof_state.apogee_decreasing_counts >= prv_state->saved_configs.apogee_decreasing_counts )
+    {
+    return true; /* Apogee detected */
+    }
+else
+    {
+    return false; /* Apogee not detected */
+    }
+    
+} /* detect_apogee */
 
 /**
   * END OF FILE
