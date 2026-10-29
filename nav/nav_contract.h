@@ -67,6 +67,20 @@ NAV_STATUS nav_release_state
     NAV_PUBLIC_STATE* nav_state
     );
 
+/**
+ * @brief Notify the integrating project of a change in NAV's phase of flight.
+ *
+ * @param[in,out] nav_state The state of the NAV library
+ * @param[in] original_state The starting state during this update
+ * @param[in] new_state The new NAV state.
+ */
+void nav_pof_transition_event
+    (
+    NAV_PUBLIC_STATE* nav_state,
+    NAV_POF original_state,
+    NAV_POF new_state
+    );
+
 #ifdef __cplusplus
 }
 #endif

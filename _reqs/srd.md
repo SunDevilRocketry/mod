@@ -116,7 +116,7 @@ The library shall provide the following IMU and magnetometer utilities:
 
 RQ.MOD.00051 - The library shall control Sun Devil Rocketry's one-way telemetry interface by defining the authoritative version in a header for projects to integrate.
 
-### 2.9. NAV
+### 2.9. Nav
 
 RQ.MOD.00053 - The library shall provide a method to fuse sensor data.
 
@@ -147,3 +147,19 @@ RQ.MOD.00031 - The library shall provide a method to convert a barometric pressu
 RQ.MOD.00051 - The library shall provide a method to retrieve a ground reference elevation from current and calibrated pressure and temperature.
 
 RQ.MOD.00052 - The library shall provide a method to retrieve the ISA temperature given a barometric pressure reading.
+
+#### 2.9.3. POF
+
+RQ.MOD.00058 - The library shall provide a method to set the phase of flight.
+
+RQ.MOD.00059 - The library shall provide a method to get the phase of flight.
+
+The library shall provide functions to detect the following phase of flight transitions.
+
+    RQ.MOD.00060 - On-Ground -> Powered Ascent
+
+    RQ.MOD.00061 - Powered Ascent -> Unpowered Ascent
+
+    RQ.MOD.00062 - Ascent -> Descent
+
+    RQ<POSTPONED>.MOD.00063 - Descent -> Landed

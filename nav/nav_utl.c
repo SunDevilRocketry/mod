@@ -50,6 +50,8 @@ NAV_STATUS nav_reset_velo
 	NAV_PUBLIC_STATE* nav_state
 	)
 {
+nav_nullchk( nav_state );
+
 /* Local Variables */
 NAV_PRIVATE_STATE* prv_state = nav_state_to_prv( nav_state );
 NAV_STATUS status = NAV_OK;
@@ -58,6 +60,11 @@ NAV_STATUS status = NAV_OK;
 if( nav_reserve_state( nav_state ) == NAV_OK )
     {
     status = _nav_reset_velo( prv_state );
+
+    if( nav_release_state( nav_state ) != NAV_OK )
+        {
+        status = NAV_FAIL;
+        }
     }
 else
     {
@@ -142,7 +149,9 @@ return atan2f(y, x);
   * @note Assumes state reserved by the caller.
   * @note Requires attitude estimate to already be updated.
   * 
-  * @param prv_state The private nav library state.
+  * @param[in,out] prv_state The private nav library state.
+  * @param[in] sensors Input data to nav
+  * @param[in,out] outputs Fused data
   * @param tdelta The delta between measurements
   * 
   * @return The status of the operation
@@ -150,12 +159,12 @@ return atan2f(y, x);
 NAV_STATUS _nav_imu_velo
 	(
 	NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs,
     float tdelta
 	)
 {
 float velo_x, velo_y, velo_z, velocity;
-NAV_SENSORS* i = &(prv_state->public_state.nav_sensors);
-NAV_OUTPUTS* o = &(prv_state->public_state.nav_outputs);
 
 /*
  * The world frame uses North-East-Down (NED) coordinates,
@@ -175,16 +184,16 @@ const QUAT gravity_world =
  */
 QUAT gravity_body = quat_rotate_world_to_body
     (
-    prv_state->public_state.nav_outputs.orientation,
+    outputs->orientation,
     gravity_world
     );
 
 QUAT linear_accel_body =
     {
     .w = 0.0f,
-    .x = i->accel.x - gravity_body.x,
-    .y = i->accel.y - gravity_body.y,
-    .z = i->accel.z - gravity_body.z,
+    .x = sensors->accel.x - gravity_body.x,
+    .y = sensors->accel.y - gravity_body.y,
+    .z = sensors->accel.z - gravity_body.z,
     };
 
 /*
@@ -193,7 +202,7 @@ QUAT linear_accel_body =
  */
 QUAT linear_accel_world = quat_rotate_body_to_world
     (
-    prv_state->public_state.nav_outputs.orientation,
+    outputs->orientation,
     linear_accel_body
     );
 
@@ -215,11 +224,11 @@ velocity = sqrtf
     );
 
 /* Update state estimations*/
-o->velocity.x = velo_x;
-o->velocity.y = velo_y;
-o->velocity.z = velo_z;
+outputs->velocity.x = velo_x;
+outputs->velocity.y = velo_y;
+outputs->velocity.z = velo_z;
 
-o->velo_mag = velocity;
+outputs->velo_mag = velocity;
 
 // Save current velocity for next computation
 prv_state->velocity.x = velo_x;

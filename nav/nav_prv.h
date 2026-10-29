@@ -62,6 +62,17 @@ typedef struct _NAV_MAHONY_FILTER
     } NAV_MAHONY_FILTER;
 _Static_assert( sizeof( NAV_MAHONY_FILTER ) == 9 * 4u );
 
+/**
+ * @brief Phase-of-flight subsystem internal state
+ */
+typedef struct _NAV_POF_STATE
+    {
+    uint16_t ld_accel_counts;
+    uint16_t ld_baro_counts;
+    uint16_t apogee_decreasing_counts;
+    uint16_t coast_detect_counts;
+    } NAV_POF_STATE;
+
 /* Top-Level Defines */
 
 /**
@@ -69,13 +80,14 @@ _Static_assert( sizeof( NAV_MAHONY_FILTER ) == 9 * 4u );
  */
 typedef struct _NAV_PRIVATE_STATE
     {
-    NAV_PUBLIC_FIELDS public_state;
-    NAV_CONFIG saved_configs;       /* 16B: Internal configs    */
+    NAV_CONFIG saved_configs;       /* 36B: Internal configs    */
     NAV_MAHONY_FILTER mahony_state; /* 36B: Mahony filter state */
+    NAV_POF_STATE pof_state;        /* 8B: POF state            */
     NAV_SENSORS cal_data;           /* 60B: Calibration data    */
     VECTOR_3F velocity;             /* 12B: Velocity data       */
     float last_update_time;         /* 4B: Float                */
     float curr_update_time;         /* 4B: Float                */
+    NAV_POF pof;                    /* 4B: Phase of Flight      */
     } NAV_PRIVATE_STATE;
 _Static_assert( sizeof( NAV_PRIVATE_STATE ) == sizeof( NAV_PUBLIC_STATE ),
                 "There is a mismatch between the public and private NAV state types." );
@@ -90,6 +102,7 @@ _Static_assert( sizeof( NAV_PRIVATE_STATE ) == sizeof( NAV_PUBLIC_STATE ),
             return NAV_NULLPTR; \
             } \
         } while(0)
+#define _nav_in_air( prv_state_p ) ( !( prv_state->pof == NAV_ON_GROUND || prv_state->pof == NAV_LANDED ) )
 
 /* Function Prototypes -------------------------------------------------------*/
 
@@ -236,7 +249,9 @@ float _nav_quat_to_yaw
   * @note Assumes state reserved by the caller.
   * @note Requires attitude estimate to already be updated.
   * 
-  * @param prv_state The private nav library state.
+  * @param[in,out] prv_state The private nav library state.
+  * @param[in] sensors Input data to nav
+  * @param[in,out] outputs Fused data
   * @param tdelta The delta between measurements
   * 
   * @return The status of the operation
@@ -244,6 +259,8 @@ float _nav_quat_to_yaw
 NAV_STATUS _nav_imu_velo
 	(
 	NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs,
     float tdelta
 	);
 

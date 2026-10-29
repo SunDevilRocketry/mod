@@ -49,7 +49,7 @@ extern "C"
 
 
 /* Private Constants ---------------------------------------------------------*/
-#define _PRIVATE_STATE_SIZE ( 132u )
+#define _PRIVATE_STATE_SIZE ( 164u )
 
 /* Typedefs ------------------------------------------------------------------*/
 
@@ -75,13 +75,24 @@ typedef enum
  */
 typedef struct _NAV_CONFIG
     {
-    float mahony_kp;
-    float mahony_ki;
+    /* pof transitions */
+    float coast_detect_threshold;
+    float launch_detect_accel_threshold;
+    float launch_detect_baro_threshold;
+    uint16_t launch_detect_accel_counts;
+    uint16_t launch_detect_baro_counts;
+    uint16_t apogee_decreasing_counts;
+    uint16_t coast_detect_counts;
+    bool launch_detect_accel_enabled;
+    bool launch_detect_baro_enabled;
     bool accel_enabled;
     bool gyro_enabled;
     bool mag_enabled;
     bool baro_enabled;
     bool gps_enabled;
+    uint8_t __pad;
+    float mahony_kp;
+    float mahony_ki;
     } NAV_CONFIG;
 
 /**
@@ -127,20 +138,24 @@ typedef struct _NAV_OUTPUTS
     } NAV_OUTPUTS;
 
 /**
- * @brief The public fields in the public nav state.
+ * @brief Navigation phase of flight. Typical flight computer
+ * FSMs will feature a superset of these states with descent
+ * split into phases depending on parachute deployment.
  */
-typedef struct _NAV_PUBLIC_FIELDS
+typedef enum _NAV_POF
     {
-    bool in_air;                    /* t: rocket is flying      */
-    NAV_SENSORS nav_sensors;        /* Input sensor data        */
-    NAV_OUTPUTS nav_outputs;        /* Output fused data        */
-    } NAV_PUBLIC_FIELDS;
+    NAV_ON_GROUND,
+    NAV_POWERED_ASCENT,
+    NAV_UNPOWERED_ASCENT,
+    NAV_DESCENT,
+    NAV_LANDED // currently unsupported
+    } NAV_POF;
+
 /**
  * @brief The public state of the navigation library.
  */
 typedef struct _NAV_PUBLIC_STATE
     {
-    NAV_PUBLIC_FIELDS pub;          /* Public data to NAV       */
     const uint8_t __opaque_private_contents 
         [ _PRIVATE_STATE_SIZE ];    /* Private data to NAV      */
     } NAV_PUBLIC_STATE;
@@ -149,13 +164,14 @@ typedef struct _NAV_PUBLIC_STATE
 /* Function Prototypes -------------------------------------------------------*/
 
 /* nav.c */
+
 /**
  * @brief Initializes the navigation library.
  * 
- * @param nav_state Public state of the nav library.
- * @param config Configures the nav library
- * @param calibration Calibrated sensor readings at launch site
- * @param current_time The time the readings were gathered.
+ * @param[in,out] nav_state Public state of the nav library.
+ * @param[in] config Configures the nav library
+ * @param[in] calibration Calibrated sensor readings at launch site
+ * @param time The time of initialization for use in deltas on update
  * 
  * @return The state of the nav library
  */
@@ -163,13 +179,16 @@ NAV_STATUS nav_init
     (
     NAV_PUBLIC_STATE* nav_state,
     NAV_CONFIG config,
-    NAV_SENSORS calibration
+    NAV_SENSORS calibration,
+    float time
     );
 
 /**
  * @brief Updates the navigation library state.
  * 
- * @param nav_state Public state of the nav library.
+ * @param[in,out] nav_state Public state of the nav library.
+ * @param[in] sensors The sensor readings to fuse
+ * @param[out] outputs The outputs from fusion
  * @param current_time The time these readings were gathered.
  * 
  * @return The state of the nav library.
@@ -177,8 +196,40 @@ NAV_STATUS nav_init
 NAV_STATUS nav_update
     (
     NAV_PUBLIC_STATE* nav_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs,
     float current_time
     );
+
+/* nav_pof.c */
+
+/**
+  * @brief Get the navigation phase of flight.
+  * 
+  * @param[in,out] nav_state The nav library state
+  * @param[out] pof The nav phase of flight 
+  *
+  * @return The status of this operation.
+  */
+NAV_STATUS nav_pof_get
+	(
+	NAV_PUBLIC_STATE* nav_state,
+    NAV_POF* pof
+	);
+
+/**
+  * @brief Overwrite the navigation phase of flight.
+  * 
+  * @param[in,out] nav_state The nav library state
+  * @param[in] pof The phase of flight
+  * 
+  * @return The status of this operation.
+  */
+NAV_STATUS nav_pof_set
+	(
+	NAV_PUBLIC_STATE* nav_state,
+    NAV_POF* pof
+	);
 
 /* nav_utl.c */
 
