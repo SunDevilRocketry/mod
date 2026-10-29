@@ -486,7 +486,9 @@ NAV_CONFIG  on_ground_asl_config =
     .gps_enabled = true,
     .gyro_enabled = true,
     .mag_enabled = true,
-    .mahony_kp = 1.0f
+    .mahony_kp = 1.0f,
+    .baro_ema_pres_alpha = 0.75f,
+    .baro_ema_temp_alpha = 0.75f
     };
 NAV_SENSORS on_ground_asl_sensors =
     {
@@ -517,7 +519,9 @@ NAV_CONFIG on_ground_asl_config_no_gps =
     .gps_enabled = false,
     .gyro_enabled = true,
     .mag_enabled = true,
-    .mahony_kp = 1.0f
+    .mahony_kp = 1.0f,
+    .baro_ema_pres_alpha = 0.75f,
+    .baro_ema_temp_alpha = 0.75f
     };
 NAV_OUTPUTS on_ground_asl_expected_no_gps =
     {
@@ -568,6 +572,10 @@ for( int i = 0; i < array_size( cases ); i++ )
 
     /* seed mahony */
     TEST_ASSERT_EQ_UINT( "Meta: Verify that mahony setup worked.", _nav_mahony_init( prv_state ), NAV_OK );
+
+    /* seed EMA at sea level */
+    prv_state->baro_state.temp_ema_state = 15.0f;
+    prv_state->baro_state.pres_ema_state = 101325.0f;
 
     /*------------------------------------------------------------------------------
     Call FUT

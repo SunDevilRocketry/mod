@@ -112,7 +112,9 @@ memset( cfg_buffer, 0, sizeof( NAV_CONFIG ) );
     
     /* Filter Configuration */
     .mahony_kp = 1.0f,
-    .mahony_ki = 0.0f
+    .mahony_ki = 0.0f,
+    .baro_ema_pres_alpha = 0.7f,
+    .baro_ema_temp_alpha = 0.7f
     };
 
 return( NAV_OK );
@@ -282,6 +284,41 @@ prv_state->velocity.z = velo_z;
 return NAV_OK;
 
 } /* _nav_imu_velo */
+
+
+/**
+  * @brief Updates the barometer exponential moving average (EMA) with the latest sensor readings.
+  * @param[in,out] prv_state Pointer to the nav library state
+  * @param[in,out] sensors Pointer to the sensor inputs
+  * 
+  * @return Nav library status
+  */
+NAV_STATUS _nav_baro_ema
+	(
+	NAV_PRIVATE_STATE* prv_state,
+    NAV_SENSORS* sensors
+	)
+{
+if ( prv_state->baro_state.pres_ema_state == INFINITY || prv_state->baro_state.temp_ema_state == INFINITY )
+	{
+	prv_state->baro_state.pres_ema_state = sensors->baro_pres;
+	prv_state->baro_state.temp_ema_state = sensors->baro_temp;
+	return NAV_OK;
+	}
+
+prv_state->baro_state.pres_ema_state = 
+    ( prv_state->saved_configs.baro_ema_pres_alpha * sensors->baro_pres ) 
+    + ( (1-prv_state->saved_configs.baro_ema_pres_alpha) * prv_state->baro_state.pres_ema_state );
+prv_state->baro_state.temp_ema_state = 
+    ( prv_state->saved_configs.baro_ema_temp_alpha * sensors->baro_temp ) 
+    + ( (1-prv_state->saved_configs.baro_ema_temp_alpha) * prv_state->baro_state.temp_ema_state );
+
+sensors->baro_pres = prv_state->baro_state.pres_ema_state;
+sensors->baro_temp = prv_state->baro_state.temp_ema_state;
+
+return NAV_OK;
+
+} /* _nav_baro_ema */
 
 /**
   * END OF FILE

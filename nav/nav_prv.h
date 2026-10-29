@@ -74,6 +74,15 @@ typedef struct _NAV_POF_STATE
     float apogee_last_sample;
     } NAV_POF_STATE;
 
+/**
+ * @brief Baro filter internal state
+ */
+typedef struct _NAV_BARO_FILTER_STATE
+    {
+    float pres_ema_state;
+    float temp_ema_state;
+    } NAV_BARO_FILTER_STATE;
+
 /* Top-Level Defines */
 
 /**
@@ -83,9 +92,11 @@ typedef struct _NAV_PRIVATE_STATE
     {
     NAV_CONFIG saved_configs;       /* 36B: Internal configs    */
     NAV_MAHONY_FILTER mahony_state; /* 36B: Mahony filter state */
-    NAV_POF_STATE pof_state;        /* 12B: POF state            */
+    NAV_POF_STATE pof_state;        /* 12B: POF state           */
     NAV_SENSORS cal_data;           /* 60B: Calibration data    */
     VECTOR_3F velocity;             /* 12B: Velocity data       */
+    NAV_BARO_FILTER_STATE baro_state;
+                                    /* 8B: Baro filter state    */
     float last_update_time;         /* 4B: Float                */
     float curr_update_time;         /* 4B: Float                */
     NAV_POF pof;                    /* 4B: Phase of Flight      */
@@ -291,6 +302,19 @@ NAV_STATUS _nav_imu_velo
     const NAV_SENSORS* sensors,
     NAV_OUTPUTS* outputs,
     float tdelta
+	);
+
+/**
+  * @brief Updates the barometer exponential moving average (EMA) with the latest sensor readings.
+  * @param[in,out] prv_state Pointer to the nav library state
+  * @param[in,out] sensors Pointer to the sensor inputs
+  * 
+  * @return Nav library status
+  */
+NAV_STATUS _nav_baro_ema
+	(
+	NAV_PRIVATE_STATE* prv_state,
+    NAV_SENSORS* sensors
 	);
 
 #ifdef __cplusplus

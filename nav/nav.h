@@ -49,7 +49,7 @@ extern "C"
 
 
 /* Private Constants ---------------------------------------------------------*/
-#define _PRIVATE_STATE_SIZE ( 168u )
+#define _PRIVATE_STATE_SIZE ( 184u )
 
 /* Typedefs ------------------------------------------------------------------*/
 
@@ -85,14 +85,18 @@ typedef struct _NAV_CONFIG
     uint16_t coast_detect_counts;
     bool launch_detect_accel_enabled;
     bool launch_detect_baro_enabled;
+    /* enabled sensors*/
     bool accel_enabled;
     bool gyro_enabled;
     bool mag_enabled;
     bool baro_enabled;
     bool gps_enabled;
     uint8_t __pad;
+    /* filter params */
     float mahony_kp;
     float mahony_ki;
+    float baro_ema_pres_alpha;
+    float baro_ema_temp_alpha;
     } NAV_CONFIG;
 
 /**
@@ -196,7 +200,7 @@ NAV_STATUS nav_init
 NAV_STATUS nav_update
     (
     NAV_PUBLIC_STATE* nav_state,
-    const NAV_SENSORS* sensors,
+    NAV_SENSORS* sensors,
     NAV_OUTPUTS* outputs,
     float current_time
     );

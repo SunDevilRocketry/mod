@@ -77,6 +77,13 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
         _nav_debug_error( "Accelerometer, gyroscope, and barometer data are all required" );
         return NAV_INVALID_CONFIG;
         }
+    
+    /* check baro EMA. alpha of 1 == no filtering */
+    if ( !( config.baro_ema_pres_alpha > 0.0f && config.baro_ema_pres_alpha <= 1.0f )
+      || !( config.baro_ema_temp_alpha > 0.0f && config.baro_ema_temp_alpha <= 1.0f ) )
+        {
+        _nav_debug_error( "Baro EMA must be tuned with valid alpha" );
+        }
 
     /* Initialize State --------------------------------------------------*/
 
@@ -94,6 +101,8 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
 
     /* Initialize subsystems */
     status |= _nav_mahony_init( prv_state ); /* start mahony               */
+    prv_state->baro_state = (NAV_BARO_FILTER_STATE){ INFINITY, INFINITY };
+                                             /* invalidate EMA             */
     status |= _nav_reset_velo( prv_state );  /* reset velocity integration */
     status |= _nav_pof_init( prv_state );    /* start phase of flight      */
 
@@ -122,7 +131,7 @@ return( status );
 NAV_STATUS nav_update
     (
     NAV_PUBLIC_STATE* nav_state,
-    const NAV_SENSORS* sensors,
+    NAV_SENSORS* sensors,
     NAV_OUTPUTS* outputs,
     float current_time
     )
@@ -139,6 +148,7 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
     prv_state->curr_update_time = current_time;
 
     /* Calculate barometer outputs */
+    status |= _nav_baro_ema( prv_state, sensors );
     outputs->ind_alt_asl  = _nav_isa_get_altitude_qnh( sensors->baro_pres, 
                                                 _nav_isa_get_temp( sensors->baro_pres ) );
     outputs->ind_alt_agl  = outputs->ind_alt_asl;
