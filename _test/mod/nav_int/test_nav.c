@@ -233,6 +233,43 @@ TEST_ASSERT_EQ_UINT( "Verify that nav returned an invalid status.", nav_status, 
 
 
 /**
+ * @brief This function tests the default config getter in Nav.
+ */
+void test_nav_dflt_cfgs
+	(
+	void
+	)
+{
+/*------------------------------------------------------------------------------
+Case 1: Get Configs
+------------------------------------------------------------------------------*/
+NAV_STATUS nav_status = NAV_OK;
+NAV_CONFIG nav_config;
+NAV_SENSORS calibration = {0};
+
+prv_state->velocity.x = 100.0f;
+prv_state->velocity.y = 100.0f;
+prv_state->velocity.z = 100.0f;
+
+VECTOR_3F zero_vec = { 0.0f };
+
+stub__state_reserve = NAV_OK;
+stub__state_release = NAV_OK;
+
+/*------------------------------------------------------------------------------
+Call FUT and verify
+------------------------------------------------------------------------------*/
+nav_status = nav_get_default_config(&nav_config);
+
+TEST_ASSERT_EQ_UINT( "Verify that nav returned a valid status.", nav_status, NAV_OK );
+
+nav_status = nav_init( &nav_state, nav_config, calibration, 10.0f );
+TEST_ASSERT_EQ_UINT( "Verify that nav initializes properly with the default configs.", nav_status, NAV_OK );
+
+} /* test_nav_dflt_cfgs */
+
+
+/**
  * @brief This function tests the pof apis for NAV.
  */
 void test_nav_pof_apis
@@ -620,6 +657,7 @@ unit_test tests[] =
     { "Nav: Test update error handling", test_nav_update_errors, "RQ.MOD.00053, RQ.MOD.00055" },
     { "Nav: Test update", test_nav_update, "RQ.MOD.00053, RQ.MOD.00056" },
     { "Nav: Test resetting velo", test_nav_reset_velo, "RQ.MOD.00055" },
+    { "Nav: Test default configs", test_nav_dflt_cfgs, "RQ.MOD.00064" },
     { "Nav: Test getting/setting POF", test_nav_pof_apis, "RQ.MOD.00055, RQ.MOD.00058, RQ.MOD.00059" }
 	};
 

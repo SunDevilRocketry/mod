@@ -66,9 +66,3 @@ void test_overflow_callback(const char* message, size_t size)
     overflow_calls++;
     last_overflow_size = size;
 }
-
-SYSTEM_TIME get_system_time(void)
-{
-    SYSTEM_TIME time = { 1, 2, 3, 4 };
-    return time;
-}

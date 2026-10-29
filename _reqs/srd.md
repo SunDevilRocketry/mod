@@ -22,10 +22,6 @@ RQ.MOD.00003 - The library shall be designed to be compiled with GNU GCC for the
 
 RQ.MOD.00004 - The library shall provide a ping response code based on the provided compiler macro from the project.
 
-RQ.MOD.00005 - The library shall provide a method for the flight computer to send a data package to the dashboard over USB.
-
-RQ.MOD.00006 - The library shall provide a method for the flight computer to construct the dashboard data packet.
-
 ### 2.2. Debug
 
 RQ.MOD.00007 - The library shall provide a platform-independent method to log debug data.
@@ -112,11 +108,11 @@ The library shall provide the following IMU and magnetometer utilities:
 
     RQ.MOD.00030 - Fusion of raw IMU data to yield a unit quaternion orientation estimate
 
-### 2.6. Telemetry
+### 2.5. Telemetry
 
 RQ.MOD.00051 - The library shall control Sun Devil Rocketry's one-way telemetry interface by defining the authoritative version in a header for projects to integrate.
 
-### 2.9. Nav
+### 2.6. Nav
 
 RQ.MOD.00053 - The library shall provide a method to fuse sensor data.
 
@@ -128,7 +124,9 @@ RQ.MOD.00056 - The library shall invalidate output data that cannot be determine
 
 RQ.MOD.00057 - The library shall provide a method to reset velocity integration.
 
-#### 2.9.1. Mahony
+RQ.MOD.00064 - The library shall provide a valid default configuration.
+
+#### 2.6.1. Mahony
 
 RQ.MOD.00036 - The library shall provide a Mahony filter to fuse accelerometer and gyroscope data to return an attitude estimate.
 
@@ -140,7 +138,7 @@ The library shall disable accelerometer fusion in the following cases:
 
     RQ.MOD.00039 - The provided parameters for accelerometer fusion are invalid.
 
-#### 2.9.2. ISA
+#### 2.6.2. ISA
 
 RQ.MOD.00031 - The library shall provide a method to convert a barometric pressure and temperature reading to an ISA altitude.
 
@@ -148,18 +146,20 @@ RQ.MOD.00051 - The library shall provide a method to retrieve a ground reference
 
 RQ.MOD.00052 - The library shall provide a method to retrieve the ISA temperature given a barometric pressure reading.
 
-#### 2.9.3. POF
+#### 2.6.3. POF
 
 RQ.MOD.00058 - The library shall provide a method to set the phase of flight.
 
 RQ.MOD.00059 - The library shall provide a method to get the phase of flight.
 
-The library shall provide functions to detect the following phase of flight transitions.
+RQ.MOD.00060 - The library shall update phase of flight during sensor fusion.
 
-    RQ.MOD.00060 - On-Ground -> Powered Ascent
+The library shall be able to detect the following phase of flight transitions.
 
-    RQ.MOD.00061 - Powered Ascent -> Unpowered Ascent
+    RQ.MOD.00061 - On-Ground -> Powered Ascent
 
-    RQ.MOD.00062 - Ascent -> Descent
+    RQ.MOD.00062 - Powered Ascent -> Unpowered Ascent
 
-    RQ<POSTPONED>.MOD.00063 - Descent -> Landed
+    RQ.MOD.00063 - Ascent -> Descent
+
+    RQ<POSTPONED>.MOD.00065 - Descent -> Landed

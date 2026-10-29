@@ -168,6 +168,9 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
         outputs->fused_posn.latitude = INFINITY;
         outputs->fused_posn.longitude = INFINITY;
         }
+
+    /* Update phase-of-flight with fused data */
+    status |= _nav_pof_update( prv_state, sensors, outputs );
     
     prv_state->last_update_time = current_time;
     status |= nav_release_state( nav_state );

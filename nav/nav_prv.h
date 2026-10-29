@@ -71,6 +71,7 @@ typedef struct _NAV_POF_STATE
     uint16_t ld_baro_counts;
     uint16_t apogee_decreasing_counts;
     uint16_t coast_detect_counts;
+    float apogee_last_sample;
     } NAV_POF_STATE;
 
 /* Top-Level Defines */
@@ -82,7 +83,7 @@ typedef struct _NAV_PRIVATE_STATE
     {
     NAV_CONFIG saved_configs;       /* 36B: Internal configs    */
     NAV_MAHONY_FILTER mahony_state; /* 36B: Mahony filter state */
-    NAV_POF_STATE pof_state;        /* 8B: POF state            */
+    NAV_POF_STATE pof_state;        /* 12B: POF state            */
     NAV_SENSORS cal_data;           /* 60B: Calibration data    */
     VECTOR_3F velocity;             /* 12B: Velocity data       */
     float last_update_time;         /* 4B: Float                */
@@ -217,6 +218,34 @@ NAV_STATUS _nav_mahony_update_imu
     VECTOR_3F accel_body,
     float delta_time_s,
     bool use_accel
+    );
+
+/* nav_pof.c */
+
+/**
+ * @brief Initialize the phase of flight module
+ * 
+ * @param prv_state The nav library state
+ * @return NAV_STATUS 
+ */
+NAV_STATUS _nav_pof_init
+    (
+    NAV_PRIVATE_STATE* prv_state
+    );
+
+/**
+ * @brief Update the POF state.
+ * 
+ * @param prv_state The navigation library state
+ * @param sensors The inputs to the library
+ * @param outputs The library's computed outputs so far
+ * @return The status of the navigation library
+ */
+NAV_STATUS _nav_pof_update
+    (
+    NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs
     );
 
 /* nav_utl.c */

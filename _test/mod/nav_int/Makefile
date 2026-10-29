@@ -20,9 +20,10 @@ OPT   = -Og
 BUILD_DIR = build
 ROOT_DIR  = ../../../..
 FRAMEWORK_DIR = ../../framework
-
+MOD_DIR = $(ROOT_DIR)/mod
 LIB_DIR = $(ROOT_DIR)/lib
 DRIVER_DIR = $(ROOT_DIR)/driver
+STUBS_DIR = $(MOD_DIR)/_test/stubs
 
 ################################################################
 # source
@@ -30,7 +31,7 @@ DRIVER_DIR = $(ROOT_DIR)/driver
 
 TEST_SOURCES = \
 test_nav.c \
-mock/test_nav_stubs.c
+$(wildcard $(STUBS_DIR)/nav_contract_stubs/*.c)
 
 COV_C_SOURCES = \
 $(wildcard $(ROOT_DIR)/mod/nav/nav*.c) \
@@ -55,6 +56,8 @@ CC = gcc
 C_INCLUDES = \
 -I. \
 -I./mock \
+-I$(MOD_DIR)/_test/stubs \
+-I$(MOD_DIR)/_test/stubs/nav_contract_stubs \
 -I$(ROOT_DIR)/mod/math_sdr \
 -I$(ROOT_DIR)/mod/error_sdr \
 -I$(ROOT_DIR)/mod/debug_sdr \

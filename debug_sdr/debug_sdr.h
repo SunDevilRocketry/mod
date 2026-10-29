@@ -81,6 +81,19 @@ typedef enum _DEBUG_LEVEL {
   LOG_LVL_ERROR /* note: "debug" errors will not trigger in release builds */
 } DEBUG_LEVEL;
 
+/* time types for use by the debug writer */
+typedef uint16_t time_hours; /* we can't exceed this limit without rolling over the systick */
+typedef uint8_t time_mins;   /* 0-59     */
+typedef uint8_t time_secs;   /* 0-59     */
+typedef uint16_t time_millis;/* 0-999    */
+
+typedef struct _SYSTEM_TIME {
+    time_hours      hours;
+    time_mins       mins;
+    time_secs       secs;  
+    time_millis     millis;
+} SYSTEM_TIME;
+
 /* Exported functions prototypes ---------------------------------------------*/
 
 DEBUG_STATUS debug_init
