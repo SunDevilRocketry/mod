@@ -116,7 +116,19 @@ The library shall provide the following IMU and magnetometer utilities:
 
 RQ.MOD.00051 - The library shall control Sun Devil Rocketry's one-way telemetry interface by defining the authoritative version in a header for projects to integrate.
 
-### 2.7. Mahony
+### 2.9. NAV
+
+RQ.MOD.00053 - The library shall provide a method to fuse sensor data.
+
+RQ.MOD.00054 - The library shall provide a method to initialize the sensor fusion system.
+
+RQ.MOD.00055 - The library shall call a contract function to prevent concurrent access to its state before accessing state data.
+
+RQ.MOD.00056 - The library shall invalidate output data that cannot be determined from the configured sources.
+
+RQ.MOD.00057 - The library shall provide a method to reset velocity integration.
+
+#### 2.9.1. Mahony
 
 RQ.MOD.00036 - The library shall provide a Mahony filter to fuse accelerometer and gyroscope data to return an attitude estimate.
 
@@ -128,7 +140,7 @@ The library shall disable accelerometer fusion in the following cases:
 
     RQ.MOD.00039 - The provided parameters for accelerometer fusion are invalid.
 
-### 2.8. ISA
+#### 2.9.2. ISA
 
 RQ.MOD.00031 - The library shall provide a method to convert a barometric pressure and temperature reading to an ISA altitude.
 

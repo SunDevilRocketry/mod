@@ -1,19 +1,17 @@
 ################################################################
 #
-# math_sdr unit tests (based on gcc)
+# isa.c unit tests (based on gcc)
 #
 ################################################################
 
-################################################################
-# target
-################################################################
-TARGET = mahony
+TARGET = isa
 
 ################################################################
 # build variables
 ################################################################
+
 DEBUG ?= 0
-OPT = -Og
+OPT   = -Og
 
 ################################################################
 # paths
@@ -23,15 +21,18 @@ BUILD_DIR = build
 ROOT_DIR  = ../../../..
 FRAMEWORK_DIR = ../../framework
 
+LIB_DIR = $(ROOT_DIR)/lib
+DRIVER_DIR = $(ROOT_DIR)/driver
+
 ################################################################
 # source
 ################################################################
+
 TEST_SOURCES = \
-test_mahony.c
+test_isa.c
 
 COV_C_SOURCES = \
-$(ROOT_DIR)/mod/mahony/mahony.c \
-$(ROOT_DIR)/mod/math_sdr/math_sdr.c
+$(ROOT_DIR)/mod/nav/nav_isa.c
 
 FRAMEWORK_SOURCES = \
 $(FRAMEWORK_DIR)/src/test_assert.c \
@@ -42,26 +43,39 @@ C_SOURCES = $(TEST_SOURCES) $(COV_C_SOURCES) $(FRAMEWORK_SOURCES)
 ################################################################
 # compiler
 ################################################################
+
 CC = gcc
 
 ################################################################
 # C flags
 ################################################################
+
 C_INCLUDES = \
 -I. \
--I$(ROOT_DIR)/mod/mahony \
 -I$(ROOT_DIR)/mod/math_sdr \
+-I$(ROOT_DIR)/mod/debug_sdr \
+-I$(ROOT_DIR)/mod/nav \
 -I$(FRAMEWORK_DIR)/src
 
 C_DEFS = \
+-DUSE_HAL_DRIVER \
+-DSTM32H750xx \
+-DFLIGHT_COMPUTER \
+-DA0002_REV2 \
 -DUNIT_TEST
 
 CFLAGS = $(C_INCLUDES) $(C_DEFS) $(OPT) -Wall -g
-
+CFLAGS += -Wno-pointer-to-int-cast
+CFLAGS += -Wno-int-to-pointer-cast
 CFLAGS += -Wno-unused-function
 CFLAGS += -Wno-unused-variable
+CFLAGS += -Wno-implicit-function-declaration
+CFLAGS += -ffunction-sections
+CFLAGS += -fdata-sections
 CFLAGS += -ftest-coverage
 CFLAGS += -fprofile-arcs
+CFLAGS += -ffile-prefix-map=$(shell pwd)/=
+
 ifeq ($(DEBUG), 1)
 CFLAGS += -DDEBUG
 else
@@ -69,8 +83,9 @@ CFLAGS += -DRELBLD
 endif
 
 ################################################################
-# build
+# build all
 ################################################################
+
 all: clean $(BUILD_DIR)/$(TARGET)
 
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
@@ -80,14 +95,15 @@ $(BUILD_DIR)/%.o: %.c $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/$(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $@ -lgcov -lm
+	$(CC) $(OBJECTS) -o $@ -Wl,--gc-sections -lgcov -lm
 
 $(BUILD_DIR):
 	mkdir $@
 
 ################################################################
-# test
+# build test
 ################################################################
+
 test:
 	@echo THIS TEST MUST BE EXECUTED IN A BASH TERMINAL. CMD/PS do not work.
 	-rm -fR $(BUILD_DIR)
@@ -96,13 +112,13 @@ test:
 	tail -n 7 "results.txt"
 	mkdir -p coverage
 	gcovr $(BUILD_DIR) \
-		--filter '.*(?<!test_)mahony[.]c$$' \
-		--filter '.*(?<!test_)math_sdr[.]c$$' \
+		--filter '.*(?<!test_)isa[.]c$$' \
 		--html-details coverage/coverage.html \
 		--json coverage/coverage.json
 
 ################################################################
-# clean
+# clean up
 ################################################################
+
 clean:
 	-rm -fR $(BUILD_DIR)

@@ -101,7 +101,7 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
     status |= _nav_mahony_init( prv_state ); /* start mahony */
     status |= _nav_reset_velo( prv_state );  /* reset velocity integration */
 
-    nav_release_state( nav_state );
+    status |= nav_release_state( nav_state );
     }
 else
     {
@@ -137,7 +137,8 @@ NAV_SENSORS* s = &(nav_state->pub.nav_sensors);
 
 if( nav_reserve_state( nav_state ) == NAV_OK )
     {
-    float tdelta   = prv_state->curr_update_time - prv_state->last_update_time;
+    float tdelta   = current_time - prv_state->last_update_time;
+    prv_state->curr_update_time = current_time;
 
     /* Invalidate Outputs ----------------------------------------------------*/
 
@@ -146,7 +147,7 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
                                                 _nav_isa_get_temp( s->baro_pres ) );
     o->ind_alt_agl  = o->ind_alt_asl;
     o->ind_alt_agl -= _nav_isa_get_altitude_qnh( prv_state->cal_data.baro_pres, 
-                                                _nav_isa_get_temp( s->baro_pres ) );
+                                                _nav_isa_get_temp( prv_state->cal_data.baro_pres ) );
 
     /* Update orientation estimate */
     /* TODO: MAGNETOMETER FUSION */
@@ -154,7 +155,8 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
                                       s->gyro, 
                                       s->accel, 
                                       tdelta, 
-                                      nav_state->pub.in_air );
+                                      !nav_state->pub.in_air );
+    o->orientation = prv_state->mahony_state.attitude;
 
     /* Update velocity estimate */
     status |= _nav_imu_velo( prv_state, tdelta );
@@ -170,13 +172,21 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
         o->fused_posn.latitude = INFINITY;
         o->fused_posn.longitude = INFINITY;
         }
+    
+    prv_state->last_update_time = current_time;
+    status |= nav_release_state( nav_state );
+
+    if( status != NAV_OK )
+        {
+        status = NAV_FAIL;
+        }
     }
 else
     {
-    
+    status = NAV_BUSY;
     }
 
-return( status != NAV_OK );
+return( status );
 
 } /* nav_update */
 

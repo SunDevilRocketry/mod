@@ -21,7 +21,7 @@
 /*------------------------------------------------------------------------------
  Project Includes
  ------------------------------------------------------------------------------*/
-#include "mahony.h"
+#include "nav_prv.h"
 #include "sdrtf_pub.h"
 
 /*------------------------------------------------------------------------------
@@ -210,7 +210,7 @@ void test_mahony_init_identity_attitude
     void
     )
 {
-MAHONY_FILTER filter;
+NAV_MAHONY_FILTER filter;
 
 QUAT identity =
     {
@@ -223,7 +223,7 @@ QUAT identity =
 TEST_ASSERT_EQ_UINT
     (
     "Mahony initialization succeeds",
-    mahony_init
+    _nav_mahony_init
         (
         &filter,
         identity,
