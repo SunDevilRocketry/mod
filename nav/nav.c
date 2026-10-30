@@ -83,6 +83,7 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
       || !( config.baro_ema_temp_alpha > 0.0f && config.baro_ema_temp_alpha <= 1.0f ) )
         {
         _nav_debug_error( "Baro EMA must be tuned with valid alpha" );
+        return NAV_INVALID_CONFIG;
         }
 
     /* Initialize State --------------------------------------------------*/
