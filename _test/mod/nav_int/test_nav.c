@@ -313,11 +313,11 @@ prv_state->pof = NAV_POWERED_ASCENT;
 /*------------------------------------------------------------------------------
 Call FUT and verify
 ------------------------------------------------------------------------------*/
-nav_status = nav_pof_set(&nav_state, &pof_set);
+nav_status = nav_pof_set(&nav_state, pof_set);
 
 TEST_ASSERT_EQ_UINT( "Verify that the status was returned OK.", nav_status, NAV_OK );
 TEST_ASSERT_EQ_UINT( "Verify that the POF was set correctly", 
-                       pof_set,
+                       prv_state->pof,
                        NAV_ON_GROUND );
 
 /*------------------------------------------------------------------------------
@@ -338,7 +338,7 @@ memcpy( &comparison, prv_state, sizeof( NAV_PUBLIC_STATE ) );
 /*------------------------------------------------------------------------------
 Call FUT and verify
 ------------------------------------------------------------------------------*/
-set_status = nav_pof_set(&nav_state, &pof_set);
+set_status = nav_pof_set(&nav_state, pof_set);
 
 TEST_ASSERT_EQ_UINT( "Verify that set returned a busy status.", set_status, NAV_BUSY );
 TEST_ASSERT_EQ_MEMORY( "Verify that set did not edit state", 
@@ -346,7 +346,7 @@ TEST_ASSERT_EQ_MEMORY( "Verify that set did not edit state",
                        &comparison,
                        sizeof( NAV_PUBLIC_STATE ) );
 
-get_status = nav_pof_get(&nav_state, &pof_set);
+get_status = nav_pof_get(&nav_state, pof_set);
 
 TEST_ASSERT_EQ_UINT( "Verify that get returned a busy status.", get_status, NAV_BUSY );
 TEST_ASSERT_EQ_MEMORY( "Verify that get did not edit state", 

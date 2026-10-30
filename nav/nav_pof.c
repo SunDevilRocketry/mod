@@ -74,7 +74,7 @@ static bool detect_apogee
 NAV_STATUS nav_pof_set
 	(
 	NAV_PUBLIC_STATE* nav_state,
-    NAV_POF* pof
+    NAV_POF pof
 	)
 {
 nav_nullchk( nav_state );
@@ -86,7 +86,7 @@ NAV_STATUS status = NAV_OK;
 /* Overwrite nav POF */
 if( nav_reserve_state( nav_state ) == NAV_OK )
     {
-    prv_state->pof = *pof;
+    prv_state->pof = pof;
 
     if( nav_release_state( nav_state ) != NAV_OK )
         {

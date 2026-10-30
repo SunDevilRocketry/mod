@@ -232,7 +232,7 @@ NAV_STATUS nav_pof_get
 NAV_STATUS nav_pof_set
 	(
 	NAV_PUBLIC_STATE* nav_state,
-    NAV_POF* pof
+    NAV_POF pof
 	);
 
 /* nav_utl.c */
