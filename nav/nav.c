@@ -157,8 +157,13 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
 
     /* Update orientation estimate */
     /* TODO: MAGNETOMETER FUSION */
-    status |= _nav_mahony_update_imu( &(prv_state->mahony_state), 
-                                      sensors->gyro, 
+    status |= _nav_mahony_update_imu( &(prv_state->mahony_state),
+                                      (VECTOR_3F) /* inline conversion of gyro data to radians */
+                                          { 
+                                          deg_to_rad(sensors->gyro.x),
+                                          deg_to_rad(sensors->gyro.y),
+                                          deg_to_rad(sensors->gyro.z)
+                                          },
                                       sensors->accel, 
                                       tdelta, 
                                       _nav_in_air( prv_state ) );

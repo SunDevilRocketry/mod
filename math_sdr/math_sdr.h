@@ -69,6 +69,8 @@ typedef struct _VECTOR_3F
 #define GRAVITY 9.8f
 #define IDENTITY_QUAT ((QUAT) {1.0f, 0.0f, 0.0f, 0.0f })
 
+/* Conversion Constants */
+#define FT_TO_M 0.3048f
 
 /**
   * @brief Sets a certain bit and returns the new value.
