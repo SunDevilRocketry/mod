@@ -105,7 +105,9 @@ _Static_assert( sizeof( NAV_PRIVATE_STATE ) == sizeof( NAV_PUBLIC_STATE ),
                 "There is a mismatch between the public and private NAV state types." );
 
 /* Internal Macros -----------------------------------------------------------*/
-#define _nav_debug_error( msg ) debug_assert( false, "[NAV] at " __FILE__":"__LINE__" - " msg )
+#define __STRINGIFY_INTERNAL( s ) #s
+#define __STRINGIFY( s ) __STRINGIFY_INTERNAL( s )
+#define _nav_debug_error( msg ) debug_log_assert( false, "[NAV] at " __FILE__":"__STRINGIFY(__LINE__)" - " msg, LOG_LVL_ERROR )
 #define nav_state_to_prv( state ) ( (NAV_PRIVATE_STATE*)state )
 #define nav_nullchk( state ) do { \
         if ( (state) == NULL ) \
