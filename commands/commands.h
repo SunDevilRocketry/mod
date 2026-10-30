@@ -26,8 +26,6 @@
 extern "C" {
 #endif
 
-#include "math_sdr.h"
-
 /*------------------------------------------------------------------------------
  Macros 
 ------------------------------------------------------------------------------*/
@@ -90,20 +88,6 @@ extern "C" {
 /* Firmware Identifier Code - GS */
 #define FIRMWARE_RECEIVER	    ( 0x11 ) /* Reciever Firmware 	 */
 
-/*------------------------------------------------------------------------------
- Function Prototypes 
-------------------------------------------------------------------------------*/
-
-/**
-  * @brief Sends a single response byte back to sender.
-  *
-  * @param cmd_source The source of the command when building for a valve
-  *        controller.
-  */
-void ping
-	(
-	void
-	);
 
 #ifdef __cplusplus
 }

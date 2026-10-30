@@ -47,8 +47,8 @@ const uint8_t test_data[] = "123456789";
 /*------------------------------------------------------------------------------
 Call FUT and verify results
 ------------------------------------------------------------------------------*/
-TEST_ASSERT_EQ_UINT( "CRC-32C of an empty buffer is zero.", crc32( NULL, 0 ), 0 );
-TEST_ASSERT_EQ_UINT( "CRC-32C matches the standard check value.", crc32( test_data, sizeof( test_data ) - 1 ), 0xE3069283u );
+TEST_ASSERT_EQ_UINT( "CRC-32C of an empty buffer is zero.", math_crc32( NULL, 0 ), 0 );
+TEST_ASSERT_EQ_UINT( "CRC-32C matches the standard check value.", math_crc32( test_data, sizeof( test_data ) - 1 ), 0xE3069283u );
 
 } /* test_math_sdr_crc32 */
 
@@ -67,9 +67,9 @@ void test_math_sdr_clamp_float
 	void
 	)
 {
-TEST_ASSERT_EQ_FLOAT( "Values below the range clamp to its minimum.", clamp_float( -2.0f, -1.0f, 1.0f ), -1.0f );
-TEST_ASSERT_EQ_FLOAT( "Values within the range are unchanged.", clamp_float( 0.5f, -1.0f, 1.0f ), 0.5f );
-TEST_ASSERT_EQ_FLOAT( "Values above the range clamp to its maximum.", clamp_float( 2.0f, -1.0f, 1.0f ), 1.0f );
+TEST_ASSERT_EQ_FLOAT( "Values below the range clamp to its minimum.", math_clamp_float( -2.0f, -1.0f, 1.0f ), -1.0f );
+TEST_ASSERT_EQ_FLOAT( "Values within the range are unchanged.", math_clamp_float( 0.5f, -1.0f, 1.0f ), 0.5f );
+TEST_ASSERT_EQ_FLOAT( "Values above the range clamp to its maximum.", math_clamp_float( 2.0f, -1.0f, 1.0f ), 1.0f );
 
 } /* test_math_sdr_clamp_float */
 
@@ -98,7 +98,7 @@ QUAT actual;
 /*------------------------------------------------------------------------------
 Call FUT
 ------------------------------------------------------------------------------*/
-actual = quat_mult( identity, input );
+actual = math_quat_mult( identity, input );
 
 /*------------------------------------------------------------------------------
 Verify results
@@ -128,7 +128,7 @@ void test_math_sdr_quat_dot
 /*------------------------------------------------------------------------------
 Call FUT and verify results
 ------------------------------------------------------------------------------*/
-TEST_ASSERT_EQ_FLOAT( "Quaternion dot product is calculated correctly.", quat_dot( ( QUAT ){ 1.0f, 2.0f, 3.0f, 4.0f }, ( QUAT ){ 5.0f, 6.0f, 7.0f, 8.0f } ), 70.0f );
+TEST_ASSERT_EQ_FLOAT( "Quaternion dot product is calculated correctly.", math_quat_dot( ( QUAT ){ 1.0f, 2.0f, 3.0f, 4.0f }, ( QUAT ){ 5.0f, 6.0f, 7.0f, 8.0f } ), 70.0f );
 
 } /* test_math_sdr_quat_dot */
 
@@ -155,7 +155,7 @@ QUAT actual;
 /*------------------------------------------------------------------------------
 Call FUT
 ------------------------------------------------------------------------------*/
-actual = quat_add( ( QUAT ){ 1.0f, 2.0f, 3.0f, 4.0f }, ( QUAT ){ 5.0f, 6.0f, 7.0f, 8.0f } );
+actual = math_quat_add( ( QUAT ){ 1.0f, 2.0f, 3.0f, 4.0f }, ( QUAT ){ 5.0f, 6.0f, 7.0f, 8.0f } );
 
 /*------------------------------------------------------------------------------
 Verify results
@@ -190,7 +190,7 @@ QUAT actual;
 /*------------------------------------------------------------------------------
 Call FUT
 ------------------------------------------------------------------------------*/
-actual = quat_scale( ( QUAT ){ 1.0f, -2.0f, 3.0f, -4.0f }, 2.5f );
+actual = math_quat_scale( ( QUAT ){ 1.0f, -2.0f, 3.0f, -4.0f }, 2.5f );
 
 /*------------------------------------------------------------------------------
 Verify results
@@ -225,7 +225,7 @@ QUAT actual;
 /*------------------------------------------------------------------------------
 Case 1: Non-zero quaternion
 ------------------------------------------------------------------------------*/
-actual = quat_normalize( ( QUAT ){ 0.0f, 3.0f, 4.0f, 0.0f } );
+actual = math_quat_normalize( ( QUAT ){ 0.0f, 3.0f, 4.0f, 0.0f } );
 
 TEST_ASSERT_EQ_FLOAT( "Quaternion normalization calculates w.", actual.w, 0.0f );
 TEST_ASSERT_EQ_FLOAT( "Quaternion normalization calculates x.", actual.x, 0.6f );
@@ -235,7 +235,7 @@ TEST_ASSERT_EQ_FLOAT( "Quaternion normalization calculates z.", actual.z, 0.0f )
 /*------------------------------------------------------------------------------
 Case 2: Zero quaternion
 ------------------------------------------------------------------------------*/
-actual = quat_normalize( ( QUAT ){ 0.0f, 0.0f, 0.0f, 0.0f } );
+actual = math_quat_normalize( ( QUAT ){ 0.0f, 0.0f, 0.0f, 0.0f } );
 
 TEST_ASSERT_EQ_FLOAT( "Zero quaternion normalization returns identity w.", actual.w, 1.0f );
 TEST_ASSERT_EQ_FLOAT( "Zero quaternion normalization returns identity x.", actual.x, 0.0f );
@@ -267,7 +267,7 @@ QUAT actual;
 /*------------------------------------------------------------------------------
 Call FUT
 ------------------------------------------------------------------------------*/
-actual = quat_conj( ( QUAT ){ 1.0f, 2.0f, -3.0f, 4.0f } );
+actual = math_quat_conj( ( QUAT ){ 1.0f, 2.0f, -3.0f, 4.0f } );
 
 /*------------------------------------------------------------------------------
 Verify results
@@ -294,10 +294,10 @@ void test_math_sdr_eul_to_quat
 	void
 	)
 {
-QUAT actual = eul_to_quat( 1.57079632679f, 0.0f, 0.0f );
+QUAT actual = math_eul_to_quat( 1.57079632679f, 0.0f, 0.0f );
 
-TEST_ASSERT_EQ_FLOAT( "A zero Euler rotation produces identity w.", eul_to_quat( 0.0f, 0.0f, 0.0f ).w, 1.0f );
-TEST_ASSERT_EQ_FLOAT( "A zero Euler rotation produces identity x.", eul_to_quat( 0.0f, 0.0f, 0.0f ).x, 0.0f );
+TEST_ASSERT_EQ_FLOAT( "A zero Euler rotation produces identity w.", math_eul_to_quat( 0.0f, 0.0f, 0.0f ).w, 1.0f );
+TEST_ASSERT_EQ_FLOAT( "A zero Euler rotation produces identity x.", math_eul_to_quat( 0.0f, 0.0f, 0.0f ).x, 0.0f );
 TEST_ASSERT_EQ_FLOAT( "A 90 degree yaw calculates w.", actual.w, 0.70710678f );
 TEST_ASSERT_EQ_FLOAT( "A 90 degree yaw calculates x.", actual.x, 0.0f );
 TEST_ASSERT_EQ_FLOAT( "A 90 degree yaw calculates y.", actual.y, 0.0f );
@@ -320,9 +320,9 @@ void test_math_sdr_quat_is_finite
 	void
 	)
 {
-TEST_ASSERT_TRUE( "A finite quaternion is reported as finite.", quat_is_finite( ( QUAT ){ 1.0f, -2.0f, 3.0f, -4.0f } ) );
-TEST_ASSERT_FALSE( "A quaternion containing NaN is not finite.", quat_is_finite( ( QUAT ){ 1.0f, NAN, 0.0f, 0.0f } ) );
-TEST_ASSERT_FALSE( "A quaternion containing infinity is not finite.", quat_is_finite( ( QUAT ){ 1.0f, 0.0f, 0.0f, INFINITY } ) );
+TEST_ASSERT_TRUE( "A finite quaternion is reported as finite.", math_quat_is_finite( ( QUAT ){ 1.0f, -2.0f, 3.0f, -4.0f } ) );
+TEST_ASSERT_FALSE( "A quaternion containing NaN is not finite.", math_quat_is_finite( ( QUAT ){ 1.0f, NAN, 0.0f, 0.0f } ) );
+TEST_ASSERT_FALSE( "A quaternion containing infinity is not finite.", math_quat_is_finite( ( QUAT ){ 1.0f, 0.0f, 0.0f, INFINITY } ) );
 
 } /* test_math_sdr_quat_is_finite */
 
@@ -341,8 +341,8 @@ void test_math_sdr_quat_rotate_body_to_world
 	void
 	)
 {
-QUAT attitude = eul_to_quat( 1.57079632679f, 0.0f, 0.0f );
-QUAT actual = quat_rotate_body_to_world( attitude, ( QUAT ){ 0.0f, 1.0f, 0.0f, 0.0f } );
+QUAT attitude = math_eul_to_quat( 1.57079632679f, 0.0f, 0.0f );
+QUAT actual = math_quat_rotate_body_to_world( attitude, ( QUAT ){ 0.0f, 1.0f, 0.0f, 0.0f } );
 
 TEST_ASSERT_EQ_FLOAT( "Rotation preserves a pure vector scalar component.", actual.w, 0.0f );
 TEST_ASSERT_EQ_FLOAT( "A 90 degree yaw rotates body x out of world x.", actual.x, 0.0f );
@@ -366,8 +366,8 @@ void test_math_sdr_quat_rotate_world_to_body
 	void
 	)
 {
-QUAT attitude = eul_to_quat( 1.57079632679f, 0.0f, 0.0f );
-QUAT actual = quat_rotate_world_to_body( attitude, ( QUAT ){ 0.0f, 0.0f, 1.0f, 0.0f } );
+QUAT attitude = math_eul_to_quat( 1.57079632679f, 0.0f, 0.0f );
+QUAT actual = math_quat_rotate_world_to_body( attitude, ( QUAT ){ 0.0f, 0.0f, 1.0f, 0.0f } );
 
 TEST_ASSERT_EQ_FLOAT( "Inverse rotation preserves a pure vector scalar component.", actual.w, 0.0f );
 TEST_ASSERT_EQ_FLOAT( "A 90 degree yaw rotates world y into body x.", actual.x, 1.0f );
@@ -395,27 +395,27 @@ VECTOR_3F actual;
 VECTOR_3F normalized = { 3.0f, 4.0f, 0.0f };
 VECTOR_3F zero = { 0.0f, 0.0f, 0.0f };
 
-actual = vector_add( ( VECTOR_3F ){ 1.0f, -2.0f, 3.0f }, ( VECTOR_3F ){ 4.0f, 5.0f, -6.0f } );
+actual = math_vector_add( ( VECTOR_3F ){ 1.0f, -2.0f, 3.0f }, ( VECTOR_3F ){ 4.0f, 5.0f, -6.0f } );
 TEST_ASSERT_EQ_FLOAT( "Vector addition calculates x.", actual.x, 5.0f );
 TEST_ASSERT_EQ_FLOAT( "Vector addition calculates y.", actual.y, 3.0f );
 TEST_ASSERT_EQ_FLOAT( "Vector addition calculates z.", actual.z, -3.0f );
 
-actual = vector_cross( ( VECTOR_3F ){ 1.0f, 0.0f, 0.0f }, ( VECTOR_3F ){ 0.0f, 1.0f, 0.0f } );
+actual = math_vector_cross( ( VECTOR_3F ){ 1.0f, 0.0f, 0.0f }, ( VECTOR_3F ){ 0.0f, 1.0f, 0.0f } );
 TEST_ASSERT_EQ_FLOAT( "Vector cross product calculates x.", actual.x, 0.0f );
 TEST_ASSERT_EQ_FLOAT( "Vector cross product calculates y.", actual.y, 0.0f );
 TEST_ASSERT_EQ_FLOAT( "Vector cross product calculates z.", actual.z, 1.0f );
 
-TEST_ASSERT_TRUE( "A finite vector is reported as finite.", vector_is_finite( ( VECTOR_3F ){ 1.0f, -2.0f, 3.0f } ) );
-TEST_ASSERT_FALSE( "A vector containing NaN is not finite.", vector_is_finite( ( VECTOR_3F ){ 1.0f, NAN, 3.0f } ) );
-TEST_ASSERT_EQ_FLOAT( "Vector magnitude is calculated correctly.", vector_magnitude( ( VECTOR_3F ){ 3.0f, 4.0f, 12.0f } ), 13.0f );
+TEST_ASSERT_TRUE( "A finite vector is reported as finite.", math_vector_is_finite( ( VECTOR_3F ){ 1.0f, -2.0f, 3.0f } ) );
+TEST_ASSERT_FALSE( "A vector containing NaN is not finite.", math_vector_is_finite( ( VECTOR_3F ){ 1.0f, NAN, 3.0f } ) );
+TEST_ASSERT_EQ_FLOAT( "Vector magnitude is calculated correctly.", math_vector_magnitude( ( VECTOR_3F ){ 3.0f, 4.0f, 12.0f } ), 13.0f );
 
-TEST_ASSERT_TRUE( "A nonzero vector is normalized.", vector_normalize( &normalized ) );
+TEST_ASSERT_TRUE( "A nonzero vector is normalized.", math_vector_normalize( &normalized ) );
 TEST_ASSERT_EQ_FLOAT( "Vector normalization calculates x.", normalized.x, 0.6f );
 TEST_ASSERT_EQ_FLOAT( "Vector normalization calculates y.", normalized.y, 0.8f );
 TEST_ASSERT_EQ_FLOAT( "Vector normalization calculates z.", normalized.z, 0.0f );
-TEST_ASSERT_FALSE( "A zero vector cannot be normalized.", vector_normalize( &zero ) );
+TEST_ASSERT_FALSE( "A zero vector cannot be normalized.", math_vector_normalize( &zero ) );
 
-actual = vector_scale( ( VECTOR_3F ){ 1.0f, -2.0f, 3.0f }, -2.0f );
+actual = math_vector_scale( ( VECTOR_3F ){ 1.0f, -2.0f, 3.0f }, -2.0f );
 TEST_ASSERT_EQ_FLOAT( "Vector scaling calculates x.", actual.x, -2.0f );
 TEST_ASSERT_EQ_FLOAT( "Vector scaling calculates y.", actual.y, 4.0f );
 TEST_ASSERT_EQ_FLOAT( "Vector scaling calculates z.", actual.z, -6.0f );

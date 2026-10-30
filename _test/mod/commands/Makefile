@@ -30,10 +30,6 @@ DRIVER_DIR = $(ROOT_DIR)/driver
 
 TEST_SOURCES = \
 test_commands.c \
-mock/test_commands_stubs.c
-
-COV_C_SOURCES = \
-$(ROOT_DIR)/mod/commands/commands.c
 
 FRAMEWORK_SOURCES = \
 $(FRAMEWORK_DIR)/src/test_assert.c \
@@ -55,9 +51,6 @@ C_INCLUDES = \
 -I. \
 -I./mock \
 -I$(ROOT_DIR)/mod/commands \
--I$(ROOT_DIR)/mod/math_sdr \
--I$(ROOT_DIR)/driver/usb \
--I$(ROOT_DIR)/mod/_test/utilities \
 -I$(FRAMEWORK_DIR)/src
 
 C_DEFS = \

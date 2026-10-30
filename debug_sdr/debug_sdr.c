@@ -46,7 +46,6 @@
 #include "main.h"
 #include "debug_sdr.h"
 #include "error_sdr.h"
-#include "timer.h"
 
 /* Static Variables ----------------------------------------------------------*/
 static DEBUG_HANDLE debug_handle; /* This module may be conditionally compiled 
@@ -157,18 +156,16 @@ assert_return( message, DEBUG_FAIL ); /* exit if nullptr */
 assert_return( len <= DEBUG_MSG_USER_MAX_LEN, DEBUG_FAIL ); /* exit if msg too long */
 
 /* Construct the message to be logged */
-SYSTEM_TIME time = get_system_time();
-true_len = snprintf(temp_msg, DEBUG_MSG_MAX_LEN, "[%02d:%02d:%02d.%03d ", (time.hours % 24), time.mins, time.secs, time.millis);
 switch( log_level )
     {
     case LOG_LVL_INFO:
-        true_len += snprintf( (temp_msg+true_len), DEBUG_MSG_MAX_LEN - true_len, "INFO]: " );
+        true_len += snprintf( (temp_msg+true_len), DEBUG_MSG_MAX_LEN - true_len, "[INFO]: " );
         break;
     case LOG_LVL_WARN:
-        true_len += snprintf( (temp_msg+true_len), DEBUG_MSG_MAX_LEN - true_len, "WARN]: " );
+        true_len += snprintf( (temp_msg+true_len), DEBUG_MSG_MAX_LEN - true_len, "[WARN]: " );
         break;
     case LOG_LVL_ERROR:
-        true_len += snprintf( (temp_msg+true_len), DEBUG_MSG_MAX_LEN - true_len, "ERROR]: " );
+        true_len += snprintf( (temp_msg+true_len), DEBUG_MSG_MAX_LEN - true_len, "[ERROR]: " );
         break;
     default:
         return DEBUG_FAIL;

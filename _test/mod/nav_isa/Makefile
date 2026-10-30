@@ -32,7 +32,7 @@ TEST_SOURCES = \
 test_isa.c
 
 COV_C_SOURCES = \
-$(ROOT_DIR)/mod/isa/isa.c
+$(ROOT_DIR)/mod/nav/nav_isa.c
 
 FRAMEWORK_SOURCES = \
 $(FRAMEWORK_DIR)/src/test_assert.c \
@@ -53,7 +53,8 @@ CC = gcc
 C_INCLUDES = \
 -I. \
 -I$(ROOT_DIR)/mod/math_sdr \
--I$(ROOT_DIR)/mod/isa \
+-I$(ROOT_DIR)/mod/debug_sdr \
+-I$(ROOT_DIR)/mod/nav \
 -I$(FRAMEWORK_DIR)/src
 
 C_DEFS = \
