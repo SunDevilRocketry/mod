@@ -107,7 +107,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
 
       - name: Generate or modify files
-        run: doxygen
+        run: |
+          cd mod
+          doxygen
 
       - name: Copy files
         run: |
