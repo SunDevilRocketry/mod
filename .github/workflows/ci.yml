@@ -1,4 +1,4 @@
-name: Mod Test Runner
+name: Mod CI
 run-name: ${{ github.actor }} is running mod unit tests 🤖
 # Temporarily disabled while we bring this up
 on:
@@ -83,3 +83,47 @@ jobs:
           name: mod-trace-report
           path: Flight-Computer-Firmware/mod/_test/trace-report.md
       - run: echo "🍏 This job's status is ${{ job.status }}."
+
+  mod-documentation:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: mod-runner
+    steps:
+      - name: Check out mod submodule to this ref
+        uses: actions/checkout@v6
+        with:
+          path: mod/
+          submodules: 'recursive'
+
+      - name: Checkout docs site
+        uses: actions/checkout@v6
+        with:
+          repository: SunDevilRocketry/docs-site
+          token: ${{ secrets.DOCS_SITE_TOKEN }}
+          path: docs
+          ref: main
+
+      - name: Install doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - name: Generate or modify files
+        run: doxygen
+
+      - name: Copy files
+        run: |
+          rm -rf docs/avionics/mod
+          mkdir -p docs/avionics/mod
+          cp -r mod/_docs/html/* docs/avionics/mod
+
+      - name: Commit and push
+        run: |
+          cd docs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A avionics/mod
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "mod CI automation: update documentation"
+            git push
+          fi
