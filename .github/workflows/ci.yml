@@ -115,7 +115,7 @@ jobs:
         run: |
           rm -rf docs/avionics/mod
           mkdir -p docs/avionics/mod
-          cp -r mod/_docs/html/* docs/avionics/mod
+          cp -r mod/_doc/html/* docs/avionics/mod
 
       - name: Commit and push
         run: |
