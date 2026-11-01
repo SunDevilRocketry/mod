@@ -346,7 +346,7 @@ TEST_ASSERT_EQ_MEMORY( "Verify that set did not edit state",
                        &comparison,
                        sizeof( NAV_PUBLIC_STATE ) );
 
-get_status = nav_pof_get(&nav_state, pof_set);
+get_status = nav_pof_get(&nav_state, &pof_set);
 
 TEST_ASSERT_EQ_UINT( "Verify that get returned a busy status.", get_status, NAV_BUSY );
 TEST_ASSERT_EQ_MEMORY( "Verify that get did not edit state", 
@@ -369,7 +369,7 @@ memcpy( &comparison, prv_state, sizeof( NAV_PUBLIC_STATE ) );
 /*------------------------------------------------------------------------------
 Call FUT and verify
 ------------------------------------------------------------------------------*/
-set_status = nav_pof_set(&nav_state, &pof_set);
+set_status = nav_pof_set(&nav_state, pof_set);
 
 TEST_ASSERT_EQ_UINT( "Verify that set returned a fail status.", set_status, NAV_FAIL );
 
