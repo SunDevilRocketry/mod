@@ -1,10 +1,10 @@
 ################################################################
 #
-# isa.c unit tests (based on gcc)
+# nav_*.c integration tests (based on gcc)
 #
 ################################################################
 
-TARGET = isa
+TARGET = nav_int
 
 ################################################################
 # build variables
@@ -20,19 +20,22 @@ OPT   = -Og
 BUILD_DIR = build
 ROOT_DIR  = ../../../..
 FRAMEWORK_DIR = ../../framework
-
+MOD_DIR = $(ROOT_DIR)/mod
 LIB_DIR = $(ROOT_DIR)/lib
 DRIVER_DIR = $(ROOT_DIR)/driver
+STUBS_DIR = $(MOD_DIR)/_test/stubs
 
 ################################################################
 # source
 ################################################################
 
 TEST_SOURCES = \
-test_isa.c
+test_nav.c \
+$(wildcard $(STUBS_DIR)/nav_contract_stubs/*.c)
 
 COV_C_SOURCES = \
-$(ROOT_DIR)/mod/isa/isa.c
+$(wildcard $(ROOT_DIR)/mod/nav/nav*.c) \
+$(ROOT_DIR)/mod/math_sdr/math_sdr.c
 
 FRAMEWORK_SOURCES = \
 $(FRAMEWORK_DIR)/src/test_assert.c \
@@ -52,8 +55,13 @@ CC = gcc
 
 C_INCLUDES = \
 -I. \
+-I./mock \
+-I$(MOD_DIR)/_test/stubs \
+-I$(MOD_DIR)/_test/stubs/nav_contract_stubs \
 -I$(ROOT_DIR)/mod/math_sdr \
--I$(ROOT_DIR)/mod/isa \
+-I$(ROOT_DIR)/mod/error_sdr \
+-I$(ROOT_DIR)/mod/debug_sdr \
+-I$(ROOT_DIR)/mod/nav	   \
 -I$(FRAMEWORK_DIR)/src
 
 C_DEFS = \
@@ -61,6 +69,7 @@ C_DEFS = \
 -DSTM32H750xx \
 -DFLIGHT_COMPUTER \
 -DA0002_REV2 \
+-DNAV_ENABLE_DEBUG \
 -DUNIT_TEST
 
 CFLAGS = $(C_INCLUDES) $(C_DEFS) $(OPT) -Wall -g
@@ -111,7 +120,7 @@ test:
 	tail -n 7 "results.txt"
 	mkdir -p coverage
 	gcovr $(BUILD_DIR) \
-		--filter '.*(?<!test_)isa[.]c$$' \
+		--filter '.*/(nav|math_sdr)[^/]*[.]c$$' \
 		--html-details coverage/coverage.html \
 		--json coverage/coverage.json
 

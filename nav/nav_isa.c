@@ -1,8 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : isa.c
-  * @brief          : Contains functions to compute vehicle dynamics
-  *                   information at different altitudes and speeds.
+  * @file   nav_isa.c
+  * @brief  Navigation & sensor fusion component's ISA/altitude model.
   ******************************************************************************
   * @copyright
   *
@@ -30,7 +29,7 @@
 /*------------------------------------------------------------------------------
  Project Includes                                                                     
 ------------------------------------------------------------------------------*/
-#include "isa.h"
+#include "nav_prv.h"
 #include "math_sdr.h"
 
 /*------------------------------------------------------------------------------
@@ -51,6 +50,50 @@
 ------------------------------------------------------------------------------*/
 
 /**
+ * @brief Retrieve the calibrated ground reference altitude.
+ * 
+ * @param[in, out] nav_state The public nav library state
+ * @param[out] reference_alt The ground reference altitude
+ * @return NAV_OK if retrieved correctly, NAV_BUSY if sync failed, and NAV_FAIL if there was a critical error
+ */
+NAV_STATUS nav_isa_get_ground_reference_alt
+    (
+    NAV_PUBLIC_STATE* nav_state,
+    float* reference_alt
+    )
+{
+nav_nullchk( nav_state );
+nav_nullchk( reference_alt );
+
+/* Local Variables */
+NAV_PRIVATE_STATE* prv_state = nav_state_to_prv( nav_state );
+NAV_STATUS status = NAV_OK;
+
+/* Reset Velocity */
+if( nav_reserve_state( nav_state ) == NAV_OK )
+    {
+    *reference_alt = _nav_isa_get_altitude_qnh( prv_state->cal_data.baro_pres, _nav_isa_get_temp( prv_state->cal_data.baro_pres ) );
+
+    if( nav_release_state( nav_state ) != NAV_OK )
+        {
+        status = NAV_FAIL;
+        }
+    }
+else
+    {
+    status = NAV_BUSY;
+    }
+
+return( status );
+
+} /* nav_isa_get_ground_reference_alt */
+
+
+/*------------------------------------------------------------------------------
+ Private Functions 
+------------------------------------------------------------------------------*/
+
+/**
   * @brief Calculates altitude (relative to sea level).
   * @param baro_pres Barometric pressure in Pa.
   * @param baro_temp Barometric temperature in C. Use INFINITY to use ISA temp.
@@ -64,7 +107,7 @@
   * 
   * @return Calculated ISA altitude above sea level.
   */
-float isa_get_altitude_qnh
+float _nav_isa_get_altitude_qnh
     (
     float baro_pres, 
     float baro_temp
@@ -78,7 +121,7 @@ if ( baro_pres <= 0.0f )
     }
 if ( baro_temp == INFINITY )
     {
-    baro_temp = isa_get_temp( baro_pres );
+    baro_temp = _nav_isa_get_temp( baro_pres );
     }
 
 if( baro_pres < ISA_TROPOPAUSE_PRES ) 
@@ -93,7 +136,7 @@ else
 
 return( altitude );
 
-} /* isa_get_altitude_qnh */
+} /* _nav_isa_get_altitude_qnh */
 
 
 /**
@@ -105,7 +148,7 @@ return( altitude );
   * 
   * @return Calculated ISA altitude above ground reference.
   */
-float isa_get_altitude_qfe
+float _nav_isa_get_altitude_qfe
     (
     float curr_pres, 
     float curr_temp,
@@ -113,12 +156,12 @@ float isa_get_altitude_qfe
     float reference_temp
     )
 {
-float current_alt = isa_get_altitude_qnh(curr_pres, curr_temp);
-float reference_alt = isa_get_altitude_qnh(reference_pres, reference_temp);
+float current_alt = _nav_isa_get_altitude_qnh(curr_pres, curr_temp);
+float reference_alt = _nav_isa_get_altitude_qnh(reference_pres, reference_temp);
 
 return( current_alt - reference_alt );
 
-} /* isa_get_altitude_qfe */
+} /* _nav_isa_get_altitude_qfe */
 
 
 /**
@@ -127,7 +170,7 @@ return( current_alt - reference_alt );
   * @param baro_pres The barometric pressure
   * @return The ISA temperature
   */
-float isa_get_temp
+float _nav_isa_get_temp
     (
     float baro_pres
     )
@@ -149,7 +192,7 @@ else
     return temp_k - KELVIN_OFFSET;
     }
 
-} /* isa_get_temp */
+} /* _nav_isa_get_temp */
 
 /**
   * END OF FILE

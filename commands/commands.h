@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : commands.h
-  * @brief          : Contains general command functions common to all embedded controllers
+  * @file  commands.h
+  * @brief Contains general command functions common to all embedded controllers
   ******************************************************************************
   * @copyright
   *
@@ -16,6 +16,10 @@
   * https://opensource.org/license/bsd-3-clause
   *
   ******************************************************************************
+  * @dir commands
+  * @brief The component that defines the interface used for common commands across
+  * SDR's embedded ecosystem.
+  ******************************************************************************
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -25,8 +29,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "math_sdr.h"
 
 /*------------------------------------------------------------------------------
  Macros 
@@ -90,20 +92,6 @@ extern "C" {
 /* Firmware Identifier Code - GS */
 #define FIRMWARE_RECEIVER	    ( 0x11 ) /* Reciever Firmware 	 */
 
-/*------------------------------------------------------------------------------
- Function Prototypes 
-------------------------------------------------------------------------------*/
-
-/**
-  * @brief Sends a single response byte back to sender.
-  *
-  * @param cmd_source The source of the command when building for a valve
-  *        controller.
-  */
-void ping
-	(
-	void
-	);
 
 #ifdef __cplusplus
 }

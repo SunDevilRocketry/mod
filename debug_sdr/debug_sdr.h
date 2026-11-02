@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : debug_sdr.h
-  * @brief          : Interfaces for debugging SDR embedded firmware.
+  * @file   debug_sdr.h
+  * @brief  Interfaces for debugging SDR embedded firmware.
   ******************************************************************************
   * @copyright
   *
@@ -24,6 +24,33 @@
   (+) Write to a logging interface
   ******************************************************************************
   @endverbatim
+  @dir    debug_sdr
+  @brief  Provides a unified debug logging interface across SDR embedded code.
+          Built for low-memory/no-dynamic-memory/high-reliability environments.
+  
+  @section dbg_integ Integration Guide
+  The debug module is used by a handful of SDR's projects to provide a
+  non-blocking debug writer for embedded boards.
+
+  To integrate the module, you need to provide a write callback to debug_init.
+  This write callback should meet the following declaration:
+  @code
+  void overflow_callback_name(const char*, size_t);
+  @endcode
+  It also needs to call debug_callback_handler after finishing its write. This
+  allows for nonblocking operation of the debug module for performance critical
+  devices. If your debug writer is blocking, you can safely call 
+  debug_callback_handler before returning control flow to the debug module.
+
+  The module also allows you to overwrite the default behavior if the debug
+  buffer overflows. As-is, we clear the buffer and queue up a message indicating
+  that it overflowed.
+
+  Finally, we include your project's "main.h" header to allow projects to 
+  overwrite our default debug buffer size of 2048 bytes. To do this, simply
+  define DEBUG_INTF_BUF_SIZE as the number of bytes you want the buffer to be
+  in your header.
+  ******************************************************************************
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -37,8 +64,10 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "main.h"
+#include "error_sdr.h"
 
 /* Constants -----------------------------------------------------------------*/
 #ifndef DEBUG_INTF_BUF_SIZE /* allow the project to override the buffer length if needed */
@@ -79,6 +108,19 @@ typedef enum _DEBUG_LEVEL {
   LOG_LVL_WARN,
   LOG_LVL_ERROR /* note: "debug" errors will not trigger in release builds */
 } DEBUG_LEVEL;
+
+/* time types for use by the debug writer */
+typedef uint16_t time_hours; /* we can't exceed this limit without rolling over the systick */
+typedef uint8_t time_mins;   /* 0-59     */
+typedef uint8_t time_secs;   /* 0-59     */
+typedef uint16_t time_millis;/* 0-999    */
+
+typedef struct _SYSTEM_TIME {
+    time_hours      hours;
+    time_mins       mins;
+    time_secs       secs;  
+    time_millis     millis;
+} SYSTEM_TIME;
 
 /* Exported functions prototypes ---------------------------------------------*/
 
@@ -187,5 +229,8 @@ void debug_callback_handler
   #define debug_ignore_emulator_warnings_stop() /* do nothing */
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DEBUG_H */

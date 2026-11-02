@@ -8,10 +8,6 @@
 
 ## 1. Structural
 
-RQ.MOD.00001 - The library shall be designed to interface with the Sun Devil Rocketry "driver" library.
-
-    > Test plan: For the purposes of verifying the library, tests will assume these modules are used on A0002-2XX Flight Computer. This does not require the flight computer to release at the same time, however library integration is tested via the flight computer. Thus, the required coverage burden will only be achieved if the flight computer provides much of it.
-
 RQ.MOD.00002 - The library shall be organized into self-contained modules with header files organized next to source files.
 
 RQ.MOD.00003 - The library shall be designed to be compiled with GNU GCC for the desired target architecture.
@@ -21,10 +17,6 @@ RQ.MOD.00003 - The library shall be designed to be compiled with GNU GCC for the
 ### 2.1. Commands
 
 RQ.MOD.00004 - The library shall provide a ping response code based on the provided compiler macro from the project.
-
-RQ.MOD.00005 - The library shall provide a method for the flight computer to send a data package to the dashboard over USB.
-
-RQ.MOD.00006 - The library shall provide a method for the flight computer to construct the dashboard data packet.
 
 ### 2.2. Debug
 
@@ -90,33 +82,25 @@ The library shall provide all of the following 3-element vector operations:
 
     RQ.MOD.00046 - Scalar Multiplication
 
-### 2.5. Sensor
-
-RQ.MOD.00023 - The library shall provide a method to start retrieval of sensor data
-
-RQ.MOD.00024 - The library shall provide a method to retrieve sensor data from the last cycle and start retrieval of sensor data
-
-The library shall provide a method to execute the following sensor commands and subcommands:
-
-    RQ.MOD.00025 - Dump: Transmit the contents of the last sensor data cycle over USB.
-
-RQ.MOD.00026 - The library shall provide methods to get and set the starting orientation of the flight computer.
-
-The library shall provide the following IMU and magnetometer utilities:
-
-    RQ.MOD.00027 - Conversion of raw IMU data to floating point values
-
-    RQ.MOD.00028 - Integration of acceleration data and body state to yield velocity
-
-    RQ.MOD.00029 - Re-mapping raw IMU data based on orientation
-
-    RQ.MOD.00030 - Fusion of raw IMU data to yield a unit quaternion orientation estimate
-
-### 2.6. Telemetry
+### 2.5. Telemetry
 
 RQ.MOD.00051 - The library shall control Sun Devil Rocketry's one-way telemetry interface by defining the authoritative version in a header for projects to integrate.
 
-### 2.7. Mahony
+### 2.6. Nav
+
+RQ.MOD.00053 - The library shall provide a method to fuse sensor data.
+
+RQ.MOD.00054 - The library shall provide a method to initialize the sensor fusion system.
+
+RQ.MOD.00055 - The library shall call a contract function to prevent concurrent access to its state before accessing state data.
+
+RQ.MOD.00056 - The library shall invalidate output data that cannot be determined from the configured sources.
+
+RQ.MOD.00057 - The library shall provide a method to reset velocity integration.
+
+RQ.MOD.00064 - The library shall provide a valid default configuration.
+
+#### 2.6.1. Mahony
 
 RQ.MOD.00036 - The library shall provide a Mahony filter to fuse accelerometer and gyroscope data to return an attitude estimate.
 
@@ -128,10 +112,28 @@ The library shall disable accelerometer fusion in the following cases:
 
     RQ.MOD.00039 - The provided parameters for accelerometer fusion are invalid.
 
-### 2.8. ISA
+#### 2.6.2. ISA
 
 RQ.MOD.00031 - The library shall provide a method to convert a barometric pressure and temperature reading to an ISA altitude.
 
 RQ.MOD.00051 - The library shall provide a method to retrieve a ground reference elevation from current and calibrated pressure and temperature.
 
 RQ.MOD.00052 - The library shall provide a method to retrieve the ISA temperature given a barometric pressure reading.
+
+#### 2.6.3. POF
+
+RQ.MOD.00058 - The library shall provide a method to set the phase of flight.
+
+RQ.MOD.00059 - The library shall provide a method to get the phase of flight.
+
+RQ.MOD.00060 - The library shall update phase of flight during sensor fusion.
+
+The library shall be able to detect the following phase of flight transitions.
+
+    RQ.MOD.00061 - On-Ground -> Powered Ascent
+
+    RQ.MOD.00062 - Powered Ascent -> Unpowered Ascent
+
+    RQ.MOD.00063 - Ascent -> Descent
+
+    RQ<POSTPONED>.MOD.00065 - Descent -> Landed

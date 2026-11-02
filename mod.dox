@@ -1,0 +1,71 @@
+/**
+ * @mainpage Mod Library Documentation
+ *
+ * @subsubsection pn Part Number: A0015
+ * 
+ * @subsubsection contact Contact
+ *
+ * This library is maintained by the Sun Devil Rocketry Firmware Team.
+ *
+ * Firmware Team Lead: Nicholas Armistead [@narmistead](https://github.com/NArmistead)
+ *
+ * Library Maintainer: Eli Sells [@etsells](https://github.com/ETSells)
+ * 
+ * Copyright Holder: Sun Devil Rocketry (rocketry.asu@gmail.com)
+ *
+ * @section intro_sec Introduction
+ * Welcome to the official documentation page for the mod library. Mod
+ * is the platform-independent utility library used by Sun Devil Rocketry
+ * for their embedded projects like the Flight Computer and Ground Station.
+ * 
+ * Most of the utilities in this library are specific to Sun Devil Rocketry's
+ * protocols and applications, but we still make an effort to have this library
+ * be portable and usable by other people.
+ *
+ * Mod is split into "components", which are themselves independent libraries that
+ * serve a specific purpose. Some components are further split into "modules", such as
+ * nav. These modules are cohesive and intended to be implemented together, but are split
+ * into modules in order to make the component less complex.
+ *
+ * @section dependency_sec Dependencies
+ * Mod is completely free of external dependencies except for a lightweight 
+ * implementation of the C standard library (including math functions, standard defs, and asserts). 
+ * Some components are able to be used on their own, and some require other components in this library. 
+ * A graph describing the dependency relationships between components is
+ * included below.
+ *
+ * @dot
+ * digraph G {
+ *     subgraph {
+ *         rank=same;
+ *         telemetry;
+ *         std [label="C Standard Library"];
+ *         commands;
+ *     }
+ *     debug_sdr -> error_sdr;
+ *     nav -> math_sdr;
+ *     nav -> debug_sdr [style=dashed, label="optional: NAV_ENABLE_DEBUG", fontsize=10];
+ *     nav -> std;
+ *     error_sdr -> std;
+ *     math_sdr -> std;
+ * }
+ * @enddot
+ *
+ * @section quality_sec Quality Assurance
+ * Mod is developed at the highest standard of quality assurance at Sun Devil Rocketry. It is used
+ * in safety critical projects, so we treat it as such. Our guiding standard is the 
+ * [Avionics Software Quality Assurance Standard](https://docs.sundevilrocketry.org/document-control/standards/Avionics%20Software%20Quality%20Assurance%20Standard.pdf),
+ * and mod also has some additional practices to ensure software quality, including code coverage requirements
+ * from automated testing.
+ *
+ * The QA artifacts from the latest release of the library will be available at our [documentation site](https://docs.sundevilrocketry.org/document-control/avionics/A0015).
+ *
+ * @section integ_sec Integration Guide
+ * Since each component can be integrated individually, components with integration requirements will have a guide provided in their documentation. The following components
+ * work as-is and have no integration requirements:
+ * - math_sdr
+ *
+ * The following components are header-only and therefore only provide definitions:
+ * - telemetry
+ * - commands
+ */

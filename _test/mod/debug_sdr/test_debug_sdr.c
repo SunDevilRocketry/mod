@@ -57,7 +57,7 @@ void test_debug_sdr_wrap_and_callback
 	void
 	)
 {
-const char* message = "12345678901234567890";
+const char* message = "123456789012345678901234567890";
 
 stubs_reset();
 debug_init( test_write_callback, test_overflow_callback );
@@ -83,7 +83,7 @@ void test_debug_sdr_overflow
 	void
 	)
 {
-char message[ 50 ];
+char message[ 64 ];
 memset( message, 'o', sizeof( message ) );
 
 stubs_reset();
