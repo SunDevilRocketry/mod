@@ -205,6 +205,21 @@ NAV_STATUS nav_update
     float current_time
     );
 
+/* nav_isa.c */
+
+/**
+ * @brief Retrieve the calibrated ground reference altitude.
+ * 
+ * @param[in, out] nav_state The public nav library state
+ * @param[out] reference_alt The ground reference altitude
+ * @return NAV_OK if retrieved correctly, NAV_BUSY if sync failed, and NAV_FAIL if there was a critical error
+ */
+NAV_STATUS nav_isa_get_ground_reference_alt
+    (
+    NAV_PUBLIC_STATE* nav_state,
+    float* reference_alt
+    );
+
 /* nav_pof.c */
 
 /**

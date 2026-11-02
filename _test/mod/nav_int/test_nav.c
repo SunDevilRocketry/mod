@@ -381,6 +381,83 @@ TEST_ASSERT_EQ_UINT( "Verify that get returned a fail status.", get_status, NAV_
 
 
 /**
+ * @brief This function tests the AGL reference API in NAV.
+ */
+void test_nav_isa_agl_ref
+	(
+	void
+	)
+{
+/*------------------------------------------------------------------------------
+Case 1: Get ground reference
+------------------------------------------------------------------------------*/
+NAV_STATUS nav_status = NAV_OK;
+float reference_alt = INFINITY;
+
+stub__state_reserve = NAV_OK;
+stub__state_release = NAV_OK;
+
+prv_state->cal_data.baro_pres = 101325.0f;
+prv_state->cal_data.baro_temp = 15.0f;
+
+/*------------------------------------------------------------------------------
+Call FUT and verify
+------------------------------------------------------------------------------*/
+nav_status = nav_isa_get_ground_reference_alt(&nav_state, &reference_alt);
+
+TEST_ASSERT_EQ_UINT( "Verify that the status was returned OK.", nav_status, NAV_OK );
+TEST_ASSERT_EQ_UINT( "Verify that the reference alt was returned correctly", 
+                       reference_alt,
+                       0.0f );
+
+/*------------------------------------------------------------------------------
+Case 2: Failed Reservation
+------------------------------------------------------------------------------*/
+memset( &nav_state, 0, sizeof( NAV_PUBLIC_STATE ) );
+NAV_PUBLIC_STATE comparison = { 0 };
+
+stub__state_reserve = NAV_BUSY;
+reference_alt = 123456.0f;
+
+memcpy( &comparison, prv_state, sizeof( NAV_PUBLIC_STATE ) );
+
+/*------------------------------------------------------------------------------
+Call FUT and verify
+------------------------------------------------------------------------------*/
+nav_status = nav_isa_get_ground_reference_alt(&nav_state, &reference_alt);
+
+TEST_ASSERT_EQ_UINT( "Verify that the function returned a busy status.", nav_status, NAV_BUSY );
+TEST_ASSERT_EQ_MEMORY( "Verify that the function did not edit state", 
+                       &nav_state,
+                       &comparison,
+                       sizeof( NAV_PUBLIC_STATE ) );
+TEST_ASSERT_EQ_UINT( "Verify that the reference alt was not updated", 
+                       reference_alt,
+                       0.0f );
+
+/*------------------------------------------------------------------------------
+Case 3: Failed Release
+------------------------------------------------------------------------------*/
+memset( &nav_state, 0, sizeof( NAV_PUBLIC_STATE ) );
+
+stub__state_reserve = NAV_OK;
+stub__state_release = NAV_BUSY;
+
+reference_alt = 123456.0f;
+
+memcpy( &comparison, prv_state, sizeof( NAV_PUBLIC_STATE ) );
+
+/*------------------------------------------------------------------------------
+Call FUT and verify
+------------------------------------------------------------------------------*/
+nav_status = nav_isa_get_ground_reference_alt(&nav_state, &reference_alt);
+
+TEST_ASSERT_EQ_UINT( "Verify that the function returned a fail status.", nav_status, NAV_FAIL );
+
+} /* test_nav_isa_agl_ref */
+
+
+/**
  * @brief This function tests the update function for NAV.
  */
 void test_nav_update_errors

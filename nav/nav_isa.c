@@ -50,6 +50,50 @@
 ------------------------------------------------------------------------------*/
 
 /**
+ * @brief Retrieve the calibrated ground reference altitude.
+ * 
+ * @param[in, out] nav_state The public nav library state
+ * @param[out] reference_alt The ground reference altitude
+ * @return NAV_OK if retrieved correctly, NAV_BUSY if sync failed, and NAV_FAIL if there was a critical error
+ */
+NAV_STATUS nav_isa_get_ground_reference_alt
+    (
+    NAV_PUBLIC_STATE* nav_state,
+    float* reference_alt
+    )
+{
+nav_nullchk( nav_state );
+nav_nullchk( reference_alt );
+
+/* Local Variables */
+NAV_PRIVATE_STATE* prv_state = nav_state_to_prv( nav_state );
+NAV_STATUS status = NAV_OK;
+
+/* Reset Velocity */
+if( nav_reserve_state( nav_state ) == NAV_OK )
+    {
+    *reference_alt = _nav_isa_get_altitude_qnh( prv_state->cal_data.baro_pres, _nav_isa_get_temp( prv_state->cal_data.baro_pres ) );
+
+    if( nav_release_state( nav_state ) != NAV_OK )
+        {
+        status = NAV_FAIL;
+        }
+    }
+else
+    {
+    status = NAV_BUSY;
+    }
+
+return( status );
+
+} /* nav_isa_get_ground_reference_alt */
+
+
+/*------------------------------------------------------------------------------
+ Private Functions 
+------------------------------------------------------------------------------*/
+
+/**
   * @brief Calculates altitude (relative to sea level).
   * @param baro_pres Barometric pressure in Pa.
   * @param baro_temp Barometric temperature in C. Use INFINITY to use ISA temp.
