@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : nav_pof.c
-  * @brief          : Navigation & sensor fusion library phase of flight.
+  * @file   nav_pof.c
+  * @brief  Navigation & sensor fusion component phase of flight.
   ******************************************************************************
   * @copyright
   *

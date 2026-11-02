@@ -1,8 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : nav_mahony.c
-  * @brief          : Navigation & sensor fusion library's attitude filter 
-  *                   interface.
+  * @file   nav_mahony.c
+  * @brief  Navigation & sensor fusion component's attitude filter module.
   ******************************************************************************
   * @copyright
   *

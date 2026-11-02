@@ -1,7 +1,7 @@
 /**
   ******************************************************************************* 
-  * @file error_sdr.c
-  * @brief Contains error-related functions for SDR code.
+  * @file   error_sdr.c
+  * @brief  Contains error handling functions for SDR code.
   *******************************************************************************
   * @copyright
   *
@@ -29,27 +29,7 @@
  Project Includes                                                                     
 ------------------------------------------------------------------------------*/
 #include "main.h"
-#include "math_sdr.h"
 #include "error_sdr.h"
-
-#if defined( STM32H750xx ) || defined( STM32H733xx )
-#include "stm32h7xx_hal.h"
-#include "led.h"
-#elif defined( F1_TESTBED )
-// LEDs not supported. Provide a stub.
-typedef enum {
-    LED_RED,
-    LED_BLUE,
-    LED_GREEN,
-    LED_PURPLE,
-    LED_CYAN,
-    LED_YELLOW,
-    LED_WHITE
-} LED_COLOR;
-
-void led_set_color( LED_COLOR color )
-{} // stub
-#endif
 
 /*------------------------------------------------------------------------------
  Internal function prototypes 
@@ -93,8 +73,6 @@ volatile ERROR_CALLBACK default_error_handler = { 0, dflt_error_handler };
 /*------------------------------------------------------------------------------
  API Functions 
 ------------------------------------------------------------------------------*/
-
-
 
 /**
   * @brief Dispatches an error to its registered callback or default handler.
@@ -176,7 +154,6 @@ static void dflt_error_handler
     volatile ERROR_CODE error_code
     )
 {
-led_set_color( LED_RED );
 while(1); /* Control flow trap */
 
 } /* dflt_error_handler */
@@ -185,5 +162,5 @@ while(1); /* Control flow trap */
   */
 
 /**
-  * END OF FILE                                                                  * 
+  * END OF FILE
   */

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : nav_contract.h
-  * @brief          : Navigation component contract header.
+  * @file   nav_contract.h
+  * @brief  Navigation component contract header.
   ******************************************************************************
   * @copyright
   *

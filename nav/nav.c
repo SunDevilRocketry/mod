@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : nav.c
-  * @brief          : Navigation & sensor fusion library's main module.
+  * @file   nav.c
+  * @brief  Navigation & sensor fusion component's main module.
   ******************************************************************************
   * @copyright
   *

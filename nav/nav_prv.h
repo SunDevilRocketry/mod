@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : nav_prv.h
-  * @brief          : Navigation component private header.
+  * @file   nav_prv.h
+  * @brief  Navigation component private header.
   ******************************************************************************
   * @copyright
   *
@@ -39,6 +39,10 @@ extern "C"
 /* Project Includes ----------------------------------------------------------*/
 #include "nav.h"
 #include "nav_contract.h"
+
+#ifdef NAV_ENABLE_DEBUG
+#include "debug_sdr.h"
+#endif
 
 /* Public Constants ----------------------------------------------------------*/
 
@@ -107,7 +111,11 @@ _Static_assert( sizeof( NAV_PRIVATE_STATE ) == sizeof( NAV_PUBLIC_STATE ),
 /* Internal Macros -----------------------------------------------------------*/
 #define __STRINGIFY_INTERNAL( s ) #s
 #define __STRINGIFY( s ) __STRINGIFY_INTERNAL( s )
+#ifdef NAV_ENABLE_DEBUG
 #define _nav_debug_error( msg ) debug_log_assert( false, "[NAV] at " __FILE__":"__STRINGIFY(__LINE__)" - " msg, LOG_LVL_ERROR )
+#else
+#define _nav_debug_error( msg ) ( (void)0 ) /* safely do nothing */
+#endif
 #define nav_state_to_prv( state ) ( (NAV_PRIVATE_STATE*)state )
 #define nav_nullchk( state ) do { \
         if ( (state) == NULL ) \

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : debug_sdr.c
-  * @brief          : Interfaces for debugging SDR embedded firmware.
+  * @file       debug_sdr.c
+  * @brief      Interfaces for debugging SDR embedded firmware.
   ******************************************************************************
   * @copyright
   *
@@ -35,7 +35,6 @@
       overflow as an argument. Pass NULL to use the default handler.
   (+) Do not use the _debug functions directly! Use the macros so that you have
       protection against release builds.
-  (+) If you want to log in release builds, use the error_sdr logging functions.
   ******************************************************************************
   @endverbatim
   */
@@ -45,7 +44,6 @@
 
 #include "main.h"
 #include "debug_sdr.h"
-#include "error_sdr.h"
 
 /* Static Variables ----------------------------------------------------------*/
 static DEBUG_HANDLE debug_handle; /* This module may be conditionally compiled 

@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : nav.h
-  * @brief          : Navigation component public header.
+  * @file   nav.h
+  * @brief  Navigation component public header.
   ******************************************************************************
   * @copyright
   *
@@ -27,6 +27,30 @@
   (+) Stateless (library state owned by integrating project)
   ******************************************************************************
   @endverbatim
+  ******************************************************************************
+  * @dir    nav
+  * @brief  Sun Devil Rocketry's sensor fusion and navigation component.
+  * 
+  * @section nav_integ Integration Guide
+  * Nav is the largest and most complex component of mod by far. It is used for
+  * sensor fusion in high-power rocketry projects. In order to use nav, your
+  * project should do the following:
+  * 
+  * 1. Define a region of memory for the nav state to live. This can be as 
+  * simple as defining a global of type `NAV_PUBLIC_STATE`. It needs to have
+  * scope to everywhere you might use the nav library.
+  * @note Nav is designed to be stateless -- all of the state memory is stored
+  * inside the nav state.
+  * 
+  * 2. Call `nav_init` with your project's desired configuration and calibrated
+  * sensor offsets. If you don't know what to configure your project for, a
+  * default configuration is given via `nav_get_default_config`.
+  * 
+  * 3. Every time you retrieve your sensor data, call `nav_update` with this data.
+  * 
+  * 4. `nav_update` will return fused sensor data, including barometric altitude,
+  * vehicle orientation, and an estimated phase of flight.
+  ******************************************************************************
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -42,8 +66,8 @@ extern "C"
 #include <stdbool.h>
 
 /* Project Includes ----------------------------------------------------------*/
-#include "debug_sdr.h"
 #include "math_sdr.h"
+
 
 /* Public Constants ----------------------------------------------------------*/
 

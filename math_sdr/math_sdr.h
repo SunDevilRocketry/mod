@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : math_sdr.h
-  * @brief          : Contains math and utility functions for SDR code.
+  * @file   math_sdr.h
+  * @brief  Contains math and utility functions for SDR code.
   ******************************************************************************
   * @copyright
   *
@@ -26,6 +26,10 @@
   (+) Quaternion operations
   ******************************************************************************
   @endverbatim
+  ******************************************************************************
+  * @dir    math_sdr
+  * @brief  Provides useful mathematical utilities used in SDR embedded code.
+  *******************************************************************************
   */
 
 
@@ -42,7 +46,6 @@ extern "C" {
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 
 
 /* Typedefs ------------------------------------------------------------------*/

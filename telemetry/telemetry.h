@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : telemetry.h
-  * @brief          : Definitions for the telemetry data structures.
+  * @file   telemetry.h
+  * @brief  Definitions for the telemetry data structures.
   ******************************************************************************
   * @copyright
   *
@@ -16,6 +16,14 @@
   * https://opensource.org/license/bsd-3-clause
   *
   ******************************************************************************
+  * @dir        telemetry
+  * @brief      Sun Devil Rocketry's wireless communication protocol 
+  *             definitions.
+  *
+  * @details    The contracts in this header are designed for transmitters that 
+  *             use SDR's LoRa driver. It also provides the source-of-truth for 
+  *             upstream software projects that consume telemetry data.
+  ******************************************************************************
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -29,12 +37,11 @@ extern "C" {
 /*------------------------------------------------------------------------------
  Standard Includes                                                                    
 ------------------------------------------------------------------------------*/
-
+#include <assert.h>
 
 /*------------------------------------------------------------------------------
  Project Includes  
 ------------------------------------------------------------------------------*/
-#include "commands.h"
 #include "math_sdr.h"
 
 /*------------------------------------------------------------------------------

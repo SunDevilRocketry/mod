@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : commands.h
-  * @brief          : Contains general command functions common to all embedded controllers
+  * @file  commands.h
+  * @brief Contains general command functions common to all embedded controllers
   ******************************************************************************
   * @copyright
   *
@@ -15,6 +15,10 @@
   *
   * https://opensource.org/license/bsd-3-clause
   *
+  ******************************************************************************
+  * @dir commands
+  * @brief The component that defines the interface used for common commands across
+  * SDR's embedded ecosystem.
   ******************************************************************************
   */
 

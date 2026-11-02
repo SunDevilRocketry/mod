@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : nav_utl.c
-  * @brief          : Navigation & sensor fusion library utilities.
+  * @file   nav_utl.c
+  * @brief  Navigation & sensor fusion component utilities.
   ******************************************************************************
   * @copyright
   *

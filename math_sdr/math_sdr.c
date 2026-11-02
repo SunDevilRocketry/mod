@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : math_sdr.c
-  * @brief          : Contains math and utility functions for SDR code.
+  * @file   math_sdr.c
+  * @brief  Contains math and utility functions for SDR code.
   ******************************************************************************
   * @copyright
   *
@@ -22,7 +22,6 @@
 #include <math.h>
 
 /* Project Includes ----------------------------------------------------------*/
-#include "main.h"
 #include "math_sdr.h"
 
 /* API Functions -------------------------------------------------------------*/

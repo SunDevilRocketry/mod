@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : nav_isa.c
-  * @brief          : Navigation & sensor fusion library's ISA model.
+  * @file   nav_isa.c
+  * @brief  Navigation & sensor fusion component's ISA/altitude model.
   ******************************************************************************
   * @copyright
   *
