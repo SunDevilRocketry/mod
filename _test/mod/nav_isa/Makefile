@@ -54,6 +54,7 @@ C_INCLUDES = \
 -I. \
 -I$(ROOT_DIR)/mod/math_sdr \
 -I$(ROOT_DIR)/mod/debug_sdr \
+-I$(ROOT_DIR)/mod/error_sdr \
 -I$(ROOT_DIR)/mod/nav \
 -I$(FRAMEWORK_DIR)/src
 
