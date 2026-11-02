@@ -58,7 +58,8 @@ C_INCLUDES = \
 -I$(FRAMEWORK_DIR)/src
 
 C_DEFS = \
--DUNIT_TEST
+-DUNIT_TEST \
+-DNAV_ENABLE_DEBUG \
 
 CFLAGS = $(C_INCLUDES) $(C_DEFS) $(OPT) -Wall -g
 CFLAGS += -ffunction-sections

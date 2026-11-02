@@ -69,7 +69,8 @@ C_DEFS = \
 -DSTM32H750xx \
 -DFLIGHT_COMPUTER \
 -DA0002_REV2 \
--DUNIT_TEST
+-DUNIT_TEST \
+-DNAV_ENABLE_DEBUG \
 
 CFLAGS = $(C_INCLUDES) $(C_DEFS) $(OPT) -Wall -g
 CFLAGS += -Wno-pointer-to-int-cast

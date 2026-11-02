@@ -433,7 +433,7 @@ TEST_ASSERT_EQ_MEMORY( "Verify that the function did not edit state",
                        sizeof( NAV_PUBLIC_STATE ) );
 TEST_ASSERT_EQ_UINT( "Verify that the reference alt was not updated", 
                        reference_alt,
-                       0.0f );
+                       123456.0f );
 
 /*------------------------------------------------------------------------------
 Case 3: Failed Release
@@ -743,6 +743,7 @@ unit_test tests[] =
     { "Nav: Test update error handling", test_nav_update_errors, "RQ.MOD.00053, RQ.MOD.00055" },
     { "Nav: Test update", test_nav_update, "RQ.MOD.00053, RQ.MOD.00056" },
     { "Nav: Test resetting velo", test_nav_reset_velo, "RQ.MOD.00055" },
+    { "Nav: Test getting ref alt", test_nav_isa_agl_ref, "RQ.MOD.00055" },
     { "Nav: Test default configs", test_nav_dflt_cfgs, "RQ.MOD.00064" },
     { "Nav: Test getting/setting POF", test_nav_pof_apis, "RQ.MOD.00055, RQ.MOD.00058, RQ.MOD.00059" }
 	};
