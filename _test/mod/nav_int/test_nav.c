@@ -574,14 +574,12 @@ NAV_SENSORS on_ground_asl_sensors =
     .baro_temp = 15.0f,
     .gps_alt = 0.0f,
     .gps_brg = 270.0f,
-    .gps_posn = { 45.0f, 45.0f },
     .gyro = { 0.0f, 0.0f, 0.0f },
     .mag = { 0.0f, 0.0f, 0.0f } // don't care
     };
 NAV_SENSORS on_ground_asl_calib = on_ground_asl_sensors;
 NAV_OUTPUTS on_ground_asl_expected =
     {
-    .fused_posn = { 45.0f, 45.0f },
     .ind_alt_agl = 0.0f,
     .ind_alt_asl = 0.0f,
     .orientation = { 0.707107f, 0.0f, -0.707107f, 0.0f },
@@ -602,7 +600,6 @@ NAV_CONFIG on_ground_asl_config_no_gps =
     };
 NAV_OUTPUTS on_ground_asl_expected_no_gps =
     {
-    .fused_posn = { INFINITY, INFINITY },
     .ind_alt_agl = 0.0f,
     .ind_alt_asl = 0.0f,
     .orientation = { 0.707107f, 0.0f, -0.707107f, 0.0f },
@@ -687,15 +684,6 @@ for( int i = 0; i < array_size( cases ); i++ )
     TEST_ASSERT_NEAR_FLOAT( "Verify that the ASL altitude matches the expected", 
         outputs.ind_alt_asl, 
         cases[i].outputs->ind_alt_asl,
-        0.001f );
-
-    TEST_ASSERT_NEAR_FLOAT( "Verify that the GPS latitude matches the expected", 
-        outputs.fused_posn.latitude, 
-        cases[i].outputs->fused_posn.latitude,
-        0.001f );
-    TEST_ASSERT_NEAR_FLOAT( "Verify that the GPS longitude matches the expected", 
-        outputs.fused_posn.longitude, 
-        cases[i].outputs->fused_posn.longitude,
         0.001f );
     
     TEST_ASSERT_NEAR_FLOAT( "Verify that the Quat W component matches the expected", 
