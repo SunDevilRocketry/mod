@@ -21,7 +21,7 @@
                             ##### Nav Features #####
   ==============================================================================
   [..]
-  (+) Platform-independent high power rocketrysensor data processing and 
+  (+) Platform-independent high power rocketry sensor data processing and 
       filtering library
       (+) Dependencies: debug_sdr, math_sdr.
   (+) Stateless (library state owned by integrating project)
@@ -73,7 +73,7 @@ extern "C"
 
 
 /* Private Constants ---------------------------------------------------------*/
-#define _PRIVATE_STATE_SIZE ( 184u )
+#define _PRIVATE_STATE_SIZE ( 176u )
 
 /* Typedefs ------------------------------------------------------------------*/
 
@@ -143,11 +143,9 @@ typedef struct _NAV_SENSORS
     {
     VECTOR_3F accel; /* u: m/s^2   */
     VECTOR_3F gyro;  /* u: deg/s   */
-    VECTOR_3F mag;   /* u: uT (?)  */
+    VECTOR_3F mag;   /* u: uT      */
     float baro_pres; /* u: Pa      */
     float baro_temp; /* u: C       */
-    NAV_POSN gps_posn;
-                     /* u: deg     */
     float gps_alt;   /* u: m       */
     float gps_brg;   /* u: deg     */
     } NAV_SENSORS;
@@ -160,7 +158,6 @@ typedef struct _NAV_OUTPUTS
     QUAT orientation;
     VECTOR_3F velocity;
     float velo_mag;
-    NAV_POSN fused_posn;
     float ind_alt_agl; /* u: m   */
     float ind_alt_asl; /* u: m   */
     } NAV_OUTPUTS;

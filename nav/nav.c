@@ -167,23 +167,11 @@ if( nav_reserve_state( nav_state ) == NAV_OK )
                                           },
                                       sensors->accel, 
                                       tdelta, 
-                                      _nav_in_air( prv_state ) );
+                                      !_nav_in_air( prv_state ) );
     outputs->orientation = prv_state->mahony_state.attitude;
 
     /* Update velocity estimate */
     status |= _nav_imu_velo( prv_state, sensors, outputs, tdelta );
-
-    /* Update GPS fusion */
-    if( prv_state->saved_configs.gps_enabled )
-        {
-        /* TODO: Fuse in other data */
-        outputs->fused_posn = sensors->gps_posn;
-        }
-    else
-        {
-        outputs->fused_posn.latitude = INFINITY;
-        outputs->fused_posn.longitude = INFINITY;
-        }
 
     /* Update phase-of-flight with fused data */
     status |= _nav_pof_update( prv_state, sensors, outputs );

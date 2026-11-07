@@ -149,7 +149,7 @@ return( status );
 /**
  * @brief Initialize the phase of flight module
  * 
- * @param prv_state The nav library state
+ * @param[in,out] prv_state The nav library state
  * @return NAV_STATUS 
  */
 NAV_STATUS _nav_pof_init
@@ -205,9 +205,9 @@ return( NAV_OK );
 /**
  * @brief Update the POF state.
  * 
- * @param prv_state The navigation library state
- * @param sensors The inputs to the library
- * @param outputs The library's computed outputs so far
+ * @param[in,out] prv_state The navigation library state
+ * @param[in] sensors The inputs to the library
+ * @param[in] outputs The library's computed outputs so far
  * @return The status of the navigation library
  */
 NAV_STATUS _nav_pof_update
