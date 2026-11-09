@@ -124,15 +124,6 @@ typedef struct _NAV_CONFIG
     } NAV_CONFIG;
 
 /**
- * @brief Navigation library position type.
- */
-typedef struct _NAV_POSN
-    {
-    float latitude;  /* u: degrees */
-    float longitude; /* u: degrees */
-    } NAV_POSN;
-
-/**
  * @brief Navigation library sensor inputs.
  * 
  * @details If the device has multiple sensors of
@@ -147,7 +138,7 @@ typedef struct _NAV_SENSORS
     float baro_pres; /* u: Pa      */
     float baro_temp; /* u: C       */
     float gps_alt;   /* u: m       */
-    float gps_brg;   /* u: deg     */
+    float gps_hdg;   /* u: deg     */
     } NAV_SENSORS;
 
 /**

@@ -26,7 +26,8 @@
   * The error_sdr component should work out of the box, but in order to make the
   * best use of it, it is recommended that your project overwrite the default
   * error handler to meet your needs. Our usual default error handler sets our
-  * status LED to red, then traps control flow in an infinite loop.
+  * status LED to red, then traps control flow in an infinite loop. The library's
+  * default traps control flow.
   * 
   * @code
   * 
@@ -35,7 +36,6 @@
   *   volatile ERROR_CODE error_code
   *   )
   * {
-  * led_set_color( LED_RED );
   * while (1) {}
   * } // error_handler
   * 

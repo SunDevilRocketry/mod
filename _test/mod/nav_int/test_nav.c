@@ -573,7 +573,7 @@ NAV_SENSORS on_ground_asl_sensors =
     .baro_pres = 101325.0f,
     .baro_temp = 15.0f,
     .gps_alt = 0.0f,
-    .gps_brg = 270.0f,
+    .gps_hdg = 270.0f,
     .gyro = { 0.0f, 0.0f, 0.0f },
     .mag = { 0.0f, 0.0f, 0.0f } // don't care
     };
