@@ -715,12 +715,12 @@ TEST_ASSERT_EQ_UINT
 
 TEST_ASSERT_EQ_UINT
     (
-    "Zero delta time is rejected",
+    "Negative delta time is rejected",
     _nav_mahony_update_gyro
         (
         &filter,
         zero_rate,
-        0.0f
+        -0.3f
         ),
     NAV_INVALID_PARAMS
     );

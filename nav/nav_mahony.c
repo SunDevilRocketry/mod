@@ -166,7 +166,7 @@ if ( !math_vector_is_finite(gyro_body_rad_s) )
     return NAV_INVALID_PARAMS;
     }
 
-if ( !isfinite(delta_time_s) || delta_time_s <= 0.0f )
+if ( !isfinite(delta_time_s) || delta_time_s < 0.0f )
     {
     _nav_debug_error( "Bad mahony time delta provided" );
     return NAV_INVALID_PARAMS;
@@ -263,7 +263,7 @@ if ( !math_vector_is_finite(accel_body) )
     _nav_debug_error( "Bad mahony filter accel state provided. In release mode, this will continue." );
     }
 
-if ( !isfinite(delta_time_s) || delta_time_s <= 0.0f )
+if ( !isfinite(delta_time_s) || delta_time_s < 0.0f )
     {
     _nav_debug_error( "Bad mahony time delta provided" );
     return NAV_INVALID_PARAMS;
