@@ -43,7 +43,7 @@
 #include "usb.h"
 #include "sensor.h"
 #include "math_sdr.h"
-#include "mahony.h"
+#include "ahrs.h"
 #include "error_sdr.h"
 #include "debug_sdr.h"
 #include "isa.h"
@@ -51,24 +51,6 @@
 /*------------------------------------------------------------------------------
  Private Macros
 ------------------------------------------------------------------------------*/
-
-/*
- * Initial Mahony gains for firmware integration.
- *
- * Proportional correction is enabled conservatively. Integral correction
- * remains disabled until the gains are tuned using stationary and flight data.
- *
- *
- * Proportional gain (KP) corrects gyro drift using the accelerometer. It is
- * deliberately low to reduce overcorrection during flight.
- *
- * Integral gain (KI) learns persistent gyro bias over time. It remains
- * disabled because an untuned integral term can accumulate incorrect
- * corrections during vibration, launch acceleration, or invalid accelerometer
- * data.
- */
-#define SENSOR_MAHONY_KP    1.0f
-#define SENSOR_MAHONY_KI    0.0f
 
 /* Barometer EMA Alphas */
 #define BARO_PRESS_ALPHA (0.7f)
@@ -82,7 +64,7 @@ extern GPS_DATA gps_data;
 extern IMU_OFFSET imu_offset;
 
 /* Timing (sensors) */
-uint64_t imu_velo_tick = 0;
+uint64_t current_tick = 0;
 
 /* IMU */
 float velo_x_prev = 0.0f;
@@ -102,13 +84,21 @@ static MOUNT_ORIENTATION mount_orientation = MOUNT_ORIENTATION_IMU_NORMAL;
  * Persistent attitude filter state. This instance retains the quaternion and
  * integral correction between consecutive IMU updates.
  */
-static MAHONY_FILTER mahony_filter;
-
-/* Timestamp of the previous Mahony update in microseconds. */
-static uint64_t mahony_tick = 0;
+static AHRS_PUBLIC_STATE ahrs_filter;
 
 static float ema_press_prev = 0.0f;
 static float ema_temp_prev = 0.0f;
+
+//temp
+AHRS_CONFIG ahrs_config = 
+    {
+    .gyro_noise = 0.05,
+    .gyro_bias = 0.05,
+    .mag_noise = (VECTOR_3F){ 0.05, 0.05, 0.05 },
+    .accel_noise = (VECTOR_3F){ 0.05, 0.05, 0.05 },
+    .global_mag_ref = (VECTOR_3F){ 23.3, 3.96, 39.9 },
+    .small_angle_threshold = 0.1
+    };
 
 
 /*------------------------------------------------------------------------------
@@ -361,32 +351,30 @@ SENSOR_STATUS sensor_init
     PRESET_DATA* preset_data
     )
 {
-float ax = preset_data->imu_offset.accel_x;
-float ay = preset_data->imu_offset.accel_y;
-float az = preset_data->imu_offset.accel_z;
+// float ax = preset_data->imu_offset.accel_x;
+// float ay = preset_data->imu_offset.accel_y;
+// float az = preset_data->imu_offset.accel_z;
 
-QUAT initial_attitude = quat_grav_attitude
-    (
-    ax,
-    ay,
-    az,
-    IDENTITY_QUAT
-    );
+// QUAT initial_attitude = quat_grav_attitude
+//     (
+//     ax,
+//     ay,
+//     az,
+//     IDENTITY_QUAT
+//     );
 
-imu_velo_tick = get_us_tick();
-mahony_tick = imu_velo_tick;
+float current_time = get_us_tick() / MICROSEC_PER_SEC;
 
 sensor_reset_velo();
 
-MAHONY_STATUS mahony_status = mahony_init
+AHRS_STATUS ahrs_status = ahrs_init
     (
-    &mahony_filter,
-    initial_attitude,
-    SENSOR_MAHONY_KP,
-    SENSOR_MAHONY_KI
+    &ahrs_filter,
+    ahrs_config,
+    current_time
     );
 
-if ( mahony_status != MAHONY_OK )
+if ( ahrs_status != AHRS_OK )
     {
     return( SENSOR_FAIL );
     }
@@ -479,30 +467,16 @@ SENSOR_STATUS sensor_body_state
     STATE_ESTIMATION* state_estimate
     )
 {
-uint64_t current_tick;
-uint64_t imu_tdelta;
-
-float delta_time_s;
-
+float current_time;
 bool use_accel;
+AHRS_STATUS ahrs_status;
 
 VECTOR_3F gyro_body_rad_s;
 VECTOR_3F accel_body_m_s2;
+VECTOR_3F mag; // temp
 
 /* Calculate elapsed time between attitude updates using the microsecond timer. */
-current_tick = get_us_tick();
-imu_tdelta = current_tick - mahony_tick;
-
-delta_time_s = (float)imu_tdelta / (float)MICROSEC_PER_SEC;
-
-if ( mahony_tick == 0 
-	|| delta_time_s <= 0.0f 
-	|| delta_time_s > 1.0f )
-    {
-    delta_time_s = 0.01f;
-    }
-
-mahony_tick = current_tick;
+current_time = get_us_tick() / MICROSEC_PER_SEC;
 
 /*
  * Converted gyro data is in degrees per second. Mahony requires radians per
@@ -519,34 +493,41 @@ accel_body_m_s2.x = imu_converted->accel_x;
 accel_body_m_s2.y = imu_converted->accel_y;
 accel_body_m_s2.z = imu_converted->accel_z;
 
-/*
- * Permit accelerometer correction only before powered flight. The Mahony
- * filter still performs its own magnitude and finite-value checks.
- */
+mag.x = imu_converted->mag_x;
+mag.y = imu_converted->mag_y;
+mag.z = imu_converted->mag_z;
+
 use_accel = get_fc_state() <= FC_STATE_LAUNCH_DETECT;
 
-MAHONY_STATUS mahony_status = mahony_update_imu
-    (
-    &mahony_filter,
-    gyro_body_rad_s,
-    accel_body_m_s2,
-    delta_time_s,
-    use_accel
-    );
+ahrs_status = ahrs_gyro_update(&ahrs_filter, gyro_body_rad_s, current_time);
 
-if ( mahony_status != MAHONY_OK )
+if ( ahrs_status != AHRS_OK )
     {
     return SENSOR_IMU_FAIL;
     }
 
-/*
- * Store the filter's body-to-world quaternion as the system attitude estimate.
- */
-state_estimate->attitude = mahony_filter.attitude;
+if ( use_accel )
+    {
+    // ahrs_status = ahrs_accel_update(&ahrs_filter, accel_body_m_s2);
 
-/*
- * Preserve the existing public roll-rate units of degrees per second.
- */
+    if ( ahrs_status != AHRS_OK )
+        {
+        return SENSOR_IMU_FAIL;
+        }
+    }
+
+// temp
+(void)ahrs_mag_update(&ahrs_filter, mag);
+
+/* Store the filter's body-to-world quaternion as the system attitude estimate. */
+ahrs_status = ahrs_get_attitude(&ahrs_filter, &state_estimate->attitude);
+
+if ( ahrs_status != AHRS_OK )
+    {
+    return SENSOR_IMU_FAIL;
+    }
+
+/* Preserve the existing public roll-rate units of degrees per second. */
 state_estimate->roll_rate = imu_converted->gyro_x;
 
 return SENSOR_OK;
@@ -670,7 +651,7 @@ float accel_world_z = linear_accel_world.z;
 float ts_delta;
 
 uint64_t current_tick = get_us_tick();
-uint64_t imu_tdelta = current_tick - imu_velo_tick;
+uint64_t imu_tdelta = current_tick - current_tick;
 ts_delta = (float) imu_tdelta / (float) MICROSEC_PER_SEC;
 
 // Calculate 3 velocity vectors using motion equations
@@ -698,7 +679,7 @@ velo_x_prev = velo_x;
 velo_y_prev = velo_y;
 velo_z_prev = velo_z;
 
-imu_velo_tick = current_tick;
+current_tick = current_tick;
 
 }
 
