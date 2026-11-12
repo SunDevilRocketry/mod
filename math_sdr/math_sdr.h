@@ -66,6 +66,8 @@ typedef struct _VECTOR_3F
     float z;
     } VECTOR_3F;
 
+typedef float MAT33[3][3];
+
 /* Macros --------------------------------------------------------------------*/
 
 /* Constants */
@@ -193,7 +195,7 @@ bool math_quat_is_finite
     QUAT quaternion
     );
 
-/* Vectors -------------------------------------------------------------------*/
+/* Linalg -------------------------------------------------------------------*/
 
 bool math_vector_is_finite
     (
@@ -226,6 +228,12 @@ VECTOR_3F math_vector_scale
     (
     VECTOR_3F vector,
     float scalar
+    );
+
+VECTOR_3F math_mat_vec_mult
+    (
+    MAT33 mat,
+    VECTOR_3F vec
     );
 
 #ifdef __cplusplus
