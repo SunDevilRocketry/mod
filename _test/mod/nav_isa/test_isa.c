@@ -18,7 +18,7 @@ Standard Includes
 Project Includes
 ------------------------------------------------------------------------------*/
 #include "sdrtf_pub.h"
-#include "isa.h"
+#include "nav_prv.h"
 #include "math_sdr.h"
 
 /*------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ struct test_case cases[] =
 for( int i = 0; i < array_size( cases ); i++ )
     {
     /* Assert with a small tolerance on the values (0.05%) */
-    float altitude = isa_get_altitude_qnh( cases[i].pressure, cases[i].temperature );
+    float altitude = _nav_isa_get_altitude_qnh( cases[i].pressure, cases[i].temperature );
     if( cases[i].altitude != INFINITY )
         {
         TEST_ASSERT_GE_FLOAT( cases[i].description, 
@@ -65,7 +65,7 @@ for( int i = 0; i < array_size( cases ); i++ )
                             cases[i].altitude + (cases[i].altitude * 0.0005) );
         if( cases[i].temperature != INFINITY )
             {
-            float temperature = isa_get_temp( cases[i].pressure );
+            float temperature = _nav_isa_get_temp( cases[i].pressure );
 
             TEST_ASSERT_GE_FLOAT( "Test that the ISA temp function returns the ISA temp for that altitude",
                                   temperature,                  
@@ -97,15 +97,15 @@ void test_isa_qfe
 {
 float baro_pressure = 91000.0f;
 float baro_temp = 8.0f;
-float baro_alt = isa_get_altitude_qnh( baro_pressure, baro_temp );
+float baro_alt = _nav_isa_get_altitude_qnh( baro_pressure, baro_temp );
 float offset_pressure = 101300.0f;
 float offset_temp = 19.0f;
-float offset_alt = isa_get_altitude_qnh( offset_pressure, offset_temp );
+float offset_alt = _nav_isa_get_altitude_qnh( offset_pressure, offset_temp );
 
-float qfe = isa_get_altitude_qfe( baro_pressure, baro_temp, offset_pressure, offset_temp );
+float qfe = _nav_isa_get_altitude_qfe( baro_pressure, baro_temp, offset_pressure, offset_temp );
 
 TEST_ASSERT_EQ_FLOAT( "QFE altitude is the difference between current and calibrated alt.", qfe, baro_alt - offset_alt );
-qfe = isa_get_altitude_qfe( offset_pressure, offset_temp, baro_pressure, baro_temp );
+qfe = _nav_isa_get_altitude_qfe( offset_pressure, offset_temp, baro_pressure, baro_temp );
 TEST_ASSERT_EQ_FLOAT( "QFE altitude can be negative.", qfe, offset_alt - baro_alt );
 
 } /* test_isa_qfe */

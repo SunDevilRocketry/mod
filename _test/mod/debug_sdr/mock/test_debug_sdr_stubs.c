@@ -1,7 +1,6 @@
 #include <string.h>
 
 #include "test_debug_sdr_stubs.h"
-#include "timer.h"
 
 static unsigned int write_calls;
 static unsigned int write_callback_limit;
@@ -65,10 +64,4 @@ void test_overflow_callback(const char* message, size_t size)
     (void)message;
     overflow_calls++;
     last_overflow_size = size;
-}
-
-SYSTEM_TIME get_system_time(void)
-{
-    SYSTEM_TIME time = { 1, 2, 3, 4 };
-    return time;
 }

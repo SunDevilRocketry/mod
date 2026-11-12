@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
-  * @file           : error_sdr.h
-  * @brief          : Contains error handling functions for SDR code.
+  * @file   error_sdr.h
+  * @brief  Contains error handling functions for SDR code.
   ******************************************************************************
   * @copyright
   *
@@ -16,6 +16,37 @@
   * https://opensource.org/license/bsd-3-clause
   *
   ******************************************************************************
+  * @dir    error_sdr
+  * @brief  Provides a unified error handler for SDR embedded firmware. 
+  * 
+  * @details    Includes common/shared definitions of error codes that can be 
+  *             used across projects and libraries.
+  * 
+  * @section error_integ Integration Guide
+  * The error_sdr component should work out of the box, but in order to make the
+  * best use of it, it is recommended that your project overwrite the default
+  * error handler to meet your needs. Our usual default error handler sets our
+  * status LED to red, then traps control flow in an infinite loop. The library's
+  * default traps control flow.
+  * 
+  * @code
+  * 
+  * void error_handler
+  *   (
+  *   volatile ERROR_CODE error_code
+  *   )
+  * {
+  * while (1) {}
+  * } // error_handler
+  * 
+  * volatile extern ERROR_CALLBACK default_error_handler;
+  * default_error_handler.error_callback = error_handler;
+  * @endcode
+  * 
+  * There is also a more involved strategy that defines a callback table for
+  * individual error codes. Use the global define USE_ERROR_CALLBACK
+  * to enable this.
+  *******************************************************************************
   */
 
 
