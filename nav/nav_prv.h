@@ -45,7 +45,7 @@ extern "C"
 #endif
 
 /* Public Constants ----------------------------------------------------------*/
-
+#define LAND_DETECT_BUF_SZ 16
 
 /* Typedefs ------------------------------------------------------------------*/
 
@@ -76,6 +76,7 @@ typedef struct _NAV_POF_STATE
     uint16_t apogee_decreasing_counts;
     uint16_t coast_detect_counts;
     float apogee_last_sample;
+    float land_detect_lookback_buf[ LAND_DETECT_BUF_SZ ];
     } NAV_POF_STATE;
 
 /**
@@ -94,10 +95,10 @@ typedef struct _NAV_BARO_FILTER_STATE
  */
 typedef struct _NAV_PRIVATE_STATE
     {
-    NAV_CONFIG saved_configs;       /* 36B: Internal configs    */
+    NAV_CONFIG saved_configs;       /* 48B: Internal configs    */
     NAV_MAHONY_FILTER mahony_state; /* 36B: Mahony filter state */
-    NAV_POF_STATE pof_state;        /* 12B: POF state           */
-    NAV_SENSORS cal_data;           /* 60B: Calibration data    */
+    NAV_POF_STATE pof_state;        /* 76B: POF state           */
+    NAV_SENSORS cal_data;           /* 52B: Calibration data    */
     VECTOR_3F velocity;             /* 12B: Velocity data       */
     NAV_BARO_FILTER_STATE baro_state;
                                     /* 8B: Baro filter state    */

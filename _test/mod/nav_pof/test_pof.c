@@ -259,6 +259,115 @@ for ( unsigned int case_num = 0; case_num < sizeof( cases ) / sizeof( cases[0] )
 /*******************************************************************************
 *                                                                              *
 * PROCEDURE:                                                                   *
+*       test_landing_detect                                                    *
+*                                                                              *
+* DESCRIPTION:                                                                 *
+*       Test landing detection using barometric input vectors.                 *
+*                                                                              *
+*******************************************************************************/
+void test_landing_detect
+    (
+    void
+    )
+{
+/*------------------------------------------------------------------------------
+Local Typedefs
+------------------------------------------------------------------------------*/
+typedef struct
+    {
+    const char *test_name;
+    float starting_buffer[ LAND_DETECT_BUF_SZ ];
+    float ending_buffer[ LAND_DETECT_BUF_SZ ];
+    float alt_agl;
+    float alt_asl;
+    bool expect_detected;
+    } coast_test_case;
+float threshold = 0.75f * GRAVITY;
+coast_test_case cases[] =
+    {
+    /* Normal */
+    { "Initializes if buffer is empty",
+      { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY },
+      { 1000.0f, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY },
+      1000.0f,
+      2000.0f,
+      false
+    },
+    /* Normal */
+    { "Detect if on ground",
+      { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, INFINITY },
+      { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY },
+      1.0f,
+      100.0f,
+      true
+    },
+    /* Normal */
+    { "Do not detect if altitude out of range",
+      { 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, INFINITY },
+      { 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f, 1000.0f },
+      1000.0f,
+      1100.0f,
+      false
+    },
+    /* Normal */
+    { "Do not detect if vspd average is too high",
+      { 1000.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, INFINITY },
+      { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY },
+      1.0f,
+      100.0f,
+      false
+    },
+    /* Robust */
+    { "Reject update if altitude invalid",
+      { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY },
+      { INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY },
+      INFINITY,
+      2000.0f,
+      false
+    }
+    };
+
+for ( unsigned int case_num = 0; case_num < sizeof( cases ) / sizeof( cases[0] ); case_num++ )
+    {
+    NAV_SENSORS sensors = { 0 };
+    NAV_OUTPUTS outputs = { 0 };
+    NAV_STATUS status = NAV_OK;
+    nav_get_default_config( &(prv_state->saved_configs) );
+    _nav_pof_init( prv_state );
+    prv_state->pof = NAV_DESCENT;
+    prv_state->saved_configs.land_detect_vspd_threshold = 0.5f;
+    stub__pof_transitions_logged = 0;
+    memcpy( prv_state->pof_state.land_detect_lookback_buf, cases[ case_num ].starting_buffer, 4 * LAND_DETECT_BUF_SZ );
+
+    /* Timing */
+    prv_state->curr_update_time = 1.0f;
+    prv_state->last_update_time = 0.0f;
+    
+    /* Call FUT */
+    outputs.ind_alt_agl = cases[case_num].alt_agl;
+    outputs.ind_alt_asl = cases[case_num].alt_asl;
+    status = _nav_pof_update( prv_state, &sensors, &outputs );
+    
+    TEST_ASSERT_EQ_MEMORY( "Test that the buffer equals the expected.", 
+                    prv_state->pof_state.land_detect_lookback_buf,
+                    cases[ case_num ].ending_buffer,
+                    4 * LAND_DETECT_BUF_SZ );
+
+    TEST_ASSERT_EQ_UINT( cases[case_num].test_name, stub__pof_transitions_logged, cases[case_num].expect_detected );
+    TEST_ASSERT_EQ_UINT( "Test that the operation returned successfully", status, NAV_OK );
+
+    if( cases[case_num].expect_detected )
+        {
+        TEST_ASSERT_EQ_UINT( "Test that the new state is \"landed\".", prv_state->pof, NAV_LANDED );
+        }
+    }
+
+} /* test_landing_detect */
+
+
+/*******************************************************************************
+*                                                                              *
+* PROCEDURE:                                                                   *
 *       test_pof_init                                                          *
 *                                                                              *
 * DESCRIPTION:                                                                 *
@@ -339,6 +448,17 @@ status = _nav_pof_init( prv_state );
 
 TEST_ASSERT_EQ_UINT( "Verify that initialization fails if apogee detect is misconfigured", status, NAV_INVALID_CONFIG );
 
+/*------------------------------------------------------------------------------
+Case 7: Landing misconfigured
+------------------------------------------------------------------------------*/
+nav_get_default_config( &config );
+config.land_detect_vspd_threshold = 0;
+prv_state->saved_configs = config;
+
+status = _nav_pof_init( prv_state );
+
+TEST_ASSERT_EQ_UINT( "Verify that initialization fails if landing detect is misconfigured", status, NAV_INVALID_CONFIG );
+
 } /* test_pof_init */
 
 
@@ -362,6 +482,7 @@ unit_test tests[] =
     { "POF: launch_detection", test_launch_detection, "RQ.MOD.00060, RQ.MOD.00061" },
     { "POF: apogee_detect", test_apogee_detection, "RQ.MOD.00060, RQ.MOD.00063" },
     { "POF: coast_detect", test_coast_detect, "RQ.MOD.00060, RQ.MOD.00062" },
+    { "POF: landing_detect", test_landing_detect, "RQ.MOD.00060, RQ.MOD.00065" },
     { "POF: initialization", test_pof_init, "RQ.MOD.00060" }
     };
 

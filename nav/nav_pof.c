@@ -59,6 +59,13 @@ static bool detect_apogee
     NAV_OUTPUTS* outputs
     );
 
+static bool detect_landing
+    (
+    NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs
+    );
+
 /*------------------------------------------------------------------------------
  API Functions 
 ------------------------------------------------------------------------------*/
@@ -194,8 +201,21 @@ if( configs->apogee_decreasing_counts == 0 )
     return NAV_INVALID_CONFIG;
     }
 
+/* Check the land detect configuration */
+if( configs->land_detect_vspd_threshold <= 0 )
+    {
+    _nav_debug_error( "Landing detect must specify a vertical speed target." );
+    return NAV_INVALID_CONFIG;
+    }
+
 /* Set up the POF state */
 memset( &(prv_state->pof_state), 0, sizeof( NAV_POF_STATE ) );
+
+/* The landing detection buffer should initialize to INFINITY */
+for( int i = 0; i < LAND_DETECT_BUF_SZ; i++ )
+    {
+    prv_state->pof_state.land_detect_lookback_buf[i] = INFINITY;
+    }
 
 return( NAV_OK );
 
@@ -248,6 +268,13 @@ switch( starting_state )
         break;
 
     case NAV_DESCENT:
+        if( detect_landing( prv_state, sensors, outputs ) )
+            {
+            prv_state->pof = NAV_LANDED;
+            nav_pof_transition_event( (NAV_PUBLIC_STATE*)prv_state, starting_state, prv_state->pof );
+            }
+        break;
+
     case NAV_LANDED:
         /* no applicable transitions; do nothing */
         break;
@@ -434,6 +461,124 @@ else
     }
     
 } /* detect_apogee */
+
+
+/**
+ * @brief Detect if landing has occurred.
+ * 
+ * @details Checks for two sources:
+ *          1: Rocket is within a given range around the calibrated reference alt 
+ *             (increases w/ altitude ASL)
+ *             Caveat: This will fail if the rocket lands on a mountain or particularly
+ *                     large hill.
+ *          2: Rocket has a vertical speed within the threshold over 16 samples.
+ * 
+ * @todo In the future, we should factor a confidence statistic into this estimate. We
+ * can use Kalman error once that statistic exists. Alternatively, we could fit a regression
+ * model to the buffer
+ * 
+ * @param prv_state The navigation library state
+ * @param sensors The inputs to the library
+ * @param outputs The library's computed outputs so far
+ * @return t: landing has occurred
+ */
+static bool detect_landing
+    (
+    NAV_PRIVATE_STATE* prv_state,
+    const NAV_SENSORS* sensors,
+    NAV_OUTPUTS* outputs
+    )
+{
+/* local variables */
+float on_gnd_alt_rng;   /* range around reference alt */
+float avg_vspd = 0;     /* running average vertical speed over 16 samples */
+float curr_vspd;        /* current vertical speed over last step */
+uint8_t i;              /* iterator */
+
+/* Only check landing if there is a valid altitude estimate */
+if( !isfinite( outputs->ind_alt_asl ) || !isfinite( outputs->ind_alt_agl ) )
+    {
+    /* do not update the internal state, we will try again on the next cycle */
+    return false;
+    }
+
+on_gnd_alt_rng = outputs->ind_alt_asl * 0.2;
+float curr_alt = outputs->ind_alt_agl;
+
+if( prv_state->pof_state.land_detect_lookback_buf[0] == INFINITY )
+    {
+    /* Buffer is empty. Populate the first cell and move on. */
+    prv_state->pof_state.land_detect_lookback_buf[0] = curr_alt;
+    return false;
+    }
+
+/* Populate the next cell of the buffer.
+ *
+ * NOTE: We assume even time steps here. This is okay even if that's not true, 
+ * we just need average speeds over steps. 
+ */
+for( i = 1; i < LAND_DETECT_BUF_SZ; i++ )
+    {
+    /* If a cell is not populated, that's our current index */
+    if( prv_state->pof_state.land_detect_lookback_buf[i] == INFINITY )
+        {
+        /* Set the altitude at that cell */
+        prv_state->pof_state.land_detect_lookback_buf[i] = curr_alt;
+
+        /* Get the current speed over the timestep */
+        curr_vspd = prv_state->pof_state.land_detect_lookback_buf[i] - prv_state->pof_state.land_detect_lookback_buf[i - 1];
+        curr_vspd /= prv_state->curr_update_time - prv_state->last_update_time;
+
+        /* Add to the running average */
+        avg_vspd += curr_vspd;
+
+        i++;
+        break;
+        }
+
+    /* Get the current speed over the timestep */
+    curr_vspd = prv_state->pof_state.land_detect_lookback_buf[i] - prv_state->pof_state.land_detect_lookback_buf[i - 1];
+    curr_vspd /= prv_state->curr_update_time - prv_state->last_update_time;
+
+    /* Add to the running average */
+    avg_vspd += curr_vspd;
+    }
+
+/* Finalize the average by dividing the number of steps */
+avg_vspd /= i - 1;
+avg_vspd = fabsf( avg_vspd );
+
+/* 1: Do not consider landing detection while too far out of range of the ground. */
+if( curr_alt > on_gnd_alt_rng )
+    {
+    return false; /* Landing not detected */
+    }
+
+/* 2: Ensure the vehicle is not descending. */
+if( i == LAND_DETECT_BUF_SZ )
+    {
+    /* Buffer is full, so reset it. */
+    for( int i = 0; i < LAND_DETECT_BUF_SZ; i++ )
+        {
+        prv_state->pof_state.land_detect_lookback_buf[i] = INFINITY;
+        }
+    
+    /* Check if the average speed matches the requirement */
+    if( avg_vspd <= prv_state->saved_configs.land_detect_vspd_threshold )
+        {
+        return true; /* Landing detected */
+        }
+    else
+        {
+        return false; /* Landing not detected */
+        }
+    }
+else
+    {
+    return false; /* Landing not detected */
+    }
+    
+} /* detect_landing */
 
 /**
   * END OF FILE

@@ -102,6 +102,7 @@ memset( cfg_buffer, 0, sizeof( NAV_CONFIG ) );
     .coast_detect_threshold = 0.75f,
     .coast_detect_counts = 5,
     .apogee_decreasing_counts = 7,
+    .land_detect_vspd_threshold = 3.0f,
 
     /* Sensor Fusion Configuration */
     .accel_enabled = true,

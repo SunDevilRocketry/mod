@@ -136,4 +136,4 @@ The library shall be able to detect the following phase of flight transitions.
 
     RQ.MOD.00063 - Ascent -> Descent
 
-    RQ<POSTPONED>.MOD.00065 - Descent -> Landed
+    RQ.MOD.00065 - Descent -> Landed
