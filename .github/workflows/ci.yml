@@ -4,8 +4,8 @@ run-name: ${{ github.actor }} is running mod unit tests 🤖
 on:
   release:
   pull_request:
+  workflow_dispatch:
   push:
-    paths:
     branches:
       - main
       - staging
