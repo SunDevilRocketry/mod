@@ -73,7 +73,7 @@ extern "C"
 
 
 /* Private Constants ---------------------------------------------------------*/
-#define _PRIVATE_STATE_SIZE ( 176u )
+#define _PRIVATE_STATE_SIZE ( 244u )
 
 /* Typedefs ------------------------------------------------------------------*/
 
@@ -100,6 +100,7 @@ typedef enum
 typedef struct _NAV_CONFIG
     {
     /* pof transitions */
+    float land_detect_vspd_threshold;       /* u: m/s     */
     float coast_detect_threshold;           /* u: g-force */
     float launch_detect_accel_threshold;    /* u: g-force */
     float launch_detect_baro_threshold;     /* u: Pa */
