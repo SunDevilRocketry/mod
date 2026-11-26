@@ -5,14 +5,22 @@ on:
   release:
   pull_request:
   push:
-    paths:
     branches:
       - main
       - staging
       - integration/**
+  workflow_dispatch:
+    inputs:
+      version-number:
+        description: "Release version (for example, v3.1.0)"
+        required: true
+        type: string
 jobs:
   mod-runner:
     runs-on: ubuntu-latest
+    outputs:
+      release-version: ${{ steps.dispatch-version.outputs.release_version }}
+      document-version: ${{ steps.dispatch-version.outputs.document_version }}
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
@@ -32,6 +40,23 @@ jobs:
         with:
           path: Flight-Computer-Firmware/mod
           submodules: 'recursive'
+      - name: Validate release version
+        id: dispatch-version
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RAW_VERSION: ${{ github.event.inputs.version-number }}
+        run: |
+          if [[ ! "$RAW_VERSION" =~ ^[A-Za-z0-9][A-Za-z0-9.+_-]*$ ]]; then
+            echo "Version must contain only letters, numbers, dots, plus signs, underscores, and hyphens." >&2
+            exit 1
+          fi
+          document_version="$(printf '%s' "$RAW_VERSION" | LC_ALL=C tr -cd '0-9')"
+          if [[ -z "$document_version" ]]; then
+            echo "Version must contain at least one numeric character." >&2
+            exit 1
+          fi
+          echo "release_version=$RAW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "document_version=$document_version" >> "$GITHUB_OUTPUT"
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: List files in the repository
         run: |
@@ -81,7 +106,155 @@ jobs:
         with:
           name: mod-trace-report
           path: Flight-Computer-Firmware/mod/_test/trace-report.md
+      - name: Fail dispatch when traces are missing
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          trace_report="Flight-Computer-Firmware/mod/_test/trace-report.md"
+          if [[ ! -s "$trace_report" ]]; then
+            echo "Trace report is missing or empty: $trace_report" >&2
+            exit 1
+          fi
+          if grep -q 'TRACE ISSUE' "$trace_report"; then
+            grep -n 'TRACE ISSUE' "$trace_report" >&2
+            echo "The trace report contains requirements without test traces." >&2
+            exit 1
+          fi
+      - name: Install LibreOffice for QA document generation
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-writer
+      - name: Generate QA document
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: Flight-Computer-Firmware/mod
+        env:
+          DOCUMENT_VERSION: ${{ steps.dispatch-version.outputs.document_version }}
+        run: |
+          output_dir="_test/artifacts/quality-control"
+          mkdir -p "$output_dir"
+          python3 _test/framework/tools/quality_control_document.py \
+            --config library.conf \
+            --version-string "$DOCUMENT_VERSION" \
+            --output "$output_dir/A0015-${DOCUMENT_VERSION}-QC.md"
+      - name: Upload QA document
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v6
+        with:
+          name: mod-quality-control
+          path: Flight-Computer-Firmware/mod/_test/artifacts/quality-control/
+          if-no-files-found: error
       - run: echo "🍏 This job's status is ${{ job.status }}."
+
+  prepare-release:
+    name: Open document-control PR and draft release
+    if: github.event_name == 'workflow_dispatch'
+    needs: mod-runner
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out Mod
+        uses: actions/checkout@v6
+        with:
+          path: mod-source
+      - name: Download coverage report
+        uses: actions/download-artifact@v7
+        with:
+          name: mod-library-coverage
+          path: release-inputs/coverage
+      - name: Download test results
+        uses: actions/download-artifact@v7
+        with:
+          name: mod-test-results
+          path: release-inputs/test-results
+      - name: Download trace report
+        uses: actions/download-artifact@v7
+        with:
+          name: mod-trace-report
+          path: release-inputs/trace-report
+      - name: Download QA document
+        uses: actions/download-artifact@v7
+        with:
+          name: mod-quality-control
+          path: release-inputs/quality-control
+      - name: Require document-control write token
+        env:
+          DOCCTL_AUTOMATION: ${{ secrets.DOCCTL_AUTOMATION }}
+        run: |
+          if [[ -z "$DOCCTL_AUTOMATION" ]]; then
+            echo "Set the DOCCTL_AUTOMATION repository secret with write access to SunDevilRocketry/document-control." >&2
+            exit 1
+          fi
+      - name: Check out document-control
+        uses: actions/checkout@v6
+        with:
+          repository: SunDevilRocketry/document-control
+          ref: main
+          token: ${{ secrets.DOCCTL_AUTOMATION }}
+          path: document-control
+      - name: Stage quality-control artifacts
+        env:
+          RELEASE_VERSION: ${{ needs.mod-runner.outputs.release-version }}
+          DOCUMENT_VERSION: ${{ needs.mod-runner.outputs.document-version }}
+        run: |
+          destination="document-control/avionics/A0015/$RELEASE_VERSION"
+          mkdir -p "$destination/coverage" "$destination/test-results"
+          cp release-inputs/trace-report/trace-report.md "$destination/trace-report.md"
+          cp "release-inputs/quality-control/A0015-${DOCUMENT_VERSION}-QC.md" "$destination/quality-control.md"
+          cp "release-inputs/quality-control/A0015-${DOCUMENT_VERSION}-QC.pdf" "$destination/quality-control.pdf"
+          cp mod-source/_reqs/srd.md "$destination/srd.md"
+          cp -a release-inputs/coverage/. "$destination/coverage/"
+          cp -a release-inputs/test-results/. "$destination/test-results/"
+      - name: Create document-control pull request
+        working-directory: document-control
+        env:
+          GH_TOKEN: ${{ secrets.DOCCTL_AUTOMATION }}
+          RELEASE_VERSION: ${{ needs.mod-runner.outputs.release-version }}
+        run: |
+          branch="automation/mod-qc-artifacts-${RELEASE_VERSION}-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add "avionics/A0015/$RELEASE_VERSION"
+          if git diff --cached --quiet; then
+            echo "No quality-control artifacts were staged." >&2
+            exit 1
+          fi
+          git commit -m "Mod: QC artifacts [$RELEASE_VERSION]"
+          git push --set-upstream origin "$branch"
+          cat > "$RUNNER_TEMP/document-control-pr-body.md" <<EOF
+          ## SDR Document Control Pull Request
+
+          **Type:** QA artifacts
+
+          **Version(s):**
+          - Mod quality control report (PDF): $RELEASE_VERSION
+          - Mod quality control report (Markdown): $RELEASE_VERSION
+          - Mod trace report: $RELEASE_VERSION
+          - Mod coverage report: $RELEASE_VERSION
+          - Mod SRD: $RELEASE_VERSION
+          - Mod test results: $RELEASE_VERSION
+
+          **Description:** &lt;Autogenerated from release workflow in Mod&gt;
+          EOF
+          gh pr create \
+            --repo SunDevilRocketry/document-control \
+            --base main \
+            --head "$branch" \
+            --title "Mod: Quality Control Artifacts [$RELEASE_VERSION]" \
+            --body-file "$RUNNER_TEMP/document-control-pr-body.md" \
+            --assignee "$GITHUB_ACTOR"
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ needs.mod-runner.outputs.release-version }}
+        run: |
+          gh release create "$RELEASE_VERSION" \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            --generate-notes \
+            --title "Mod $RELEASE_VERSION" \
+            --target "$GITHUB_SHA"
 
   mod-documentation:
     runs-on: ubuntu-latest
